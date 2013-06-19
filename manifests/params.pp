@@ -21,6 +21,8 @@ class vclmgmt::params {
             $pkg_list += $tftp
             $pkg_list += "xCat"
             $pkg_exclude = [ $atftp ]
+
+            $service_list = [ "network", "dhcpd", "xinetd", "mysqld", "htpd", "vcld" ]
         }
     }
 }
