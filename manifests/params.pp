@@ -1,4 +1,7 @@
 class vclmgmt::params {
+    $vcldir = '/vcl'
+    $maintenance = "${vcldir}/web/.ht-inc/maintenance"
+
     $xcatcore = 'xcat-2-core'
     $xcatdep  = 'xcat-dep'
     $xcatcore_desc = 'xCat 2 Core packages'
