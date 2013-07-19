@@ -1,4 +1,4 @@
-class class vclmgmt::subversion {
+class vclmgmt::subversion {
 	File { $vclmgmt::params::vcldir :
 		ensure  => "directory",
 	        require => Class["vclmgmt::params"],

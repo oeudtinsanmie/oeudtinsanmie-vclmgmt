@@ -6,6 +6,7 @@ class vclmgmt::networks {
         netmask => '255.255.255.0',
         macaddress => $vclmgmt::params::image_mac,
         bootproto => 'static',
+        require => Class['vclmgmt::params'],
     }
     network::if::static { 'ipmi':
         interface => 'eth2',
@@ -14,6 +15,7 @@ class vclmgmt::networks {
         netmask => '255.255.255.0',
         macaddress => $vclmgmt::params::ipmi_mac,
         bootproto => 'static',
+        require => Class['vclmgmt::params'],
     }
     network::if::dynamic { 'public':
         interface => 'eth0',
@@ -21,6 +23,6 @@ class vclmgmt::networks {
         netmask => '255.255.255.0',
         macaddress => $vclmgmt::params::public_mac,
         bootproto => 'dhcp',
-
+        require => Class['vclmgmt::params'],
     }
 }
