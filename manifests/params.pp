@@ -1,6 +1,20 @@
 class vclmgmt::params {
-    $vcldir = '/vcl'
-    $maintenance = "${vcldir}/web/.ht-inc/maintenance"
+
+#	/etc/vcl/		-> vcl/managementnode/etc/vcl/ (vcld.conf)	
+
+    $vcldir 	= '/vcl'
+    $vclweb 	= '/var/www/html/vcl'
+    $vclnode 	= '/usr/local/vcl'
+    $vcld	= '/etc/init.d/vcld'
+    
+    $vcllinks = [ $vclweb, $vclnode, $vcld ]
+    $vcltargets = {
+        $vclweb		=>	"{$vcldir}/web",
+        $vclnode	=>	"{$vcldir}/managementnode",
+        $vcld		=>	"{$vcldir}/managementnode/bin/S99vcld.linux",
+    }
+
+    $maintenance = "${vclweb}/.ht-inc/maintenance"
 
     $xcatcore = 'xcat-2-core'
     $xcatdep  = 'xcat-dep'

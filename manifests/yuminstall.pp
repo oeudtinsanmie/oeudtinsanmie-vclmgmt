@@ -4,6 +4,8 @@ class vclmgmt::yuminstall {
         require => Class["vclmgmt::installfrom"],
     }
 
+    include $vclmgmt::params
+
     package { $vclmgmt::params::pkg_list : }
 
     package { $vclmgmt::params::pkg_exclude :

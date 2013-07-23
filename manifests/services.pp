@@ -7,5 +7,7 @@ class vclmgmt::services {
         require => Class["vclmgmt::yuminstall"],
     }
 
+    include $vclmgmt::params
+
     service { $vclmgmt::params::service_list : }
 }

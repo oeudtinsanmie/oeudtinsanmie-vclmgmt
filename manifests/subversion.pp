@@ -1,4 +1,6 @@
 class vclmgmt::subversion {
+	include $vclmgmt::params
+
 	File { $vclmgmt::params::vcldir :
 		ensure  => "directory",
 	        require => Class["vclmgmt::params"],
@@ -11,6 +13,6 @@ class vclmgmt::subversion {
 		method		=> "http",
 		#revision	=> "",
 		require		=> File[$vclmgmt::params::vcldir],
-	        require 	=> Class["vclmgmt::params"],
+	        require 	=> Class["vclmgmt::yuminstall"],
 	}
 }
