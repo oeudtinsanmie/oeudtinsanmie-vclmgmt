@@ -1,7 +1,7 @@
 class vclmgmt::subversion {
 	include $vclmgmt::params
 
-	File { $vclmgmt::params::vcldir :
+	file { $vclmgmt::params::vcldir :
 		ensure  => "directory",
 	        require => Class["vclmgmt::params"],
 	}

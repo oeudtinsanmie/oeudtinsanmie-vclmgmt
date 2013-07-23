@@ -1,22 +1,22 @@
 class vclmgmt::maintenancedir {
-	File { $vclmgmt::params::maintenance :
-		ensure  => "directory",
-		owner   => "apache",
-	        require => Class["vclmgmt::subversion"],
-	}
-	
-
 	define vclmgmt::maintenancedir::mylinks() {
 		include vclmgmt::params
 		$mytarget = $vclmgmt::params::vcltargets[$name]
 
-		File { $name :
+		file { $name :
 			ensure => "link",
 			target => $mytarget,
-			require => Class["vclmgmt::params"],
+			require => Class["vclmgmt::subversion"],
 		}    
 	}
-	vclmgmt::maintenancedir::mylinks($vclmgmt::params::vcllinks) {
+	vclmgmt::maintenancedir::mylinks { $vclmgmt::params::vcllinks :
 		
+	}
+
+	file { "maintenance" :
+		path	=> $vclmgmt::params::maintenance,
+		ensure  => "directory",
+		owner   => "apache",
+	        require => Class["vclmgmt::subversion"],
 	}
 }

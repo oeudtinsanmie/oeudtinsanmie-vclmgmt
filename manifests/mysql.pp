@@ -3,7 +3,7 @@ class vclmgmt::mysql {
         require => Class['mysql::server'],
     }
     class {'mysql::server': 
-        config_hash => { 'root_password' => $vclmgmt::params::sqlroot }
+        config_hash => { 'root_password' => $vclmgmt::params::sqlroot },
         require => Class['vclmgmt::params'],
     }
     

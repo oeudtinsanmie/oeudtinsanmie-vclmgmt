@@ -9,9 +9,9 @@ class vclmgmt::params {
     
     $vcllinks = [ $vclweb, $vclnode, $vcld ]
     $vcltargets = {
-        $vclweb		=>	"{$vcldir}/web",
-        $vclnode	=>	"{$vcldir}/managementnode",
-        $vcld		=>	"{$vcldir}/managementnode/bin/S99vcld.linux",
+        "{$vclweb}"	=>	"{$vcldir}/web",
+        "{$vclnode}"	=>	"{$vcldir}/managementnode",
+        "{$vcld}"	=>	"{$vcldir}/managementnode/bin/S99vcld.linux",
     }
 
     $maintenance = "${vclweb}/.ht-inc/maintenance"
