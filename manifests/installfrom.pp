@@ -1,7 +1,6 @@
 class vclmgmt::installfrom {
-    include $vclmgmt::params
-
-    yumrepo { $vclmgmt::params::xcatcore :
+    yumrepo { "xcat-core" :
+	name => $vclmgmt::params::xcatcore,
         descr => $vclmgmt::params::xcatcore_desc,
         baseurl => $vclmgmt::params::xcatcore_mirror,
         enabled => 1,
@@ -10,7 +9,8 @@ class vclmgmt::installfrom {
         require => Class["vclmgmt::params"],
     }
 
-    yumrepo { $vclmgmt::params::xcatdep :
+    yumrepo { "xcat-dep" :
+	name => $vclmgmt::params::xcatdep,
         descr => $vclmgmt::params::xcatdep_desc,
         baseurl => $vclmgmt::params::xcatdep_mirror,
         enabled => 1,
