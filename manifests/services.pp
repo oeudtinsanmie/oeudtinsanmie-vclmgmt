@@ -4,7 +4,7 @@ class vclmgmt::services {
         hasstatus => true,
         hasrestart => true,
         enable => true,
-        require => Class["vclmgmt::yuminstall"],
+        require => Class["vclmgmt::vcldirs"],
     }
 
     include $vclmgmt::params

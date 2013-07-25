@@ -1,6 +1,7 @@
 class vclmgmt::yuminstall {
     Package { 
         ensure => "latest",
+        provider => "yum",
         require => Class["vclmgmt::installfrom"],
     }
 

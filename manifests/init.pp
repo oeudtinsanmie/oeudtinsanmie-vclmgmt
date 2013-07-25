@@ -13,7 +13,11 @@
 # [Remember: No empty lines between comments and class definition]
 
 
-class vclmgmt {
-    	include vclmgmt::installfrom, vclmgmt::maintenancedir, vclmgmt::mysql, vclmgmt::networks, vclmgmt::params, vclmgmt::puppetmaster, vclmgmt::services, vclmgmt::setup_security, vclmgmt::subversion, vclmgmt::yuminstall
+class vclmgmt {	
+    	include vclmgmt::installfrom, vclmgmt::vcldirs, vclmgmt::networks, vclmgmt::cpan, vclmgmt::params, vclmgmt::services, vclmgmt::setup_security, vclmgmt::subversion, vclmgmt::yuminstall
+
+#	if $environment != "root" {
+#		include vclmgmt::mysql
+#	}
 
 }
