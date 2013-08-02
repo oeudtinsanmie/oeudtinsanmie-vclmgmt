@@ -9,14 +9,15 @@ class vclmgmt::params {
     
     $vcllinks = [ $vclweb, $vclnode, $vcld ]
     $vcltargets = {
-        "${$vclweb}"	=>	"${vcldir}/web",
-        "${$vclnode}"	=>	"${vcldir}/managementnode",
-        "${$vcld}"	=>	"${vcldir}/managementnode/bin/S99vcld.linux",
+        "${vclweb}"	=>	"${vcldir}/web",
+        "${vclnode}"	=>	"${vcldir}/managementnode",
+        "${vcld}"	=>	"${vcldir}/managementnode/bin/S99vcld.linux",
     }
 
     $maintenance = "${vclweb}/.ht-inc/maintenance"
 
     $vclpassword = "VcLr5O(O(t"
+    $sqlroot	 = "Sq1Lr5O(O(t"
 
     $image_mac  = "00:10:18:84:4D:B4"
     $ipmi_mac   = "84:2B:2B:50:D1:8B"
