@@ -1,12 +1,7 @@
 class vclmgmt::vcldirs {
-	define vclmgmt::maintenancedir::mylinks() {
+	define vclmgmt::vcldirs::mylinks() {
 		include vclmgmt::params
-		$mytarget = $vclmgmt::params::vcltargets[$name]
-
-		file { $mytarget : 
-			ensure => "present",
-			recurse => "true",
-		}
+		$mytarget = $vclmgmt::params::vcllinktargets[$name]
 
 		file { $name :
 			ensure => "link",
@@ -14,7 +9,27 @@ class vclmgmt::vcldirs {
 			require => Class["vclmgmt::subversion"],
 		}    
 	}
-	vclmgmt::maintenancedir::mylinks { $vclmgmt::params::vcllinks :
+
+	define vclmgmt::vcldirs::vclcopy() {
+		include vclmgmt::params
+		$mytarget 	= $vclmgmt::params::vclcptargets[$name]
+		$mydir 		= $vclmgmt::params::vclcptgtdirs[$name]
+
+		exec { "mkdir ${mydir}" :
+			require => Class["vclmgmt::subversion"],
+			unless => "ls ${mydir}"
+		}
+
+		exec { "cp ${name} ${mytarget}" :
+			require => Class["vclmgmt::subversion"],
+		}
+	}
+
+	vclmgmt::vcldirs::vclcopy { $vclmgmt::params::vclcopyfiles :
+
+	}
+
+	vclmgmt::vcldirs::mylinks { $vclmgmt::params::vcllinks :
 		
 	}
 
@@ -23,5 +38,17 @@ class vclmgmt::vcldirs {
 		ensure  => "directory",
 		owner   => "apache",
 	        require => Class["vclmgmt::subversion"],
+	}
+
+	file { "vcld" :
+		path	=> $vclmgmt::params::vclcptargets[$vclmgmt::params::vcld],
+		ensure	=> "present",
+		mode	=> "a+x",
+	}
+
+	file { "images" :
+		path	=> $vclmgmt::params::vclimages,
+		ensure 	=> "directory",
+		require => Class["vclmgmt::subversion"],
 	}
 }

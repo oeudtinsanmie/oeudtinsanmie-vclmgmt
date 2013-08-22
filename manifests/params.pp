@@ -1,27 +1,33 @@
 class vclmgmt::params {
 
-#	/etc/vcl/		-> vcl/managementnode/etc/vcl/ (vcld.conf)	
-
     $vcldir 	= '/vcl'
+
     $vclweb 	= '/var/www/html/vcl'
     $vclnode 	= '/usr/local/vcl'
-    $vcld	= '/etc/init.d/vcld'
+    $vclimages	= "${vcldir}/images"
     
-    $vcllinks = [ $vclweb, $vclnode, $vcld ]
-    $vcltargets = {
+    $vcllinks = [ $vclweb, $vclnode ]
+    $vcllinktargets = {
         "${vclweb}"	=>	"${vcldir}/web",
         "${vclnode}"	=>	"${vcldir}/managementnode",
-        "${vcld}"	=>	"${vcldir}/managementnode/bin/S99vcld.linux",
+    }
+
+    $vcldconf 	= "${vcldir}/managementnode/etc/vcl/vcld.conf"
+    $vcld	= "${vcldir}/managementnode/bin/S99vcld.linux"
+
+    $vclcopyfiles = [ $vcldconf, $vcld ]
+
+    $vclcptgtdirs = {
+	"${vcldconf}"	=> '/etc/vcl',
+	"${vcld}"	=> '/etc/init.d',
+    }
+
+    $vclcptargets = {
+	"${vcldconf}"	=> '/etc/vcl/vcld.conf',
+	"${vcld}"	=> '/etc/init.d/vcld',
     }
 
     $maintenance = "${vclweb}/.ht-inc/maintenance"
-
-    $vclpassword = "VcLr5O(O(t"
-    $sqlroot	 = "Sq1Lr5O(O(t"
-
-    $image_mac  = "00:10:18:84:4D:B4"
-    $ipmi_mac   = "84:2B:2B:50:D1:8B"
-    $public_mac = "84:2B:2B:50:D1:89"
 
     $xcatcore = 'xcat-2-core'
     $xcatdep  = 'xcat-dep'
@@ -49,11 +55,9 @@ class vclmgmt::params {
 			# "mysql-server", 
             $pkg_list = [ "httpd", "mod_ssl", "php", "php-gd", "php-mcrypt", "php-mysql", "php-xml", "php-xmlrpc", "php-ldap", "php-process", "augeas", "phpMyAdmin.noarch", "dhcp", "subversion", "tftp-server.${architecture}", "xCAT", "expat-devel", "gcc", "krb5-libs", "krb5-devel", "libxml2-devel", "make", "nmap", "openssl-devel", "perl-Archive-Tar", "perl-CPAN", "perl-Crypt-OpenSSL-RSA", "perl-DBD-MySQL", "perl-DBI", "perl-Digest-SHA1", "perl-IO-String", "perl-MailTools", "perl-Net-Jabber", "perl-Net-Netmask", "perl-Net-SSH-Expect", "perl-Text-CSV_XS", "perl-XML-Simple", "perl-YAML", "xmlsec1-openssl" ]
 
-		# "perl-RPC-XML", 
-
             $pkg_exclude = [ "atftp-xcat.${architecture}" ]
 				# "network", "mysqld", 
-            $service_list = [ "dhcpd", "xinetd", "htpd", "vcld" ]
+            $service_list = [ "dhcpd", "xinetd", "httpd", "vcld" ]
 #        }
 #    }
 

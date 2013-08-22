@@ -14,10 +14,10 @@
 
 
 class vclmgmt {	
-    	include vclmgmt::installfrom, vclmgmt::vcldirs, vclmgmt::networks, vclmgmt::cpan, vclmgmt::params, vclmgmt::services, vclmgmt::setup_security, vclmgmt::subversion, vclmgmt::yuminstall
+    	include vclmgmt::installfrom, vclmgmt::vcldirs, vclmgmt::cpan, vclmgmt::params, vclmgmt::services, vclmgmt::setup_security, vclmgmt::subversion, vclmgmt::yuminstall
 
 	if $environment != "root" {
 		include vclmgmt::mysql
 	}
-
+	
 }
