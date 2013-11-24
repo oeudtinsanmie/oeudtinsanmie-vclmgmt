@@ -24,11 +24,11 @@ define("ONLINEDEBUG", 1);     // 1 to display errors to screen, 0 to email error
 define("BASEURL", "https://<%= @fqdn %>/vcl");   // no trailing slash - all of the URL except /index.php
 define("SCRIPT", "/index.php");                 // this should only be "/index.php" unless you rename index.php to something else
 define("HELPURL", "https://<%= @fqdn %>/help/"); // URL pointed to by the "Help" link in the navigation area
-define("HELPEMAIL", “<%= @help_email %>“);        // if an unexpected error occurs, users will be prompted that they can email
+define("HELPEMAIL", “<%= @helpemail %>“);        // if an unexpected error occurs, users will be prompted that they can email
                                                     //   this address for further assistance
-define("ERROREMAIL", "<%= @help_email %>");      // if an unexpected error occurs, the code will send an email about it to
+define("ERROREMAIL", "<%= @helpemail %>");      // if an unexpected error occurs, the code will send an email about it to
                                                     //   to this address
-define("ENVELOPESENDER", "<%= @help_email %>");   // email address for envelope sender of mail messages
+define("ENVELOPESENDER", "<%= @helpemail %>");   // email address for envelope sender of mail messages
                                                      //   if a message gets bounced, it goes to this address
 define("COOKIEDOMAIN", “.<%= @domain %>“);       // domain in which cookies are set
 define("HOMEURL", "http://<%= @fqdn %>/"); // url to go to when someone clicks HOME or Logout
@@ -56,7 +56,7 @@ conditions, and limit the use of your image accordingly.</p>
 
 <p>** If you have software licensing questions or would like assistance 
 regarding specific terms and conditions, please contact 
-<a href=mailto:<%= @help_email %>><%= @help_email %></a>.</p>";
+<a href=mailto:<%= @helpemail %>><%= @helpemail %></a>.</p>";
 
 
 #######################   end required modifications ###########################
@@ -92,7 +92,7 @@ define("ALLOWADDSHIBUSERS", 0); // this is only related to using Shibboleth auth
                                 // also have LDAP set up (i.e. affiliation.shibonly = 1)
                                 // set this to 1 to allow users be manually added to VCL before they have ever logged in
                                 // through things such as adding a user to a user group or directly granting a user a
-                                // privilege somewhere in the privilege tree. Note that if you enable this and typo
+                               // privilege somewhere in the privilege tree. Note that if you enable this and typo
                                 // a userid, there is no way to verify that it was entered incorrectly so the user
                                 // will be added to the database with the typoed userid
 

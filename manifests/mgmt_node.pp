@@ -1,6 +1,6 @@
 include vclmgmt
 
-define vclmgmt::mgmt_node($public_mac, $public_if = 'em1', $public_ip = 'dhcp', $private_mac, $private_ip = '172.20.0.1', $private_if = 'em2', $ipmi_mac, $ipmi_ip = '172.25.0.1', $ipmi_if = 'p4p1', $vcldb = 'vcl', $vcluser = 'vcluser@localhost', $root_pw, $vcluser_pw, $vclhost = 'localhost') {
+define vclmgmt::mgmt_node($public_mac, $public_if = 'em1', $public_ip = 'dhcp', $private_mac, $private_ip = '172.20.0.1', $private_if = 'em2', $ipmi_mac, $ipmi_ip = '172.25.0.1', $ipmi_if = 'p4p1', $vcldb = 'vcl', $vcluser = 'vcluser@localhost', $root_pw, $vcluser_pw, $vclhost = 'localhost', $serverip = 'localhost',$xmlrpc_pw = 'just_another_password', $xml_url = 'localhost') {
 	vclmgmt::networks { "mgmt_interfaces" :
 		public_mac 	=> $public_mac,
 		public_if	=> $public_if, 
@@ -20,18 +20,13 @@ define vclmgmt::mgmt_node($public_mac, $public_if = 'em1', $public_ip = 'dhcp', 
 		vcluser_pw	=> $vcluser_pw,
 	}
 	
-<<<<<<< HEAD
-	vclmgmt::configure { "mgmt node configuration, secrets.php" :
-		vclhost		=> $vclhost,
-		vcldb		=> $vcldb,
-		vclusername	=> $vcluser,
-		vclpassword	=> $vcluser_pw,
-=======
-	vclmgmt::configure { "config_secrets.php" :
+	vclmgmt::configure { "config_vcl_files" :
 		vclhost		=> $vclhost,
 		vcldb		=> $vcldb,
 		vcluser		=> $vcluser,
 		vcluser_pw	=> $vcluser_pw,
->>>>>>> origin/dev
+		serverip 	=> $serverip,
+		xmlrpc_pw	=> $xmlrpc_pw,
+		xml_url		=> $xml_url,
 	}
 }

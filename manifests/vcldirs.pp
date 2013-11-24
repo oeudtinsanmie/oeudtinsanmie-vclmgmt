@@ -34,7 +34,7 @@ class vclmgmt::vcldirs {
 	}
 
 	file { "maintenance" :
-		path	=> $vclmgmt::params::maintenance,
+		path	=> "${vclmgmt::params::htinc}/maintenance",
 		ensure  => "directory",
 		owner   => "apache",
 	        require => Class["vclmgmt::subversion"],

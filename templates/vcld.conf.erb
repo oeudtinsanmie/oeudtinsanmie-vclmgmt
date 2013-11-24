@@ -35,7 +35,7 @@
 # FQDN: DNS name of the management node
 # Example: mgtnode1.hpc.someschool.edu
 #FQDN=eb2-2238-pod0-T610.netlabs.ncsu.edu
-FQDN = '<% @fqdn  %>'
+FQDN = '<%= @fqdn  %>'
 # processname: name to call VCL daemon process
 # Default: vcld
 processname=vcld
@@ -59,15 +59,15 @@ database=vcl
 
 # server: IP address or FQDN of the database server (required)
 #server=localhost
-server = '<% @serverip %>'
+server = '<%= @serverip %>'
 # LockerWrtUser: MySQL user account name with write privileges (required)
 #LockerWrtUser=vcluser
-LockerWrtUser = '<% @UserLocker %>'
+LockerWrtUser = '<%= @vcluser %>'
 # wrtPass: MySQL password of the above LockerWrtUser (required)
 # Any length is supported by MySQL
 # Must be a string of characters: A-Z a-z 0-9
 #wrtPass=VcLr5O(O(t
-wrtPass = '<% @dbUserPw %>'
+wrtPass = '<%= @vcluser_pw %>'
 # xml-rpc username password and url information
 # Required for block reservation processing
 # xmlrpc_username must be the unityid field for a user in the user table
@@ -78,8 +78,8 @@ wrtPass = '<% @dbUserPw %>'
 
 xmlrpc_username=vclsystem@Local
 #xmlrpc_pass=insecureDefault
-xmlrpc_pass = '<% @xmlrpc_pw %>'
-xmlrpc_url= '<% @xml_url %>'
+xmlrpc_pass = '<%= @xmlrpc_pw %>'
+xmlrpc_url= '<%= @xml_url %>'
 
 ######### END REQUIRED Configuration settings ##############
 

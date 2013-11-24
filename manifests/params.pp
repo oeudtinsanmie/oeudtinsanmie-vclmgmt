@@ -14,7 +14,7 @@ class vclmgmt::params {
 
     $vcldconf 	= "${vcldir}/managementnode/etc/vcl/vcld.conf"
     $vcld	= "${vcldir}/managementnode/bin/S99vcld.linux"
-
+	
     $vclcopyfiles = [ $vcldconf, $vcld ]
 
     $vclcptgtdirs = {
@@ -27,7 +27,7 @@ class vclmgmt::params {
 	"${vcld}"	=> '/etc/init.d/vcld',
     }
 
-    $maintenance = "${vclweb}/.ht-inc/maintenance"
+    $htinc = "${vclweb}/.ht-inc"
 
     $xcatcore = 'xcat-2-core'
     $xcatdep  = 'xcat-dep'
@@ -56,7 +56,6 @@ class vclmgmt::params {
             $pkg_list = [ "httpd", "mod_ssl", "php", "php-gd", "php-mcrypt", "php-mysql", "php-xml", "php-xmlrpc", "php-ldap", "php-process", "augeas", "phpMyAdmin.noarch", "dhcp", "subversion", "tftp-server.${architecture}", "xCAT", "expat-devel", "gcc", "krb5-libs", "krb5-devel", "libxml2-devel", "make", "nmap", "openssl-devel", "perl-Archive-Tar", "perl-CPAN", "perl-Crypt-OpenSSL-RSA", "perl-DBD-MySQL", "perl-DBI", "perl-Digest-SHA1", "perl-IO-String", "perl-MailTools", "perl-Net-Jabber", "perl-Net-Netmask", "perl-Net-SSH-Expect", "perl-Text-CSV_XS", "perl-XML-Simple", "perl-YAML", "xmlsec1-openssl" ]
 
             $pkg_exclude = [ "atftp-xcat.${architecture}" ]
-				# "network", "mysqld", 
             $service_list = [ "dhcpd", "xinetd", "httpd", "vcld" ]
 #        }
 #    }
