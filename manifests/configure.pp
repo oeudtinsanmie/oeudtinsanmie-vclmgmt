@@ -1,4 +1,4 @@
-define vclmgmt::configure($vclhost, $vcldb, $vcluser, $vcluser_pw) {
+define vclmgmt::configure($vclhost, $vcldb, $vcluser, $vcluser_pw, $helpemail = 'netlabs@help.ncsu.edu') {
 	
 	file { "/var/www/html/vcl/.ht-inc/secrets.php" :
 		ensure => file,
