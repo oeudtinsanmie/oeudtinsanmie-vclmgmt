@@ -20,10 +20,10 @@ define vclmgmt::mgmt_node($public_mac, $public_if = 'em1', $public_ip = 'dhcp', 
 		vcluser_pw	=> $vcluser_pw,
 	}
 	
-	vclmgmt::configure { "mgmt node configuration, secrets.php" :
+	vclmgmt::configure { "config_secrets.php" :
 		vclhost		=> $vclhost,
 		vcldb		=> $vcldb,
-		vclusername	=> $vcluser,
-		vclpassword	=> $vcluser_pw,
+		vcluser		=> $vcluser,
+		vcluser_pw	=> $vcluser_pw,
 	}
 }
