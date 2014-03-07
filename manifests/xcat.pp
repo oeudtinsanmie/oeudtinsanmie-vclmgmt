@@ -1,6 +1,7 @@
 include vclmgmt
 
 define vclmgmt::xcat_init($ipmi_ip, $ipmi_user, $ipmi_pw, $admin_user, $adimin_pw)  {
+
     xcat_node { “ipmi” :
         bmc => “/\\z/—ipmi/“,
         bmcusername => $ipmi_user,
