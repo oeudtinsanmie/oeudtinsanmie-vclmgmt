@@ -12,7 +12,7 @@ define vclmgmt::sql_setup($vcldb, $vcluser, $root_pw, $vcluser_pw) {
     }
 
     database_user { $vcluser :
-	password_hash => mysql_password($vclmgmt::params::vclpassword),
+	password_hash => mysql_password($vcluser_pw),
     }
 
     database_grant { "${vcluser}/${vcldb}" :
