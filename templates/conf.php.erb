@@ -24,13 +24,13 @@ define("ONLINEDEBUG", 1);     // 1 to display errors to screen, 0 to email error
 define("BASEURL", "https://<%= @fqdn %>/vcl");   // no trailing slash - all of the URL except /index.php
 define("SCRIPT", "/index.php");                 // this should only be "/index.php" unless you rename index.php to something else
 define("HELPURL", "https://<%= @fqdn %>/help/"); // URL pointed to by the "Help" link in the navigation area
-define("HELPEMAIL", “<%= @helpemail %>“);        // if an unexpected error occurs, users will be prompted that they can email
+define("HELPEMAIL", "<%= @helpemail %>");        // if an unexpected error occurs, users will be prompted that they can email
                                                     //   this address for further assistance
 define("ERROREMAIL", "<%= @helpemail %>");      // if an unexpected error occurs, the code will send an email about it to
                                                     //   to this address
 define("ENVELOPESENDER", "<%= @helpemail %>");   // email address for envelope sender of mail messages
                                                      //   if a message gets bounced, it goes to this address
-define("COOKIEDOMAIN", “.<%= @domain %>“);       // domain in which cookies are set
+define("COOKIEDOMAIN", ".<%= @domain %>");       // domain in which cookies are set
 define("HOMEURL", "http://<%= @fqdn %>/"); // url to go to when someone clicks HOME or Logout
 
 date_default_timezone_set('America/New_York'); // set this to your timezone; a list of available values can
