@@ -1,6 +1,6 @@
 include vclmgmt
 
-define vclmgmt::mgmt_node($public_mac, $public_if = 'em1', $public_ip = 'dhcp', $private_mac, $private_ip = '172.20.0.1', $private_if = 'em2', $ipmi_mac, $ipmi_ip = '172.25.0.1', $ipmi_if = 'p4p1', $vcldb = 'vcl', $vcluser = 'vcluser', $root_pw, $vcluser_pw, $vclhost = 'localhost', $serverip = 'localhost', $xmlrpc_pw = 'just_another_password', $xml_url = 'localhost', $ipmi_user, $ipmi_pw, $admin_user, $admin_pw) {
+define vclmgmt::mgmt_node($public_mac, $public_if = 'em1', $public_ip = 'dhcp', $private_mac, $private_ip = '172.20.0.1', $private_net = '172.20.0.0', $private_mask = '255.252.0.0', $private_if = 'em2', $ipmi_mac, $ipmi_ip = '172.25.0.1', $ipmi_net = '172.24.0.0', $ipmi_mask = '255.252.0.0', $ipmi_if = 'p4p1', $vcldb = 'vcl', $vcluser = 'vcluser', $root_pw, $vcluser_pw, $vclhost = 'localhost', $serverip = 'localhost', $xmlrpc_pw = 'just_another_password', $xml_url = 'localhost', $ipmi_user, $ipmi_pw, $admin_user, $admin_pw) {
 	vclmgmt::networks { "mgmt_interfaces" :
 		public_mac 	=> $public_mac,
 		public_if	=> $public_if, 
@@ -31,10 +31,16 @@ define vclmgmt::mgmt_node($public_mac, $public_if = 'em1', $public_ip = 'dhcp', 
 	}
 
         vclmgmt::xcat_init { "init_xcat" :
+		ipmi_if		=> $ipmi_if,
                 ipmi_ip		=> $ipmi_ip,
                 ipmi_user	=> $ipmi_user,
                 ipmi_pw		=> $ipmi_pw,
+		ipmi_net	=> $ipmi_net,
+		ipmi_mask	=> $ipmi_mask,
                 admin_user	=> $admin_user,
                 admin_pw	=> $admin_pw,
+		private_if	=> $private_if,
+		private_net	=> $private_net,
+		private_mask	=> $private_mask,
         }
 }

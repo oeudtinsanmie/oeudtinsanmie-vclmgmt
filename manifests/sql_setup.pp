@@ -11,11 +11,11 @@ define vclmgmt::sql_setup($vcldb, $vcluser, $root_pw, $vcluser_pw) {
 	require => Class['vclmgmt::subversion'],
     }
 
-    database_user { $vcluser :
+    database_user { "${vcluser}@localhost" :
 	password_hash => mysql_password($vcluser_pw),
     }
 
-    database_grant { "${vcluser}/${vcldb}" :
+    database_grant { "${vcluser}@localhost/${vcldb}" :
 	privileges => ['GRANT_priv', 'SELECT_priv', 'INSERT_priv', 'UPDATE_priv', 'DELETE_priv', 'Create_tmp_table_priv'],
     }
 }
