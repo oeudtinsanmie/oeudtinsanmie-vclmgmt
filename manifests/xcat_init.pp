@@ -1,6 +1,6 @@
 include vclmgmt
 
-define vclmgmt::xcat_init($ipmi_ip, $ipmi_net, $ipmi_mask, $ipmi_if, $ipmi_user, $ipmi_pw, $admin_user, $admin_pw, $private_net, $private_mask, $private_if)  {
+define vclmgmt::xcat_init($ipmi_ip, $ipmi_net, $ipmi_mask, $ipmi_range, $ipmi_if, $ipmi_user, $ipmi_pw, $admin_user, $admin_pw, $private_net, $private_mask, $private_if)  {
     xcat_node { "ipmi" :
         bmc => "/\\\\z/-ipmi/",
         bmcusername => $ipmi_user,
@@ -12,7 +12,12 @@ define vclmgmt::xcat_init($ipmi_ip, $ipmi_net, $ipmi_mask, $ipmi_if, $ipmi_user,
 
     xcat_site_attribute { "master" :
         sitename => 'clustersite',
-        value => $ipmi_ip,
+        value => $fqdn,
+    }
+
+    xcat_site_attribute { "nameservers" :
+        sitename => 'clustersite',
+        value => $private_ip,
     }
 
     xcat_site_attribute { "dhcpinterfaces" :
@@ -20,10 +25,30 @@ define vclmgmt::xcat_init($ipmi_ip, $ipmi_net, $ipmi_mask, $ipmi_if, $ipmi_user,
 	value => [$private_if, $ipmi_if],
     }
 
+    xcat_site_attribute { "domain" :
+        sitename => 'clustersite',
+        value => 'netlabs.cluster',
+    }
+
+    xcat_site_attribute { "ntpservers" :
+       	sitename => 'clustersite',
+       	value => 'time.ncsu.edu',
+    }
+
+    xcat_site_attribute { "xcatroot" :
+       	sitename => 'clustersite',
+        value => "/opt/xcat",
+    }
+
+    xcat_site_attribute	{ "xcatprefix" :
+        sitename => 'clustersite',
+       	value => "/opt/xcat",
+    }
+
     xcat_network { "private" :
         mgtifname => $private_if,
-       	nameservers => "<xcatmaster>",
-       	gateway	=> "<xcatmaster>",
+       	nameservers => "xcatmaster",
+       	gateway	=> "xcatmaster",
        	domain => "private.netlabs",
        	net => $private_net,
        	mask =>	$private_mask,
@@ -31,10 +56,11 @@ define vclmgmt::xcat_init($ipmi_ip, $ipmi_net, $ipmi_mask, $ipmi_if, $ipmi_user,
 
     xcat_network { "ipmi" :
        	mgtifname => $ipmi_if,
-        nameservers => "<xcatmaster>",
-        gateway => "<xcatmaster>",
+        nameservers => "xcatmaster",
+        gateway => "xcatmaster",
         domain => "ipmi.netlabs",
         net => $ipmi_net,
         mask => $ipmi_mask,
+        dynamicrange => $ipmi_range,
     }
 }
