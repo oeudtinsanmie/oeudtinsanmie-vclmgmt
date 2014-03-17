@@ -14,7 +14,7 @@ define vclmgmt::xcat_init($ipmi_if, $private_if, $private_ip, $private_domain)  
 
     xcat_site_attribute { "dhcpinterfaces" :
 	sitename => 'clustersite',
-	value => [$private_if, $ipmi_if],
+	value => ["${private_if}.307", "${ipmi_if}.307"],
     }
 
     xcat_site_attribute { "domain" :

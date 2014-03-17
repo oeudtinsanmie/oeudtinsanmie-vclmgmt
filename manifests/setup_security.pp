@@ -19,6 +19,11 @@ class vclmgmt::setup_security {
         dport => 443,
         state => 'NEW',
     }
+    firewall { '110 reject foward across vlans' :
+	chain => 'FORWARD',
+	proto => 'all',
+	action => 'reject',
+    }
     selboolean { 'httpd can connect':
         name => 'httpd_can_network_connect',
         persistent => true,
