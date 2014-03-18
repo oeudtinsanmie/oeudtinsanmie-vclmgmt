@@ -13,6 +13,12 @@ define vclmgmt::mgmt_node($public_mac, $public_if = 'em1', $public_ip = 'dhcp', 
 		ipmi_if		=> $ipmi_if, 
 	}
 
+    	firewall { '110 accept forward from me across bridges' :
+        	chain => 'FORWARD',
+        	proto => 'all',
+        	action => 'accept',
+		source => $private_ip,
+    	}
 	vclmgmt::sql_setup { "mgmt_sql" :
 		vcldb		=> $vcldb, 
 		vcluser		=> $vcluser, 
