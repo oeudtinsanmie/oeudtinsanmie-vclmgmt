@@ -1,10 +1,10 @@
 include vclmgmt
 
-define vclmgmt::xcat_vlan($master_if, $master_mac, $master_ip, $domain, $network, $netmask, $ip_range, $vlanid) {
+define vclmgmt::xcat_vlan($master_if, $master_mac, $master_ip, $vlan_alias_ip, $domain, $network, $netmask, $ip_range, $vlanid) {
 	
     network::if::static { "${master_if}.${vlanid}" :
 	ensure 		=> 'up',
-	ipaddress 	=> $master_ip,
+	ipaddress 	=> $vlan_alias_ip,
 	netmask 	=> $netmask,
 	macaddress 	=> $master_mac,
 	vlan 		=> true,

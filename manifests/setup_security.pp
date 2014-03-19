@@ -19,7 +19,7 @@ class vclmgmt::setup_security {
         dport => 443,
         state => 'NEW',
     }
-    firewall { '111 reject foward across vlans' :
+    firewall { '112 reject foward across vlans' :
 	chain => 'FORWARD',
 	proto => 'all',
 	action => 'reject',

@@ -19,6 +19,23 @@ define vclmgmt::mgmt_node($public_mac, $public_if = 'em1', $public_ip = 'dhcp', 
         	action => 'accept',
 		source => $private_ip,
     	}
+
+    	firewall { "115 accept tftp" :
+        	chain => 'INPUT',
+        	proto => 'udp',
+        	dport => 69,
+        	action => 'accept',
+        	destination => $private_ip,
+    	}
+
+        firewall { "116 accept sending tftp" :
+                chain => 'INPUT',
+                proto => 'udp',
+                dport => 69,
+                action => 'accept',
+                source => $private_ip,
+        }
+
 	vclmgmt::sql_setup { "mgmt_sql" :
 		vcldb		=> $vcldb, 
 		vcluser		=> $vcluser, 
