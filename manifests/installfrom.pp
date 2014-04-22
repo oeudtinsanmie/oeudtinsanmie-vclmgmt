@@ -1,7 +1,5 @@
 class vclmgmt::installfrom {
     include vclmgmt::params
-    notify {"yum repos xcat-core {$vclmgmt::params::xcatcore}, {$vclmgmt::params::xcatcore_desc}, {$vclmgmt::params::xcatcore_mirror}" : }
-    notify {"yum repos xcat-dep {$vclmgmt::params::xcatdep}, {$vclmgmt::params::xcatdep_desc}, {$vclmgmt::params::xcatdep_mirror}" : }
 
     yumrepo { $vclmgmt::params::xcatcore :
         descr => $vclmgmt::params::xcatcore_desc,

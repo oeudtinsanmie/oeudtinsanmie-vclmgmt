@@ -1,10 +1,10 @@
 class vclmgmt::params {
 
-    $vcldir 	= '/vcl'
+    $vcldir 	= hiera('vclmgmt::vcldir', '/vcl')
 
-    $vclweb 	= '/var/www/html/vcl'
-    $vclnode 	= '/usr/local/vcl'
-    $vclimages	= "${vcldir}/images"
+    $vclweb 	= hiera('vclmgmt::vclweb', '/var/www/html/vcl')
+    $vclnode 	= hiera('vclmgmt::vclnode', '/usr/local/vcl')
+    $vclimages	= hiera('vclmgmt::vclimages', "${vcldir}/images")
     
     $vcllinks = [ $vclweb, $vclnode ]
     $vcllinktargets = {

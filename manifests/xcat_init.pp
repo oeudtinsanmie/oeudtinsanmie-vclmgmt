@@ -1,6 +1,6 @@
 include vclmgmt
 
-define vclmgmt::xcat_init($ipmi_if, $private_if, $private_ip, $private_domain)  {
+define vclmgmt::xcat_init($ipmi_if, $private_if, $dhcpinterfaces, $private_ip, $private_domain)  {
 
     xcat_site_attribute { "master" :
         sitename => 'clustersite',
@@ -14,7 +14,7 @@ define vclmgmt::xcat_init($ipmi_if, $private_if, $private_ip, $private_domain)  
 
     xcat_site_attribute { "dhcpinterfaces" :
 	sitename => 'clustersite',
-	value => ["${private_if}.307", "${ipmi_if}.307"],
+	value => $dhcpinterfaces,
     }
 
     xcat_site_attribute { "domain" :
