@@ -1,6 +1,6 @@
 class vclmgmt::installfrom {
     include vclmgmt::params
-
+/*
     yumrepo { $vclmgmt::params::xcatcore :
         descr => $vclmgmt::params::xcatcore_desc,
         baseurl => $vclmgmt::params::xcatcore_mirror,
@@ -18,7 +18,7 @@ class vclmgmt::installfrom {
 	gpgkey => $vclmgmt::params::xcatdep_key,
         require => Class["vclmgmt::params"],
     }
-
+*/
     yumrepo { $vclmgmt::params::centos :
         descr => $vclmgmt::params::centos_desc,
         baseurl => $vclmgmt::params::centos_mirror,
