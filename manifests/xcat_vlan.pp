@@ -1,6 +1,17 @@
 include vclmgmt
 
-define vclmgmt::xcat_vlan($master_if, $master_mac, $master_ip, $vlan_alias_ip = undef, $domain, $network, $broadcast, $netmask, $ip_range, $vlanid) {
+define vclmgmt::xcat_vlan(
+	$master_if, 
+	$master_mac, 
+	$master_ip, 
+	$vlan_alias_ip = undef, 
+	$domain, 
+	$network, 
+	$broadcast, 
+	$netmask, 
+	$ip_range, 
+	$vlanid
+) {
 
     if $vlan_alias_ip == undef {
         $myvlan_alias_ip = $master_ip
@@ -43,9 +54,10 @@ define vclmgmt::xcat_vlan($master_if, $master_mac, $master_ip, $vlan_alias_ip = 
     notify {"Making dchp subnet: ${network} / ${netmask} -- ${domain}":}
     dhcp::subnet { $network :
 	broadcast => $broadcast,
+	routers => [ $myvlan_alias_ip, ],
 	netmask => $netmask,
 	domain_name => $domain,
-	other_opts => ['filename "pxelinux.0";', "next-server ${myvlan_alias_ip};"],
+	other_opts => ['filename "pxelinux.0"', "next-server ${myvlan_alias_ip}"],
 	require => Class['::dhcp::server'],
     }
 
