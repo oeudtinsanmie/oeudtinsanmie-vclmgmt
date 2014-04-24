@@ -53,10 +53,10 @@ class vclmgmt::params {
             $fedora_key = "${fedora_base}/RPM-GPG-KEY-EPEL-${lsbmajdistrelease}"
 
 			# "mysql-server", 
-            $pkg_list = [ "httpd", "mod_ssl", "php", "php-gd", "php-mcrypt", "php-mysql", "php-xml", "php-xmlrpc", "php-ldap", "php-process", "augeas", "phpMyAdmin.noarch", "dhcp", "subversion", "tftp-server.${architecture}", "xCAT", "expat-devel", "gcc", "krb5-libs", "krb5-devel", "libxml2-devel", "make", "nmap", "openssl-devel", "perl-Archive-Tar", "perl-CPAN", "perl-Crypt-OpenSSL-RSA", "perl-DBD-MySQL", "perl-DBI", "perl-Digest-SHA1", "perl-IO-String", "perl-MailTools", "perl-Net-Jabber", "perl-Net-Netmask", "perl-Net-SSH-Expect", "perl-Text-CSV_XS", "perl-XML-Simple", "perl-YAML", "xmlsec1-openssl", "OpenIPMI-devel" ]
+            $pkg_list = [ "httpd", "mod_ssl", "php", "php-gd", "php-mcrypt", "php-mysql", "php-xml", "php-xmlrpc", "php-ldap", "php-process", "augeas", "phpMyAdmin.noarch", "subversion", "tftp-server.${architecture}", "xCAT", "expat-devel", "gcc", "krb5-libs", "krb5-devel", "libxml2-devel", "make", "nmap", "openssl-devel", "perl-Archive-Tar", "perl-CPAN", "perl-Crypt-OpenSSL-RSA", "perl-DBD-MySQL", "perl-DBI", "perl-Digest-SHA1", "perl-IO-String", "perl-MailTools", "perl-Net-Jabber", "perl-Net-Netmask", "perl-Net-SSH-Expect", "perl-Text-CSV_XS", "perl-XML-Simple", "perl-YAML", "xmlsec1-openssl", "OpenIPMI-devel" ]
 
             $pkg_exclude = [ "atftp-xcat.${architecture}" ]
-            $service_list = [ "dhcpd", "xinetd", "httpd", "vcld" ]
+            $service_list = [ "xinetd", "httpd", "vcld" ]
 #        }
 #    }
 

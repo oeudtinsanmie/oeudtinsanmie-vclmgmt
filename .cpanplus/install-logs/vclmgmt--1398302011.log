@@ -1,0 +1,9 @@
+
+[MSG] [Wed Apr 23 21:13:31 2014] Generating a Unix-style Makefile
+Writing Makefile for vclmgmt
+
+[MSG] [Wed Apr 23 21:13:31 2014] DEFAULT 'filter_prereqs' HANDLER RETURNING 'sub return value'
+[MSG] [Wed Apr 23 21:13:31 2014] Skip blib/lib/puppet/parser/functions/list_vlans.rb (unchanged)
+Skip blib/lib/puppet/parser/functions/set_defaults.rb (unchanged)
+
+[MSG] [Wed Apr 23 21:13:31 2014] Appending installation info to /usr/lib64/perl5/perllocal.pod

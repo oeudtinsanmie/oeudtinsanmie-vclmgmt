@@ -1,36 +1,43 @@
 include vclmgmt
 
-define vclmgmt::xcat_pod($private_hash, $ipmi_hash, $defaults = undef, $nodes) {
+define vclmgmt::xcat_pod(
+	$private_hash, 
+	$ipmi_hash, 
+	$defaults = undef, 
+	$nodes
+) {
+        notify {"name: ${name}, private hash: ${ipmi_hash}":}
 	ensure_resource(vclmgmt::xcat_vlan, $name, $private_hash)
 	ensure_resource(vclmgmt::xcat_vlan, "${name}-ipmi", $ipmi_hash)
 	
+	if $private_hash[vlanid] == undef {
+		$private_if = $private_hash[master_if]
+	}
+	else {
+		$private_if = "${private_hash[master_if]}.${private_hash[vlanid]}"
+	}
+	
+	if $ipmi_hash[vlanid] == undef {
+		$ipmi_if = $ipmi_hash[master_if]
+	}
+	else {
+		$ipmi_if = "${ipmi_hash[master_if]}.${ipmi_hash[vlanid]}"
+	}
+
+
 	$tmphash = {
 		tgt_net 	=> $private_hash[network],
 		ipmi_net 	=> $ipmi_hash[network],
-		master_if	=> $private_hash[master_if],
-		master_ipmi_if	=> $ipmi_hash[master_if],
+		master_if	=> $private_if,
+		master_ipmi_if	=> $ipmi_if,
 	}
 
 	if $defaults == undef {
-		$defaults = $tmphash
+		$mydefaults = $tmphash
 	}
 	else {
-		$defaults = merge($tmphash, $defaults)
+		$mydefaults = merge($tmphash, $defaults)
 	}
 
-	if $private_hash[vlanid] != undef {
-		$tmphash = { 
-		master_if	=> "${private_hash[master_if]}.${private_hash[vlanid]}", 
-		}
-		$defaults = merge($tmphash, $defaults)
-	}
-
-	if $ipmi_hash[vlanid] != undef {
-		$tmphash = { 
-		master_ipmi_if	=> "${ipmi_hash[master_if]}.${ipmi_hash[vlanid]}", 
-		}
-		$defaults = merge($tmphash, $defaults)
-	} 
-
-	create_reasources(vclmgmt::compute_node, $nodes, $defaults)
+	create_resources(vclmgmt::compute_node, $nodes, $mydefaults)
 }

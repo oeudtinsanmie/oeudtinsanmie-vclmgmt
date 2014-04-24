@@ -1,4 +1,5 @@
 include vclmgmt
+include stdlib
 
 define vclmgmt::mgmt_node(
 	$public_mac, 
@@ -26,22 +27,23 @@ define vclmgmt::mgmt_node(
 		$dhcpinterfaces = [ $private_if, $ipmi_if ]
 	}
 	else {
-		$dhcpinterfaces = unique(
-			flatten(
-				$pods.map |$key, $val| { 
+		/* // Puppet 3 syntax:
+		$dhcpinterfaces = $pods.map |$key, $val| { 
 					[ 
-					"${private_if}.${$val[private_hash][vlanid]}", 
-					"${ipmi_if}.${$val[ipmi_hash][vlanid]}, 
+					"${private_if}.${val[private_hash][vlanid]}", 
+					"${ipmi_if}.${val[ipmi_hash][vlanid]}", 
 					] 
 				}
-			)
-		)
+		$dhcpinterfaces = unique(flatten($dhcpinterfaces))
 		if member($dhcpinterfaces, "${private_if}.") {
 			$dhcpinterfaces = flatten( [ $private_if ], delete($dhcpinterfaces, "${private_if}."))
 		}
 		if member($dhcpinterfaces, "${ipmi_if}.") {
 			$dhcpinterfaces = flatten( [ $ipmi_if ], delete($dhcpinterfaces, "${ipmi_if}."))
 		}
+		*/
+		# defined a custom function to replace this for Puppet 2.7
+		$dhcpinterfaces = list_vlans($pods, $private_if, $ipmi_if)
 	}	
 
 	vclmgmt::networks { "mgmt_interfaces" :
@@ -104,7 +106,13 @@ define vclmgmt::mgmt_node(
 		private_domain 	=> $private_domain,
         }
 
+	class { 'dhcp::server':
+        #	opts => ['domain-name "toto.ltd"',
+        #               'domain-name-servers 192.168.21.1'],                      
+        }
+
 	if $pods != undef {
+		/* // Puppet 3 syntax:
 		$pods.each | $key, $val | {
 			$val = merge($val, { 
 				$private_hash => merge({
@@ -120,5 +128,21 @@ define vclmgmt::mgmt_node(
 			})
 			ensure_resource(vclmgmt::xcat_pod, $key, $val)
 		}
+		*/
+		# defined a custom function to replace this for Puppet 2.7
+		$newpods = set_defaults($pods, $private_if, $private_ip, $private_mac, $ipmi_if, $ipmi_ip, $ipmi_mac)
+		create_resources(vclmgmt::xcat_pod, $newpods)
+/*
+		dhcp::hosts { $pods["pod7a"][nodes]["cluster_node_1"][tgt_node]:
+                	subnet    => $pods["pod7a"][private_hash][network],
+                        hash_data => {
+                        	host1 => {
+                                       interfaces => {
+                                                "${private_if}" => $pods["pod7a"][nodes]["cluster_node_1"][tgt_mac],
+                                        }
+                                }
+                        }
+                }
+        /**/
 	}
 }
