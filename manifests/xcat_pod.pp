@@ -27,7 +27,9 @@ define vclmgmt::xcat_pod(
 
 	$tmphash = {
 		tgt_net 	=> $private_hash[network],
+                tgt_domain	=> $private_hash[domain],
 		ipmi_net 	=> $ipmi_hash[network],
+                ipmi_domain     => $ipmi_hash[domain],
 		master_if	=> $private_if,
 		master_ipmi_if	=> $ipmi_if,
 	}

@@ -48,4 +48,12 @@ define vclmgmt::xcat_vlan($master_if, $master_mac, $master_ip, $vlan_alias_ip = 
 	other_opts => ['filename "pxelinux.0";', "next-server ${myvlan_alias_ip};"],
 	require => Class['::dhcp::server'],
     }
+
+    bind::zone { $domain :
+	zone_contact => 'netlabs@help.ncsu.edu',
+  	zone_ns      => $master_ip,
+  	zone_serial  => '2012112901',
+  	zone_ttl     => '604800',
+  	zone_origin  => $domain,
+    }
 }

@@ -5,12 +5,14 @@ define vclmgmt::compute_node(
 	$tgt_mac, 
 	$tgt_if, 
 	$tgt_net, 
+	$tgt_domain,
 	$tgt_os = 'Linux', 
 	$tgt_arch = 'x86_64', 
 	$slotid, 
 	$ipmi_ip, 
 	$ipmi_mac, 
 	$ipmi_net, 
+	$ipmi_domain,
 	$ipmi_user, 
 	$ipmi_pw, 
 	$master_if, 
@@ -72,4 +74,24 @@ define vclmgmt::compute_node(
                  	}
                 }
    	}
+
+	
+        
+        bind::a { $name:
+		ensure => present,
+		zone => $tgt_domain,
+		ptr => false,
+		hash_data => {
+			"${name}" => { owner => $tgt_ip, },
+		}
+   	}
+                
+        bind::a { "${name}-ipmi":
+                ensure => present,
+                zone =>	$ipmi_domain,
+                ptr => false,
+                hash_data => {
+                        "${name}-ipmi" => { owner => $ipmi_ip, },
+         	}
+        }
 }

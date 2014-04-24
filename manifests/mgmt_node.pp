@@ -111,6 +111,8 @@ define vclmgmt::mgmt_node(
         #               'domain-name-servers 192.168.21.1'],                      
         }
 
+	include bind
+
 	if $pods != undef {
 		/* // Puppet 3 syntax:
 		$pods.each | $key, $val | {
