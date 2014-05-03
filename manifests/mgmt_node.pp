@@ -134,17 +134,5 @@ define vclmgmt::mgmt_node(
 		# defined a custom function to replace this for Puppet 2.7
 		$newpods = set_defaults($pods, $private_if, $private_ip, $private_mac, $ipmi_if, $ipmi_ip, $ipmi_mac)
 		create_resources(vclmgmt::xcat_pod, $newpods)
-/*
-		dhcp::hosts { $pods["pod7a"][nodes]["cluster_node_1"][tgt_node]:
-                	subnet    => $pods["pod7a"][private_hash][network],
-                        hash_data => {
-                        	host1 => {
-                                       interfaces => {
-                                                "${private_if}" => $pods["pod7a"][nodes]["cluster_node_1"][tgt_mac],
-                                        }
-                                }
-                        }
-                }
-        /**/
 	}
 }
