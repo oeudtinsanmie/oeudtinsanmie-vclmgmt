@@ -183,12 +183,21 @@ PERL_ARCHIVE_AFTER =
 
 
 TO_INST_PM = lib/puppet/parser/functions/list_vlans.rb \
-	lib/puppet/parser/functions/set_defaults.rb
+	lib/puppet/parser/functions/set_defaults.rb \
+	lib/puppet/provider/vcl_image/mysql.rb \
+	lib/puppet/provider/vcl_image/mysql.rb.save \
+	lib/puppet/type/vcl_image.rb
 
 PM_TO_BLIB = lib/puppet/parser/functions/list_vlans.rb \
 	../../blib/lib/puppet/parser/functions/list_vlans.rb \
 	lib/puppet/parser/functions/set_defaults.rb \
-	../../blib/lib/puppet/parser/functions/set_defaults.rb
+	../../blib/lib/puppet/parser/functions/set_defaults.rb \
+	lib/puppet/provider/vcl_image/mysql.rb \
+	../../blib/lib/puppet/provider/vcl_image/mysql.rb \
+	lib/puppet/provider/vcl_image/mysql.rb.save \
+	../../blib/lib/puppet/provider/vcl_image/mysql.rb.save \
+	lib/puppet/type/vcl_image.rb \
+	../../blib/lib/puppet/type/vcl_image.rb
 
 
 # --- MakeMaker platform_constants section:
@@ -577,7 +586,10 @@ ppd :
 pm_to_blib : $(FIRST_MAKEFILE) $(TO_INST_PM)
 	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)/auto'\'', q[$(PM_FILTER)], '\''$(PERM_DIR)'\'')' -- \
 	  lib/puppet/parser/functions/list_vlans.rb ../../blib/lib/puppet/parser/functions/list_vlans.rb \
-	  lib/puppet/parser/functions/set_defaults.rb ../../blib/lib/puppet/parser/functions/set_defaults.rb 
+	  lib/puppet/parser/functions/set_defaults.rb ../../blib/lib/puppet/parser/functions/set_defaults.rb \
+	  lib/puppet/provider/vcl_image/mysql.rb ../../blib/lib/puppet/provider/vcl_image/mysql.rb \
+	  lib/puppet/provider/vcl_image/mysql.rb.save ../../blib/lib/puppet/provider/vcl_image/mysql.rb.save \
+	  lib/puppet/type/vcl_image.rb ../../blib/lib/puppet/type/vcl_image.rb 
 	$(NOECHO) $(TOUCH) pm_to_blib
 
 
