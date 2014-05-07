@@ -15,7 +15,7 @@ Puppet::Type.type(:vcl_image).provide(:mysql) do
       while (@@db == nil and line = vcldconf.gets)
         if line.startswith?("database") then
           @@db = line.split('=').at(1).strip
-	  return
+          return
         end
       end
     end
@@ -73,9 +73,9 @@ Puppet::Type.type(:vcl_image).provide(:mysql) do
 
     inst_hash[:ensure] = :present
     @@columns.each_index { |i|
-      if (hash_list[i+1] != 'NULL')  
+      if (hash_list[i+1] != 'NULL') then
         inst_hash[@@columns[i].delete("image.")] = hash_list[i+1]
-      end 
+      #end 
     }
     
     inst_hash
@@ -92,9 +92,9 @@ Puppet::Type.type(:vcl_image).provide(:mysql) do
 
     inst_hash[:ensure] = :present
     @@columns.each_index { |i|
-      if (hash_list[i+1] != 'NULL')  
+      if (hash_list[i+1] != 'NULL') then  
         inst_hash[@@columns[i].delete("image.")] = hash_list[i+1]
-      end 
+      #end 
     }
     
     inst_hash
@@ -104,7 +104,7 @@ Puppet::Type.type(:vcl_image).provide(:mysql) do
     instances.each { |prov|
       if resource = resources[prov.name]
         resource.provider = prov
-      end
+      #end
     }
   end
 
@@ -146,7 +146,7 @@ Puppet::Type.type(:vcl_image).provide(:mysql) do
           raise Puppet::Error, "mysql #{cmd_list} failed to run: #{e}"
         end
       else
-        if (@property_flush[:ensure] == :present)
+        if (@property_flush[:ensure] == :present) then
           # add base image
           cmd_one = cmd_list + ['"SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = \'#{@@db}\' AND TABLE_NAME = \'image\'"']
             
@@ -164,7 +164,7 @@ Puppet::Type.type(:vcl_image).provide(:mysql) do
               cmd_list += ['\'#{resource[col]}\',']
             else
               cmd_list += [ 'NULL,' ] 
-            end
+            #end
           }
           cmd_list += [');',
                        'INSERT INTO imagerevision (id, imageid, revision, userid, datecreated, production, imagename)', 
