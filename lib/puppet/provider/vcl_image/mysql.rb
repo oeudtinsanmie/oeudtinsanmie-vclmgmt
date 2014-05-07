@@ -1,24 +1,25 @@
 Puppet::Type.type(:vcl_image).provide(:mysql) do
 
+  @@columns = [ "name", "prettyname", "platformid", "osid", "minram", "minprocnumber", "minprocspeed", "minnetwork", "maxconcurrent", "reloadtime", "deleted", "test", "lastupdate", "forcheckout", "project", "size", "architecture", "description", "image.usage" ]
+
   mk_resource_methods
   
-  commands  :mysql => '/usr/bin/mysql',
+  commands  :mysql => '/usr/bin/mysql'
     
-  @@columns = [ "name", "prettyname", "platformid", "osid", "minram", "minprocnumber", "minprocspeed", "minnetwork", "maxconcurrent", "reloadtime", "deleted", "test", "lastupdate", "forcheckout", "project", "size", "architecture", "description", "image.usage" ]
-            
   def initialize(value={})
     super(value)
     @property_flush = {}
     
-    if @@db == nil then
-      File.new("/etc/vcl/vcld.conf", "r") do | vcldconf |
-        while (@@db == nil and line = vcldconf.gets)
-          if line.startswith?("database") then
-            @@db = line.split('=').at(1).strip
-          end
+    if (@@db == nil) then
+      vcldconf = File.new("/etc/vcl/vcld.conf", "r")
+      while (@@db == nil and line = vcldconf.gets)
+        if line.startswith?("database") then
+          @@db = line.split('=').at(1).strip
+	  return
         end
       end
     end
+
   end
             
   def self.instances
@@ -100,11 +101,11 @@ Puppet::Type.type(:vcl_image).provide(:mysql) do
   end
 
   def self.prefetch(resources)
-    instances.each do |prov|
+    instances.each { |prov|
       if resource = resources[prov.name]
         resource.provider = prov
       end
-    end
+    }
   end
 
   def exists?

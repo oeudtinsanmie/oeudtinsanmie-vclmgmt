@@ -2,7 +2,7 @@ include vclmgmt
 
 define vclmgmt::baseimage(
 	$prettyname, 
-	$platform, 
+	$platform	= 'i386', 
 	$os, 
 	$minram		= 512,
 	$minprocnumber	= 1,

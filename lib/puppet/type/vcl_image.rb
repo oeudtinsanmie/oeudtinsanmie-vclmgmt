@@ -66,7 +66,7 @@ Puppet::Type.newtype(:vcl_image) do
     fedoraimage    | Fedora 16 (Bare Metal)                  | linux   | partimage  
     vmwareubuntu   | Ubuntu (VMware)                         | linux   | vmware'
     
-    newvalues(:sun4x_58, :win2k, :rhel3, :winxp, :realmrhel3, :realmrhel4, :win2003, :rh3image, :rhel4, :rh4image, :fc5image, :rhfc5, :vmwarewinxp, :rhfc7, :fc7image, :rhel5, :esx35, :vmwareesxwinxp, :realmrhel5, :sun4x_510, :centos5, :rh5image, :rhfc9, :fc9image, :winvista, :centos5image, :ubuntuimage, :vmwarewin2008, :win2008, :vmwarewinvista, :win7, :vmwarewin7, :vmwarelinux, :vmwarewin2003, :esxi4.1, :vmwareosx, :rhel6, :rh6image, :fedora16, :fedoraimage, :vmwareubuntu)
+    newvalues(:sun4x_58, :win2k, :rhel3, :winxp, :realmrhel3, :realmrhel4, :win2003, :rh3image, :rhel4, :rh4image, :fc5image, :rhfc5, :vmwarewinxp, :rhfc7, :fc7image, :rhel5, :esx35, :vmwareesxwinxp, :realmrhel5, :sun4x_510, :centos5, :rh5image, :rhfc9, :fc9image, :winvista, :centos5image, :ubuntuimage, :vmwarewin2008, :win2008, :vmwarewinvista, :win7, :vmwarewin7, :vmwarelinux, :vmwarewin2003, 'esxi4.1', :vmwareosx, :rhel6, :rh6image, :fedora16, :fedoraimage, :vmwareubuntu)
   end
   
   newproperty(:minram) do
