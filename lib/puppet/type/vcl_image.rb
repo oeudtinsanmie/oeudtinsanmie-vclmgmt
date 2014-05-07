@@ -118,6 +118,7 @@ Puppet::Type.newtype(:vcl_image) do
     desc ''
     newvalues(:true, :false)
     
+    defaultto :true
   end
   
   newproperty(:project) do
