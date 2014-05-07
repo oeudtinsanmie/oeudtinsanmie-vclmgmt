@@ -72,25 +72,21 @@ Puppet::Type.newtype(:vcl_image) do
   newproperty(:minram) do
     desc ''
     
-    defaultto 512
   end
   
   newproperty(:minprocnumber) do
     desc ''
     
-    defaultto 1
   end
   
   newproperty(:minprocspeed) do
     desc ''
     
-    defaultto 1024
   end
   
   newproperty(:minnetwork) do
     desc ''
     
-    defaultto 100
   end
   
   newproperty(:maxconcurrent) do
@@ -100,7 +96,6 @@ Puppet::Type.newtype(:vcl_image) do
   newproperty(:reloadtime) do
     desc ''
     
-    defaultto 10
   end
   
   newproperty(:test) do
@@ -131,7 +126,6 @@ Puppet::Type.newtype(:vcl_image) do
   newproperty(:size) do
     desc ''
     
-    defaultto 1500
   end
 
   newproperty(:architecture) do
