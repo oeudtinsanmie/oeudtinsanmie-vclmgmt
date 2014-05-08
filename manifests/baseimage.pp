@@ -1,6 +1,7 @@
 include vclmgmt
 
 define vclmgmt::baseimage(
+        $ensure		= present,
 	$prettyname, 
 	$platform	= 'i386', 
 	$os, 
@@ -23,6 +24,7 @@ define vclmgmt::baseimage(
 	$distro,
 ) {
         vcl_image { $name :
+		ensure		=> $ensure,
         	prettyname 	=> $prettyname, 
 		platform  	=> $platform, 
 		os 		=> $os, 
@@ -42,6 +44,7 @@ define vclmgmt::baseimage(
         }
         
         xcat::image{ "${name}-img" :
+		ensure   => $ensure,
 		url 	 => $url,
 		filepath => $filepath,
 		distro 	 => $distro,
