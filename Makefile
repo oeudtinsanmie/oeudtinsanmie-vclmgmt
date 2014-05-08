@@ -63,12 +63,12 @@ DEFINE_VERSION = -D$(VERSION_MACRO)=\"$(VERSION)\"
 XS_VERSION = 0
 XS_VERSION_MACRO = XS_VERSION
 XS_DEFINE_VERSION = -D$(XS_VERSION_MACRO)=\"$(XS_VERSION)\"
-INST_ARCHLIB = ../../blib/arch
-INST_SCRIPT = ../../blib/script
-INST_BIN = ../../blib/bin
-INST_LIB = ../../blib/lib
-INST_MAN1DIR = ../../blib/man1
-INST_MAN3DIR = ../../blib/man3
+INST_ARCHLIB = ../blib/arch
+INST_SCRIPT = ../blib/script
+INST_BIN = ../blib/bin
+INST_LIB = ../blib/lib
+INST_MAN1DIR = ../blib/man1
+INST_MAN3DIR = ../blib/man3
 MAN1EXT = 1
 MAN3EXT = 3pm
 INSTALLDIRS = site
@@ -188,13 +188,13 @@ TO_INST_PM = lib/puppet/parser/functions/list_vlans.rb \
 	lib/puppet/type/vcl_image.rb
 
 PM_TO_BLIB = lib/puppet/parser/functions/list_vlans.rb \
-	../../blib/lib/puppet/parser/functions/list_vlans.rb \
+	../blib/lib/puppet/parser/functions/list_vlans.rb \
 	lib/puppet/parser/functions/set_defaults.rb \
-	../../blib/lib/puppet/parser/functions/set_defaults.rb \
+	../blib/lib/puppet/parser/functions/set_defaults.rb \
 	lib/puppet/provider/vcl_image/mysql.rb \
-	../../blib/lib/puppet/provider/vcl_image/mysql.rb \
+	../blib/lib/puppet/provider/vcl_image/mysql.rb \
 	lib/puppet/type/vcl_image.rb \
-	../../blib/lib/puppet/type/vcl_image.rb
+	../blib/lib/puppet/type/vcl_image.rb
 
 
 # --- MakeMaker platform_constants section:
@@ -533,7 +533,7 @@ $(FIRST_MAKEFILE) : Makefile.PL $(CONFIGDEP)
 # --- MakeMaker staticmake section:
 
 # --- MakeMaker makeaperl section ---
-MAP_TARGET    = ../../perl
+MAP_TARGET    = ../perl
 FULLPERL      = /usr/bin/perl
 
 
@@ -582,10 +582,10 @@ ppd :
 
 pm_to_blib : $(FIRST_MAKEFILE) $(TO_INST_PM)
 	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)/auto'\'', q[$(PM_FILTER)], '\''$(PERM_DIR)'\'')' -- \
-	  lib/puppet/parser/functions/list_vlans.rb ../../blib/lib/puppet/parser/functions/list_vlans.rb \
-	  lib/puppet/parser/functions/set_defaults.rb ../../blib/lib/puppet/parser/functions/set_defaults.rb \
-	  lib/puppet/provider/vcl_image/mysql.rb ../../blib/lib/puppet/provider/vcl_image/mysql.rb \
-	  lib/puppet/type/vcl_image.rb ../../blib/lib/puppet/type/vcl_image.rb 
+	  lib/puppet/parser/functions/list_vlans.rb ../blib/lib/puppet/parser/functions/list_vlans.rb \
+	  lib/puppet/parser/functions/set_defaults.rb ../blib/lib/puppet/parser/functions/set_defaults.rb \
+	  lib/puppet/provider/vcl_image/mysql.rb ../blib/lib/puppet/provider/vcl_image/mysql.rb \
+	  lib/puppet/type/vcl_image.rb ../blib/lib/puppet/type/vcl_image.rb 
 	$(NOECHO) $(TOUCH) pm_to_blib
 
 

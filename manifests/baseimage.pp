@@ -10,7 +10,7 @@ define vclmgmt::baseimage(
 	$minprocspeed	= 1024,
 	$minnetwork	= 100,
 	$maxconcurrent	= undef,
-	$test		= true,
+	$test		= false,
 	$lastupdate	= undef,
 	$forcheckout	= true,
 	$project	= 'vcl',
@@ -18,6 +18,7 @@ define vclmgmt::baseimage(
 	$architecture	= 'x86_64',
 	$description	= undef,
 	$usage		= undef,
+        $deleted	= false,
 	
 	$url		= undef,
 	$filepath,
@@ -41,6 +42,7 @@ define vclmgmt::baseimage(
 		architecture	=> $architecture,
 		description	=> $description,
 		usage		=> $usage,
+		deleted		=> $deleted,
         }
         
         xcat::image{ "${name}-img" :

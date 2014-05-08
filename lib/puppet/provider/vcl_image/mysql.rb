@@ -30,7 +30,6 @@ Puppet::Type.type(:vcl_image).provide(:mysql) do
     "image.platformid" => "platform.id" 
   }
   @@tinyintbools = [ :deleted, :test, :forcheckout ]
-  @@ensurestates = [ :deleted ]
     
   @@db = nil
   @@cmd_base = nil
@@ -51,7 +50,7 @@ Puppet::Type.type(:vcl_image).provide(:mysql) do
     define_method(attr.to_s + "=") do |val|
       if (@property_hash[attr] != val) then
         @property_hash[attr] = val
-        @flush_needed = :true
+        @property_flush[attr] = val
       end
     end
   end
@@ -62,7 +61,6 @@ Puppet::Type.type(:vcl_image).provide(:mysql) do
   def initialize(value={})
     super(value)
     @property_flush = {}
-    @flush_needed = false
     
     if (@@db == nil) then
       vcldconf = File.new("/etc/vcl/vcld.conf", "r")
@@ -78,7 +76,7 @@ Puppet::Type.type(:vcl_image).provide(:mysql) do
             
   def self.instances
     
-    spiffy = list_obj().collect { |obj|
+    list_obj().collect { |obj|
       begin
         new(make_hash(obj))
       rescue StandardError => e
@@ -86,14 +84,10 @@ Puppet::Type.type(:vcl_image).provide(:mysql) do
       end
     }
 
-    Puppet.debug("Spiffy::  " + spiffy.inspect)
-    spiffy
   end
   
   def self.list_obj (obj_name = nil)
     qry = "SELECT "
-
-    Puppet.debug(qry)
 
     @@tbls.each { |tbl|
       @@columns[tbl].each { |col, param| 
@@ -101,11 +95,8 @@ Puppet::Type.type(:vcl_image).provide(:mysql) do
       } 
     }
     qry.chomp!(", ")
-    Puppet.debug(qry)
     
     qry << " FROM #{@@tbls.join(", ")}" 
-
-    Puppet.debug(qry)
 
     if @@wheres.length > 0
       qry << " WHERE"
@@ -120,25 +111,19 @@ Puppet::Type.type(:vcl_image).provide(:mysql) do
       qry << " WHERE image.name = '#{obj_name}'"
     end
 
-    Puppet.debug(qry)
-
     cmd_list = @@cmd_base + [ qry ]
 
     begin
-      Puppet.debug(cmd_list.join(" "))
       output = mysql(cmd_list)
     rescue Puppet::ExecutionFailure => e
       Puppet.debug "mysql had an error -> #{e.inspect}"
       return {}
     end
 
-    Puppet.debug(output)
-
     output
   end
 
   def list_obj (obj_name = nil)
-    Puppet.debug("My list_obj")
     self.class.list_obj(obj_name)
   end
   
@@ -162,24 +147,22 @@ Puppet::Type.type(:vcl_image).provide(:mysql) do
 
     inst_hash.merge!(inst_hash) { |key, oldval, val| val == 'NULL' ? nil : val }
     @@tinyintbools.each { |key| 
-      inst_hash[key] = (inst_hash[key] == '1')
-    }
-    @@ensurestates.each { |chk| 
-      if inst_hash.delete(chk) then
-        inst_hash[:ensure] = chk
+      if (inst_hash[key] == '1') then
+        inst_hash[key] = :true
+      else
+        inst_hash[key] = :false
       end
     }
 
-    debug = "\n{\n"
-    inst_hash.each { |key, val| debug << "#{key} => #{val},\n" }
-    debug << "}\n\n"
-    Puppet.debug(debug)
+#    debug = "\n{\n"
+#    inst_hash.each { |key, val| debug << "#{key} => #{val},\n" }
+#    debug << "}\n\n"
+#    Puppet.debug(debug)
 
     inst_hash
   end
 
   def make_hash(obj_str)
-    Puppet.debug("My make_hash")
     self.class.make_hash(obj_str)
   end
 
@@ -204,7 +187,7 @@ Puppet::Type.type(:vcl_image).provide(:mysql) do
   end
   
   def flush
-    if !@property_flush.empty? or @flush_needed then
+    if !@property_flush.empty? then
       if (@property_flush[:ensure] == :absent)
         # remove rows
         qry = "DELETE FROM image WHERE name = '#{resource[:name]}'; " 
@@ -213,24 +196,11 @@ Puppet::Type.type(:vcl_image).provide(:mysql) do
 
         cmd_list = @@cmd_base + [ qry ]
         begin
-          Puppet.debug(cmd_list.join(" "))
           mysql(cmd_list)
         rescue Puppet::ExecutionFailure => e
           raise Puppet::Error, "mysql #{cmd_list} failed to run: #{e}"
         end
         @property_hash.clear
-      elsif (@property_flush[:ensure] == "deleted")
-        # mark image as deleted
-        qry = "UPDATE imagerevision SET deleted = '1', datedeleted = NOW() WHERE imageid = (SELECT id FROM image WHERE name = #{resource[:name]}); "
-        qry <<  "UPDATE image SET deleted = '1' WHERE name = #{resource[:name]}; "
-
-        cmd_list = @@cmd_base + [ qry ]
-        begin
-          Puppet.debug(cmd_list.join(" "))
-          mysql(cmd_list)
-        rescue Puppet::ExecutionFailure => e
-          raise Puppet::Error, "mysql #{cmd_list} failed to run: #{e}"
-        end
       else
         if (@property_flush[:ensure] == :present) then
           # add base image
@@ -238,28 +208,18 @@ Puppet::Type.type(:vcl_image).provide(:mysql) do
           
           cmd_list = @@cmd_base + [ qry ]
           begin
-            Puppet.debug(cmd_list.join(" "))
             imageid = mysql(cmd_list).strip
             Puppet.debug(imageid)
           rescue Puppet::ExecutionFailure => e
-            Puppet.debug "mysql #{cmd_list} had an error -> #{e}"
-            return {}
+            raise Puppet::Error, "mysql #{cmd_list} had an error -> #{e}"
           end
-
-          Puppet.debug(imageid)
 
           qry  = "INSERT INTO image (id, "
           vals = ""
           @@columns["image"].each { |col, param| 
             qry  << "image.#{col}, "
-            if @@ensurestates.include?(param) then
-              if resource[:ensure] == param then
-                vals << "'1', "
-              else
-                vals << "'0', "
-              end
-            elsif @@tinyintbools.include?(param) then
-              if resource[param] == param then
+            if @@tinyintbools.include?(param) then
+              if resource[param] == :true then
                 vals << "'1', "
               else
                 vals << "'0', "
@@ -270,16 +230,12 @@ Puppet::Type.type(:vcl_image).provide(:mysql) do
               vals << "'#{resource[param]}', "
             end  
           }
-          Puppet.debug(qry)
-          Puppet.debug(vals)
           @@wheres.each { |img, totabl| 
             qry  << "#{img}, "
             vals << "#{totabl}, " 
           }
           qry.chomp!(", ")
           vals.chomp!(", ")
-          Puppet.debug(qry)
-          Puppet.debug(vals)
           othertbls = @@columns.keys
           othertbls.delete("image")
           if (othertbls.length > 0)
@@ -290,14 +246,8 @@ Puppet::Type.type(:vcl_image).provide(:mysql) do
             qry << " WHERE"
             othertbls.each { |tbl|
               @@columns[tbl].each { |col, param|
-                if @@ensurestates.include?(param) then
-                  if resource[:ensure] == param then
-                    qry << " #{tbl}.#{col} = '1' AND"
-                  else
-                    qry << " #{tbl}.#{col} = '0' AND"
-                  end
-                elsif @@tinyintbools.include?(param) then
-                  if resource[param] == param then
+                if @@tinyintbools.include?(param) then
+                  if resource[param] == :true then
                     qry << " #{tbl}.#{col} = '1' AND"
                   else
                     qry << " #{tbl}.#{col} = '0' AND"
@@ -315,18 +265,18 @@ Puppet::Type.type(:vcl_image).provide(:mysql) do
             qry << vals
             qry << ")"
           end
-          Puppet.debug(qry)
 
           qry << "; "
           qry << "INSERT INTO imagerevision (id, imageid, revision, userid, datecreated, production, imagename) "
           qry <<                    "VALUES (NULL, '#{imageid}', '1', '1', NOW(), '1', '#{resource[:name]}' ); "
           qry << "INSERT INTO resource (id, resourcetypeid, subid) VALUES (NULL, '13', '#{imageid}');"
 
-       	  Puppet.debug(qry)
+          if resource[:deleted] then
+            qry << " UPDATE imagerevision SET deleted = '1', datedeleted = NOW() WHERE imageid = (SELECT id FROM image WHERE name = '#{resource[:name]}'); "
+          end
 
           cmd_list = @@cmd_base + [ qry ]
           begin
-            Puppet.debug(cmd_list.join(" "))
             mysql(cmd_list)
           rescue Puppet::ExecutionFailure => e
             raise Puppet::Error, "mysql #{cmd_list} failed to run: #{e}"
@@ -334,16 +284,9 @@ Puppet::Type.type(:vcl_image).provide(:mysql) do
         else
           # change existing definition
           qry = "UPDATE #{@@tbls.join(", ")} SET"
-          Puppet.debug(qry)
           @@columns["image"].each { |col, param|
-            if @@ensurestates.include?(param) then
-              if resource[:ensure] == param then
-                qry << " image.#{col}='1',"
-              else
-                qry << " image.#{col}='0',"
-              end
-            elsif @@tinyintbools.include?(param) then
-              if resource[param] == param then
+            if @@tinyintbools.include?(param) then
+              if resource[param] == :true then
                 qry << " image.#{col}='1',"
               else
                 qry << " image.#{col}='0',"
@@ -354,26 +297,18 @@ Puppet::Type.type(:vcl_image).provide(:mysql) do
               qry << " image.#{col}='#{resource[param]}',"
             end  
           } 
-          Puppet.debug(qry)
           @@wheres.each { |img, totabl|
             qry << " #{img}=#{totabl},"
           }
           qry.chomp!(",")
-          Puppet.debug(qry)
           othertbls = @@columns.keys
           othertbls.delete("image")
           if (othertbls.length > 0)
             qry << " WHERE"
             othertbls.each { |tbl| 
               @@columns[tbl].each { |col, param|
-                if @@ensurestates.include?(param) then
-                  if resource[:ensure] == param then
-                    qry << " #{tbl}.#{col}='1' AND"
-                  else
-                    qry << " #{tbl}.#{col}='0' AND"
-                  end
-                elsif @@tinyintbools.include?(param) then
-                  if resource[param] == param then
+                if @@tinyintbools.include?(param) then
+                  if resource[param] == :true then
                     qry << " #{tbl}.#{col}='1' AND"
                   else
                     qry << " #{tbl}.#{col}='0' AND"
@@ -389,11 +324,13 @@ Puppet::Type.type(:vcl_image).provide(:mysql) do
           else
             qry << " WHERE image.name = '#{resource[:name]}';"
           end
-          Puppet.debug(qry)
+
+       	  if @property_flush[:deleted] then
+            qry << " UPDATE imagerevision SET deleted = '1', datedeleted = NOW() WHERE imageid = (SELECT id FROM image WHERE name = '#{resource[:name]}'); "
+       	  end
 
           cmd_list = @@cmd_base + [ qry ]
           begin
-            Puppet.debug(cmd_list.join(" "))
             mysql(cmd_list)
           rescue Puppet::ExecutionFailure => e
             raise Puppet::Error, "mysql #{cmd_list} failed to run: #{e}"

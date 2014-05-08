@@ -88,6 +88,13 @@ Puppet::Type.newtype(:vcl_image) do
     desc ''
     
   end
+    
+  newproperty(:deleted) do
+    desc ''
+    newvalues(:true, :false)
+    
+    defaultto :false
+  end
   
   newproperty(:maxconcurrent) do
     desc ''
