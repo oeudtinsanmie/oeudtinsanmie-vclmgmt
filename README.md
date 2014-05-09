@@ -106,6 +106,80 @@ vclmgmt::compute_node adds an xcat node object describing the target node and co
       	admin_user   => 'adminuser', # username to create as administrator on target node 
       	admin_pw     => 'adminpass', # password for user on target node
       }
+      
+Creates the database rows for a vcl base image, and creates an image within xcat, using the [xcat::image](https://github.ncsu.edu/engr-csc-netlabs/puppetmodules/tree/master/xcat) class.  Some of these parameters are enumerations from the Apache VCL project.  With the exception of the os code, everything else should work using only the default values.  If your configuration needs non-default values, refer to VCL documentation for more details.
+
+      vclmgmt::baseimage { "base-img" :
+            ensure		=> present,
+            prettyname        => "Base Image Name", 
+            platform	      => 'i386',              # vcl platform designation
+            os                => 'centos5', 
+            minram		=> 512,
+            minprocnumber	=> 1,
+            minprocspeed	=> 1024,
+            minnetwork	      => 100,
+            maxconcurrent	=> undef,
+            test		      => false,
+            lastupdate	      => undef,
+            forcheckout	      => true,
+            project	      => 'vcl',
+            size		      => 1500,
+            architecture	=> 'x86_64',
+            description	      => undef,
+            usage		      => undef,
+            deleted	      => false,
+            
+            # Parameters for the xcat::image class.  The architecture parameter, above, is used for xcat::image -> arch.
+            url		      => undef,
+            filepath          => '/images/baseimg.iso',
+            distro            => "centos6.5",
+      }
+
+Here are the os codes currently available:
+
+name           | prettyname                              | type    | installtype
+---------------|-----------------------------------------|---------|-------------
+    sun4x_58       | Solaris 5.8 (Lab)                       | unix    | none       
+    win2k          | Windows 2000 (Bare Metal)               | windows | partimage  
+    rhel3          | Red Hat Enterprise Linux 3 (Kickstart)  | linux   | kickstart  
+    winxp          | Windows XP (Bare Metal)                 | windows | partimage  
+    realmrhel3     | Red Hat Enterprise Linux 3 (Lab)        | linux   | none       
+    realmrhel4     | Red Hat Enterprise Linux 4 (Lab)        | linux   | none       
+    win2003        | Windows 2003 Server (Bare Metal)        | windows | partimage  
+    rh3image       | Red Hat Enterprise Linux 3 (Bare Metal) | linux   | partimage  
+    rhel4          | Red Hat Enterprise Linux 4 (Kickstart)  | linux   | kickstart  
+    rh4image       | Red Hat Enterprise Linux 4 (Bare Metal) | linux   | partimage  
+    fc5image       | Fedora Core 5 (Bare Metal)              | linux   | partimage  
+    rhfc5          | Fedora Core 5 (Kickstart)               | linux   | kickstart  
+    vmwarewinxp    | Windows XP (VMware)                     | windows | vmware     
+    rhfc7          | Fedora Core 7 (Kickstart)               | linux   | kickstart  
+    fc7image       | Fedora Core 7 (Bare Metal)              | linux   | partimage  
+    rhel5          | Red Hat Enterprise Linux 5 (Kickstart)  | linux   | kickstart  
+    esx35          | VMware ESX 3.5 (Kickstart)              | linux   | kickstart  
+    vmwareesxwinxp | Windows XP (VMware ESX)                 | windows | vmware     
+    realmrhel5     | Red Hat Enterprise Linux 5 (Lab)        | linux   | none       
+    sun4x_510      | Solaris 10 (Lab)                        | unix    | none       
+    centos5        | CentOS 5 (Kickstart)                    | linux   | kickstart  
+    rh5image       | Red Hat Enterprise Linux 5 (Bare Metal) | linux   | partimage  
+    rhfc9          | RedHat Fedora Core 9 (Kickstart)        | linux   | kickstart  
+    fc9image       | Red Hat Fedora Core 9 (Bare Metal)      | linux   | partimage  
+    winvista       | Windows Vista (Bare Metal)              | windows | partimage  
+    centos5image   | CentOS 5 (Bare Metal)                   | linux   | partimage  
+    ubuntuimage    | Ubuntu (Bare Metal)                     | linux   | partimage  
+    vmwarewin2008  | Windows Server 2008 (VMware)            | windows | vmware     
+    win2008        | Windows Server 2008 (Bare Metal)        | windows | partimage  
+    vmwarewinvista | Windows Vista (VMware)                  | windows | vmware     
+    win7           | Windows 7 (Bare Metal)                  | windows | partimage  
+    vmwarewin7     | Windows 7 (VMware)                      | windows | vmware     
+    vmwarelinux    | Generic Linux (VMware)                  | linux   | vmware     
+    vmwarewin2003  | Windows 2003 Server (VMware)            | windows | vmware     
+    esxi4.1        | VMware ESXi 4.1                         | linux   | kickstart  
+    vmwareosx      | OSX Snow Leopard (VMware)               | osx     | vmware     
+    rhel6          | Red Hat Enterprise 6 (Kickstart)        | linux   | kickstart  
+    rh6image       | Red Hat Enterprise 6 (Bare Metal)       | linux   | partimage  
+    fedora16       | Fedora 16 (Kickstart)                   | linux   | kickstart  
+    fedoraimage    | Fedora 16 (Bare Metal)                  | linux   | partimage  
+    vmwareubuntu   | Ubuntu (VMware)                         | linux   | vmware
 
 The nested hash structure and default-passing behavior of these puppet classes simplify defining a VCL installation in hiera, and then using the hiera_include, ensure_resource and create_resources functions. 
 
