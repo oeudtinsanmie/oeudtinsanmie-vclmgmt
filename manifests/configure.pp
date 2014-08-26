@@ -1,11 +1,9 @@
 define vclmgmt::configure($vclhost, $vcldb, $vcluser, $vcluser_pw, $helpemail = 'netlabs@help.ncsu.edu' , $serverip, $xmlrpc_pw, $xml_url) {
 	include $vclmgmt::params
 
-	file { "${vclmgmt::params::htinc}/secrets.php" :
-		ensure => file,
-		# path	=> "/var/www/html/vcl/.ht-inc",
-		#owner	=> $vcluser,
-		#password => $vcluser_pw,
+	file { 'secrets' : 
+		path	=> "${vclmgmt::params::htinc}/secrets.php",
+		ensure 	=> file,
 		mode	=> '0644',
 		content	=> template('vclmgmt/secrets.php.erb'),
 		require => Class['vclmgmt::vcldirs'],
@@ -28,5 +26,13 @@ define vclmgmt::configure($vclhost, $vcldb, $vcluser, $vcluser_pw, $helpemail = 
 	}
 #	notify{$fqdn :}
  	notify{'vcld.conf updated.':}
+
+	exec { 'genkeys' :
+		command => '/bin/sh genkeys.sh',
+		cwd	=> $vclmgmt::params::htinc,
+		creates	=> "${vclmgmt::params::htinc}/keys.pem",
+	}
+	
+	File['secrets']->Exec['genkeys']
 
     }
