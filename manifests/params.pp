@@ -2,7 +2,7 @@ class vclmgmt::params {
 
     $vcldir 	= hiera('vclmgmt::vcldir', '/vcl')
     
-    $doj	= hiera('vclmgmt::dojo', '1.10.0')
+    $dojo	= hiera('vclmgmt::dojo', '1.10.0')
 
     $vclweb 	= hiera('vclmgmt::vclweb', '/var/www/html/vcl')
     $vclnode 	= hiera('vclmgmt::vclnode', '/usr/local/vcl')

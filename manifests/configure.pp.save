@@ -1,9 +1,11 @@
 define vclmgmt::configure($vclhost, $vcldb, $vcluser, $vcluser_pw, $helpemail = 'netlabs@help.ncsu.edu' , $serverip, $xmlrpc_pw, $xml_url) {
 	include $vclmgmt::params
 
-	file { 'secrets' : 
-		path	=> "${vclmgmt::params::htinc}/secrets.php",
-		ensure 	=> file,
+	file { "${vclmgmt::params::htinc}/secrets.php" :
+		ensure => file,
+		# path	=> "/var/www/html/vcl/.ht-inc",
+		#owner	=> $vcluser,
+		#password => $vcluser_pw,
 		mode	=> '0644',
 		content	=> template('vclmgmt/secrets.php.erb'),
 		require => Class['vclmgmt::vcldirs'],
@@ -26,21 +28,5 @@ define vclmgmt::configure($vclhost, $vcldb, $vcluser, $vcluser_pw, $helpemail = 
 	}
 #	notify{$fqdn :}
  	notify{'vcld.conf updated.':}
-
-	exec { 'genkeys' :
-		command => '/bin/sh genkeys.sh',
-		cwd	=> $vclmgmt::params::htinc,
-		creates	=> "${vclmgmt::params::htinc}/keys.pem",
-	}
-	
-	archive { "dojo-release-${vclmgmt::params::dojo}" :
-		ensure 	=> present,
-		url	=> "http://download.dojotoolkit.org/release-${vclmgmt::params::dojo}/dojo-release-${vclmgmt::params::dojo}.tar.gz",
-		target	=> "${vclmgmt::params::vclweb}/dojo",
-                timeout => 0,
-                require => File['secrets'],
-	}
-	
-	File['secrets']->Exec['genkeys']
 
     }
