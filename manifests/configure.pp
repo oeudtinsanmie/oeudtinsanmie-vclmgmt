@@ -35,7 +35,7 @@ define vclmgmt::configure($vclhost, $vcldb, $vcluser, $vcluser_pw, $helpemail = 
 	
 	archive { 'dojo' :
 		ensure 	=> present,
-		url	=> 'http://download.dojotoolkit.org/release-1.10.0/dojo-release-1.10.0.tar.gz'
+		url	=> 'http://download.dojotoolkit.org/release-1.10.0/dojo-release-1.10.0.tar.gz',
 		target	=> "${vclmgmt::params::vclweb}/dojo",
 	}
 	
