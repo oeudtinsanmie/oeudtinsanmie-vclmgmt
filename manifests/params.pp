@@ -8,7 +8,7 @@ class vclmgmt::params {
     $vclnode 	= hiera('vclmgmt::vclnode', '/usr/local/vcl')
     $vclimages	= hiera('vclmgmt::vclimages', "${vcldir}/images")
     
-    $vcllinks = [ $vclweb, $vclnode ]
+    $vcllinks = [ $vclweb, $vclnode, "${vclweb}/dojo", "${vclweb}/dojo/vcldojo" ]
     $vcllinktargets = {
         "${vclweb}"	=>	"${vcldir}/web",
         "${vclnode}"	=>	"${vcldir}/managementnode",
