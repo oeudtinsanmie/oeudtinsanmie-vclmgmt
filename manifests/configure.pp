@@ -33,6 +33,12 @@ define vclmgmt::configure($vclhost, $vcldb, $vcluser, $vcluser_pw, $helpemail = 
 		creates	=> "${vclmgmt::params::htinc}/keys.pem",
 	}
 	
-	File['secrets']->Exec['genkeys']
+	archive { 'dojo' :
+		ensure 	=> present,
+		url	=> 'http://download.dojotoolkit.org/release-1.10.0/dojo-release-1.10.0.tar.gz'
+		target	=> "${vclmgmt::params::vclweb}/dojo",
+	}
+	
+	File['secrets']->Exec['genkeys']->Archive['dojo']
 
     }
