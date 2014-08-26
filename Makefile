@@ -1,7 +1,7 @@
 # This Makefile is for the vclmgmt extension to perl.
 #
 # It was generated automatically by MakeMaker version
-# 6.86 (Revision: 68600) from the contents of
+# 6.55_02 (Revision: 65502) from the contents of
 # Makefile.PL. Don't edit this file, edit Makefile.PL instead.
 #
 #       ANY CHANGES MADE HERE WILL BE LOST!
@@ -11,12 +11,10 @@
 
 #   MakeMaker Parameters:
 
-#     AUTHOR => [q[CPANPLUS Internals]]
+#     AUTHOR => q[CPANPLUS Internals]
 #     BUILD_REQUIRES => {  }
-#     CONFIGURE_REQUIRES => {  }
 #     NAME => q[vclmgmt]
 #     PREREQ_PM => {  }
-#     TEST_REQUIRES => {  }
 #     VERSION => q[]
 
 # --- MakeMaker post_initialize section:
@@ -41,7 +39,7 @@ LIBC =
 LIB_EXT = .a
 OBJ_EXT = .o
 OSNAME = linux
-OSVERS = 2.6.32-220.el6.x86_64
+OSVERS = 2.6.18-348.12.1.el5
 RANLIB = :
 SITELIBEXP = /usr/local/share/perl5
 SITEARCHEXP = /usr/local/lib64/perl5
@@ -56,19 +54,19 @@ DIRFILESEP = /
 DFSEP = $(DIRFILESEP)
 NAME = vclmgmt
 NAME_SYM = vclmgmt
-VERSION = 0
+VERSION = 
 VERSION_MACRO = VERSION
-VERSION_SYM = 0
+VERSION_SYM = 
 DEFINE_VERSION = -D$(VERSION_MACRO)=\"$(VERSION)\"
-XS_VERSION = 0
+XS_VERSION = 
 XS_VERSION_MACRO = XS_VERSION
 XS_DEFINE_VERSION = -D$(XS_VERSION_MACRO)=\"$(XS_VERSION)\"
-INST_ARCHLIB = ../blib/arch
-INST_SCRIPT = ../blib/script
-INST_BIN = ../blib/bin
-INST_LIB = ../blib/lib
-INST_MAN1DIR = ../blib/man1
-INST_MAN3DIR = ../blib/man3
+INST_ARCHLIB = ../../blib/arch
+INST_SCRIPT = ../../blib/script
+INST_BIN = ../../blib/bin
+INST_LIB = ../../blib/lib
+INST_MAN1DIR = ../../blib/man1
+INST_MAN3DIR = ../../blib/man3
 MAN1EXT = 1
 MAN3EXT = 3pm
 INSTALLDIRS = site
@@ -136,8 +134,8 @@ PERM_RW = 644
 PERM_RWX = 755
 
 MAKEMAKER   = /usr/share/perl5/ExtUtils/MakeMaker.pm
-MM_VERSION  = 6.86
-MM_REVISION = 68600
+MM_VERSION  = 6.55_02
+MM_REVISION = 65502
 
 # FULLEXT = Pathname for extension directory (eg Foo/Bar/Oracle).
 # BASEEXT = Basename part of FULLEXT. May be just equal FULLEXT. (eg Oracle)
@@ -187,24 +185,24 @@ TO_INST_PM = lib/puppet/parser/functions/list_vlans.rb \
 	lib/puppet/provider/vcl_image/mysql.rb \
 	lib/puppet/type/vcl_image.rb
 
-PM_TO_BLIB = lib/puppet/parser/functions/list_vlans.rb \
-	../blib/lib/puppet/parser/functions/list_vlans.rb \
-	lib/puppet/parser/functions/set_defaults.rb \
-	../blib/lib/puppet/parser/functions/set_defaults.rb \
-	lib/puppet/provider/vcl_image/mysql.rb \
-	../blib/lib/puppet/provider/vcl_image/mysql.rb \
+PM_TO_BLIB = lib/puppet/provider/vcl_image/mysql.rb \
+	../../blib/lib/puppet/provider/vcl_image/mysql.rb \
 	lib/puppet/type/vcl_image.rb \
-	../blib/lib/puppet/type/vcl_image.rb
+	../../blib/lib/puppet/type/vcl_image.rb \
+	lib/puppet/parser/functions/list_vlans.rb \
+	../../blib/lib/puppet/parser/functions/list_vlans.rb \
+	lib/puppet/parser/functions/set_defaults.rb \
+	../../blib/lib/puppet/parser/functions/set_defaults.rb
 
 
 # --- MakeMaker platform_constants section:
-MM_Unix_VERSION = 6.86
+MM_Unix_VERSION = 6.55_02
 PERL_MALLOC_DEF = -DPERL_EXTMALLOC_DEF -Dmalloc=Perl_malloc -Dfree=Perl_mfree -Drealloc=Perl_realloc -Dcalloc=Perl_calloc
 
 
 # --- MakeMaker tool_autosplit section:
 # Usage: $(AUTOSPLITFILE) FileToSplit AutoDirToSplitInto
-AUTOSPLITFILE = $(ABSPERLRUN)  -e 'use AutoSplit;  autosplit($$$$ARGV[0], $$$$ARGV[1], 0, 1, 1)' --
+AUTOSPLITFILE = $(ABSPERLRUN)  -e 'use AutoSplit;  autosplit($$ARGV[0], $$ARGV[1], 0, 1, 1)' --
 
 
 
@@ -240,7 +238,6 @@ MACROSTART =
 MACROEND = 
 USEMAKEFILE = -f
 FIXIN = $(ABSPERLRUN) -MExtUtils::MY -e 'MY->fixin(shift)' --
-CP_NONEMPTY = $(ABSPERLRUN) -MExtUtils::Command::MM -e 'cp_nonempty' --
 
 
 # --- MakeMaker makemakerdflt section:
@@ -368,15 +365,15 @@ linkext :: $(LINKTYPE)
 # --- MakeMaker dlsyms section:
 
 
+# --- MakeMaker dynamic section:
+
+dynamic :: $(FIRST_MAKEFILE) $(INST_DYNAMIC) $(INST_BOOT)
+	$(NOECHO) $(NOOP)
+
+
 # --- MakeMaker dynamic_bs section:
 
 BOOTSTRAP =
-
-
-# --- MakeMaker dynamic section:
-
-dynamic :: $(FIRST_MAKEFILE) $(BOOTSTRAP) $(INST_DYNAMIC)
-	$(NOECHO) $(NOOP)
 
 
 # --- MakeMaker dynamic_lib section:
@@ -427,25 +424,23 @@ clean_subdirs :
 
 clean :: clean_subdirs
 	- $(RM_F) \
-	  $(BASEEXT).bso $(BASEEXT).def \
-	  $(BASEEXT).exp $(BASEEXT).x \
-	  $(BOOTSTRAP) $(INST_ARCHAUTODIR)/extralibs.all \
-	  $(INST_ARCHAUTODIR)/extralibs.ld $(MAKE_APERL_FILE) \
-	  *$(LIB_EXT) *$(OBJ_EXT) \
-	  *perl.core MYMETA.json \
-	  MYMETA.yml blibdirs.ts \
-	  core core.*perl.*.? \
-	  core.[0-9] core.[0-9][0-9] \
-	  core.[0-9][0-9][0-9] core.[0-9][0-9][0-9][0-9] \
-	  core.[0-9][0-9][0-9][0-9][0-9] lib$(BASEEXT).def \
-	  mon.out perl \
-	  perl$(EXE_EXT) perl.exe \
-	  perlmain.c pm_to_blib \
-	  pm_to_blib.ts so_locations \
-	  tmon.out 
+	  *$(LIB_EXT) core \
+	  core.[0-9] $(INST_ARCHAUTODIR)/extralibs.all \
+	  core.[0-9][0-9] $(BASEEXT).bso \
+	  pm_to_blib.ts core.[0-9][0-9][0-9][0-9] \
+	  $(BASEEXT).x $(BOOTSTRAP) \
+	  perl$(EXE_EXT) tmon.out \
+	  *$(OBJ_EXT) pm_to_blib \
+	  $(INST_ARCHAUTODIR)/extralibs.ld blibdirs.ts \
+	  core.[0-9][0-9][0-9][0-9][0-9] *perl.core \
+	  core.*perl.*.? $(MAKE_APERL_FILE) \
+	  perl $(BASEEXT).def \
+	  core.[0-9][0-9][0-9] mon.out \
+	  lib$(BASEEXT).def perlmain.c \
+	  perl.exe so_locations \
+	  $(BASEEXT).exp 
 	- $(RM_RF) \
 	  blib 
-	  $(NOECHO) $(RM_F) $(MAKEFILE_OLD)
 	- $(MV) $(FIRST_MAKEFILE) $(MAKEFILE_OLD) $(DEV_NULL)
 
 
@@ -464,8 +459,30 @@ realclean purge ::  clean realclean_subdirs
 
 
 # --- MakeMaker metafile section:
-metafile :
-	$(NOECHO) $(NOOP)
+metafile : create_distdir
+	$(NOECHO) $(ECHO) Generating META.yml
+	$(NOECHO) $(ECHO) '--- #YAML:1.0' > META_new.yml
+	$(NOECHO) $(ECHO) 'name:               vclmgmt' >> META_new.yml
+	$(NOECHO) $(ECHO) 'version:            ' >> META_new.yml
+	$(NOECHO) $(ECHO) 'abstract:           ~' >> META_new.yml
+	$(NOECHO) $(ECHO) 'author:' >> META_new.yml
+	$(NOECHO) $(ECHO) '    - CPANPLUS Internals' >> META_new.yml
+	$(NOECHO) $(ECHO) 'license:            unknown' >> META_new.yml
+	$(NOECHO) $(ECHO) 'distribution_type:  module' >> META_new.yml
+	$(NOECHO) $(ECHO) 'configure_requires:' >> META_new.yml
+	$(NOECHO) $(ECHO) '    ExtUtils::MakeMaker:  0' >> META_new.yml
+	$(NOECHO) $(ECHO) 'build_requires:' >> META_new.yml
+	$(NOECHO) $(ECHO) '    ExtUtils::MakeMaker:  0' >> META_new.yml
+	$(NOECHO) $(ECHO) 'requires:  {}' >> META_new.yml
+	$(NOECHO) $(ECHO) 'no_index:' >> META_new.yml
+	$(NOECHO) $(ECHO) '    directory:' >> META_new.yml
+	$(NOECHO) $(ECHO) '        - t' >> META_new.yml
+	$(NOECHO) $(ECHO) '        - inc' >> META_new.yml
+	$(NOECHO) $(ECHO) 'generated_by:       ExtUtils::MakeMaker version 6.55_02' >> META_new.yml
+	$(NOECHO) $(ECHO) 'meta-spec:' >> META_new.yml
+	$(NOECHO) $(ECHO) '    url:      http://module-build.sourceforge.net/META-spec-v1.4.html' >> META_new.yml
+	$(NOECHO) $(ECHO) '    version:  1.4' >> META_new.yml
+	-$(NOECHO) $(MV) META_new.yml $(DISTVNAME)/META.yml
 
 
 # --- MakeMaker signature section:
@@ -485,19 +502,15 @@ signature :
 
 # --- MakeMaker distmeta section:
 distmeta : create_distdir metafile
-	$(NOECHO) cd $(DISTVNAME) && $(ABSPERLRUN) -MExtUtils::Manifest=maniadd -e 'exit unless -e q{META.yml};' \
-	  -e 'eval { maniadd({q{META.yml} => q{Module YAML meta-data (added by MakeMaker)}}) }' \
-	  -e '    or print "Could not add META.yml to MANIFEST: $$$${'\''@'\''}\n"' --
-	$(NOECHO) cd $(DISTVNAME) && $(ABSPERLRUN) -MExtUtils::Manifest=maniadd -e 'exit unless -f q{META.json};' \
-	  -e 'eval { maniadd({q{META.json} => q{Module JSON meta-data (added by MakeMaker)}}) }' \
-	  -e '    or print "Could not add META.json to MANIFEST: $$$${'\''@'\''}\n"' --
+	$(NOECHO) cd $(DISTVNAME) && $(ABSPERLRUN) -MExtUtils::Manifest=maniadd -e 'eval { maniadd({q{META.yml} => q{Module meta-data (added by MakeMaker)}}) } ' \
+	  -e '    or print "Could not add META.yml to MANIFEST: $${'\''@'\''}\n"' --
 
 
 
 # --- MakeMaker distsignature section:
 distsignature : create_distdir
-	$(NOECHO) cd $(DISTVNAME) && $(ABSPERLRUN) -MExtUtils::Manifest=maniadd -e 'eval { maniadd({q{SIGNATURE} => q{Public-key signature (added by MakeMaker)}}) }' \
-	  -e '    or print "Could not add SIGNATURE to MANIFEST: $$$${'\''@'\''}\n"' --
+	$(NOECHO) cd $(DISTVNAME) && $(ABSPERLRUN) -MExtUtils::Manifest=maniadd -e 'eval { maniadd({q{SIGNATURE} => q{Public-key signature (added by MakeMaker)}}) } ' \
+	  -e '    or print "Could not add SIGNATURE to MANIFEST: $${'\''@'\''}\n"' --
 	$(NOECHO) cd $(DISTVNAME) && $(TOUCH) SIGNATURE
 	cd $(DISTVNAME) && cpansign -s
 
@@ -533,7 +546,7 @@ $(FIRST_MAKEFILE) : Makefile.PL $(CONFIGDEP)
 # --- MakeMaker staticmake section:
 
 # --- MakeMaker makeaperl section ---
-MAP_TARGET    = ../perl
+MAP_TARGET    = ../../perl
 FULLPERL      = /usr/bin/perl
 
 
@@ -568,7 +581,7 @@ testdb_static :: testdb_dynamic
 # --- MakeMaker ppd section:
 # Creates a PPD (Perl Package Description) for a binary distribution.
 ppd :
-	$(NOECHO) $(ECHO) '<SOFTPKG NAME="$(DISTNAME)" VERSION="$(VERSION)">' > $(DISTNAME).ppd
+	$(NOECHO) $(ECHO) '<SOFTPKG NAME="$(DISTNAME)" VERSION="">' > $(DISTNAME).ppd
 	$(NOECHO) $(ECHO) '    <ABSTRACT></ABSTRACT>' >> $(DISTNAME).ppd
 	$(NOECHO) $(ECHO) '    <AUTHOR>CPANPLUS Internals</AUTHOR>' >> $(DISTNAME).ppd
 	$(NOECHO) $(ECHO) '    <IMPLEMENTATION>' >> $(DISTNAME).ppd
@@ -582,10 +595,10 @@ ppd :
 
 pm_to_blib : $(FIRST_MAKEFILE) $(TO_INST_PM)
 	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)/auto'\'', q[$(PM_FILTER)], '\''$(PERM_DIR)'\'')' -- \
-	  lib/puppet/parser/functions/list_vlans.rb ../blib/lib/puppet/parser/functions/list_vlans.rb \
-	  lib/puppet/parser/functions/set_defaults.rb ../blib/lib/puppet/parser/functions/set_defaults.rb \
-	  lib/puppet/provider/vcl_image/mysql.rb ../blib/lib/puppet/provider/vcl_image/mysql.rb \
-	  lib/puppet/type/vcl_image.rb ../blib/lib/puppet/type/vcl_image.rb 
+	  lib/puppet/provider/vcl_image/mysql.rb ../../blib/lib/puppet/provider/vcl_image/mysql.rb \
+	  lib/puppet/type/vcl_image.rb ../../blib/lib/puppet/type/vcl_image.rb \
+	  lib/puppet/parser/functions/list_vlans.rb ../../blib/lib/puppet/parser/functions/list_vlans.rb \
+	  lib/puppet/parser/functions/set_defaults.rb ../../blib/lib/puppet/parser/functions/set_defaults.rb 
 	$(NOECHO) $(TOUCH) pm_to_blib
 
 

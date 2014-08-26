@@ -17,8 +17,8 @@ class vclmgmt {
     include xcat
     include vclmgmt::installfrom, vclmgmt::vcldirs, vclmgmt::cpan, vclmgmt::params, vclmgmt::services, vclmgmt::setup_security, vclmgmt::subversion, vclmgmt::yuminstall
 
-	if $environment != "root" {
-		include vclmgmt::mysql
-	}
+#	if $environment != "root" {
+#		include vclmgmt::mysql
+#	}
 	
 }
