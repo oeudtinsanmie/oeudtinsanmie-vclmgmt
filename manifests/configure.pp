@@ -41,7 +41,7 @@ define vclmgmt::configure($vclhost, $vcldb, $vcluser, $vcluser_pw, $helpemail = 
                 require => File['secrets'],
 	}
 	
-	vclmgmt::vcldirs::mylinks { $vclmgmt::params::vclpostlinks :
+	vclmgmt::mylinks { $vclmgmt::params::vclpostlinks :
 
 	}
 	
