@@ -35,10 +35,12 @@ define vclmgmt::configure($vclhost, $vcldb, $vcluser, $vcluser_pw, $helpemail = 
 	
 	archive { 'dojo' :
 		ensure 	=> present,
-		url	=> 'http://download.dojotoolkit.org/release-1.10.0/dojo-release-1.10.0.tar.gz',
+		url	=> 'http://download.dojotoolkit.org/release-1.9.3/dojo-release-1.9.3.tar.gz',
 		target	=> "${vclmgmt::params::vclweb}/dojo",
+                timeout => 0,
+                require => File['secrets'],
 	}
 	
-	File['secrets']->Exec['genkeys']->Archive['dojo']
+	File['secrets']->Exec['genkeys']
 
     }
