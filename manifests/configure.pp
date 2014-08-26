@@ -41,7 +41,7 @@ define vclmgmt::configure($vclhost, $vcldb, $vcluser, $vcluser_pw, $helpemail = 
                 require => File['secrets'],
 	}
 	
-	Archive["dojo-release-${vclmgmt::params::dojo}"]->File["${vclmgmt::params::vclweb}/dojo"]->File["${vclweb}/dojo/vcldojo"]
+	Archive["dojo-release-${vclmgmt::params::dojo}"]->File["${vclmgmt::params::vclweb}/dojo"]->File["${vclmgmt::params::vclweb}/dojo/vcldojo"]
 	
 	File['secrets']->Exec['genkeys']
 
