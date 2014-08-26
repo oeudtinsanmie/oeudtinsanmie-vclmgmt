@@ -1,14 +1,4 @@
 class vclmgmt::vcldirs {
-	define vclmgmt::vcldirs::mylinks() {
-		include vclmgmt::params
-		$mytarget = $vclmgmt::params::vcllinktargets[$name]
-
-		file { $name :
-			ensure => "link",
-			target => $mytarget,
-			require => Class["vclmgmt::subversion"],
-		}    
-	}
 
 	define vclmgmt::vcldirs::vclcopy() {
 		include vclmgmt::params
@@ -29,7 +19,7 @@ class vclmgmt::vcldirs {
 
 	}
 
-	vclmgmt::vcldirs::mylinks { $vclmgmt::params::vcllinks :
+	vclmgmt::mylinks { $vclmgmt::params::vcllinks :
 		
 	}
 
