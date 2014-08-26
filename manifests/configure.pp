@@ -36,9 +36,13 @@ define vclmgmt::configure($vclhost, $vcldb, $vcluser, $vcluser_pw, $helpemail = 
 	archive { "dojo-release-${vclmgmt::params::dojo}" :
 		ensure 	=> present,
 		url	=> "http://download.dojotoolkit.org/release-${vclmgmt::params::dojo}/dojo-release-${vclmgmt::params::dojo}.tar.gz",
-		target	=> vclmgmt::params::vclweb,
+		target	=> "${vclmgmt::params::vclweb}/",
                 timeout => 0,
                 require => File['secrets'],
+	}
+	
+	vclmgmt::vcldirs::mylinks { $vclmgmt::params::vclpostlinks :
+
 	}
 	
 	Archive["dojo-release-${vclmgmt::params::dojo}"]->File["${vclmgmt::params::vclweb}/dojo"]->File["${vclmgmt::params::vclweb}/dojo/vcldojo"]
