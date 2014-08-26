@@ -13,6 +13,7 @@ class vclmgmt::params {
         "${vclweb}"	=>	"${vcldir}/web",
         "${vclnode}"	=>	"${vcldir}/managementnode",
         "${vclweb}/dojo" =>	"${vclweb}/dojo-release-${vclmgmt::params::dojo}",
+        "${vclweb}/dojo/vcldojo" => "${vclweb}/js/vcldojo",
     }
 
     $vcldconf 	= "${vcldir}/managementnode/etc/vcl/vcld.conf"
