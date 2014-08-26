@@ -12,6 +12,7 @@ class vclmgmt::params {
     $vcllinktargets = {
         "${vclweb}"	=>	"${vcldir}/web",
         "${vclnode}"	=>	"${vcldir}/managementnode",
+        "${vclweb}/dojo" =>	"${vclweb}/dojo-release-${vclmgmt::params::dojo}",
     }
 
     $vcldconf 	= "${vcldir}/managementnode/etc/vcl/vcld.conf"
