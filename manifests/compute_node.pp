@@ -56,7 +56,7 @@ define vclmgmt::compute_node(
 	dhcp::hosts { $name:
  		subnet    => $tgt_net,
    		hash_data => {
-     			"${name}" => {
+     			"${name}.${tgt_domain}" => {
        				interfaces => {
          				"${master_if}" => $tgt_mac,
        				}
@@ -67,9 +67,9 @@ define vclmgmt::compute_node(
         dhcp::hosts { "${name}-ipmi":
                 subnet    => $ipmi_net,
                 hash_data => {
-                 	"${name}-ipmi" => {
+                 	"${name}-ipmi.${ipmi_domain}" => {
                                 interfaces => {
-                                        "${master_if}" => $ipmi_mac,
+                                        "${master_ipmi_if}" => $ipmi_mac,
                                 }
                  	}
                 }
