@@ -24,7 +24,7 @@ class vclmgmt::setup_security {
 	proto => 'all',
 	action => 'reject',
     }
-# SELinux not installed
+# SELinux is disabled
 #    selboolean { 'httpd can connect':
 #        name => 'httpd_can_network_connect',
 #        persistent => true,
