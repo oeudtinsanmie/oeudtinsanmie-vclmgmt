@@ -95,7 +95,7 @@ class vclmgmt::params {
 	mode	=> '0644',
     }
     
-    $servicedefault {
+    $servicedefault = {
         ensure => running,
         hasstatus => true,
         hasrestart => true,
