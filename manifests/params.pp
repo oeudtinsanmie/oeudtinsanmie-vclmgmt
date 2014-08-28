@@ -1,81 +1,9 @@
 class vclmgmt::params {
 
-    $vcldir 	= hiera('vclmgmt::vcldir', '/vcl')
-    
-    $dojo	= hiera('vclmgmt::dojo', '1.10.0')
-
-    $vclweb 	= hiera('vclmgmt::vclweb', '/var/www/html/vcl')
-    $vclnode 	= hiera('vclmgmt::vclnode', '/usr/local/vcl')
-    $vclimages	= hiera('vclmgmt::vclimages', "${vcldir}/images")
-
-    $htinc = "${vclweb}/.ht-inc"
-    
-    $postfiles = {
-        "${vclweb}"	=> {
-        	ensure 	=> "link",
-        	path	=> "${vclweb}",
-        	target 	=> "${vcldir}/web",
-        },
-        "${vclnode}"	=> {
-        	ensure 	=> "link",
-        	path	=> "${vclnode}",
-        	target	=> "${vcldir}/managementnode",
-        },
-    	"${vclweb}/dojo" => {
-        	ensure 	=> "link",
-    		path	=> "${vclweb}/dojo",
-    		target 	=> "${vclweb}/dojo-release-${vclmgmt::params::dojo}",
-    	},
-    	"${vclweb}/dojo/vcldojo" => {
-        	ensure 	=> "link",
-    		path	=> "${vclweb}/dojo/vcldojo",
-    		target	=> "${vclweb}/js/vcldojo",
-    	},
-    	"maintenance" => {
-		path	=> "${vclmgmt::params::htinc}/maintenance",
-		ensure  => "directory",
-		owner   => "apache",
-	},
-	"vcld" => {
-		path	=> $vclmgmt::params::vclcptargets[$vclmgmt::params::vcld],
-		ensure	=> "present",
-		mode	=> "a+x",
-	},
-	"images" => {
-		path	=> $vclmgmt::params::vclimages,
-		ensure 	=> "directory",
-	}
-    }
-    
-    $vclcopyfiles = {
-# Will copy / edit this via Augeas in future versions
-#    	'vcldconf' => {
-#    		path 	=> "${vcldir}/managementnode/etc/vcl/vcld.conf",
-#    		tgtdir	=> '/etc/vcl',
-#    		target	=> 'vcld.conf',
-#    	}, 
-    	'vcld' => {
-    		path	=> "${vcldir}/managementnode/bin/S99vcld.linux",
-    		tgtdir	=> '/etc/init.d',
-    		target	=> 'vcld',
-    	},
-    }
-    
-    $configs = {
-    	'secrets' => {
-    		path	=> "${vclmgmt::params::htinc}/secrets.php",
-		content	=> template('vclmgmt/secrets.php.erb'),
-	},
-	# Remove this in future version, once copy / edit works above
-	'vcldconf' => {
-		path	=> "/etc/vcl/vcld.conf",
-		content => template('vclmgmt/vcld.conf.erb'),
-	},
-	'confphp' => {
-		path	=> "${vclmgmt::params::htinc}/conf.php",
-		content => template('vclmgmt/conf.php.erb'),
-	},
-    }
+    $vcldir 	= '/vcl'
+    $dojo	= '1.10.0'
+    $vclweb 	= '/var/www/html/vcl'
+    $vclnode 	= '/usr/local/vcl'
     
     # defaults
     $configfile = {
