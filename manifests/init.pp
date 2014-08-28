@@ -28,7 +28,7 @@ class vclmgmt inherits vclmgmt::params {
     }
     
     # TODO: More complete cpan provider to allow optional updates
-    class vclmgmt::cpan {
+    define vclmgmt::cpan() {
 	exec { "/usr/bin/cpanp -i --skiptest ${name}" :
 		refreshonly => true,
 	}
