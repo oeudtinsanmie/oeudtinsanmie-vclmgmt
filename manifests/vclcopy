@@ -1,0 +1,14 @@
+define vclmgmt::vclcopy(
+  $path,
+  $target,
+	$tgtdir,
+) {
+		
+		exec { "mkdir ${tgtdir}" :
+			unless => "ls ${mydir}"
+		}
+
+		exec { "cp ${path} ${tgtdir}/${target}" :
+		
+		}
+}
