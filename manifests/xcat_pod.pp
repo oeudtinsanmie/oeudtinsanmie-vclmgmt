@@ -1,5 +1,3 @@
-include vclmgmt
-
 define vclmgmt::xcat_pod(
 	$private_hash, 
 	$ipmi_hash, 
