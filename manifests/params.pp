@@ -183,7 +183,6 @@ class vclmgmt::params {
     	}
     }
 
-    $cpan_command = "/usr/bin/cpanp -i --skiptest"
     $cpan_list = [ "CPAN", "DBI", "Scalar::Util", "Digest::SHA1", "LWP::Protocol::https", "Mail::Mailer", "Mo::builder", "Object::InsideOut", "RPC::XML", "URI", "YAML" ]
 
     $firedefaults = {
