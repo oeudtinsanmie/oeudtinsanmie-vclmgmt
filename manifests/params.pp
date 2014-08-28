@@ -95,6 +95,13 @@ class vclmgmt::params {
 	mode	=> '0644',
     }
     
+    $servicedefault {
+        ensure => running,
+        hasstatus => true,
+        hasrestart => true,
+        enable => true,
+    }
+    
     case $::osfamily {
 
     	'RedHat': {
