@@ -111,19 +111,6 @@ class vclmgmt(
 		},
 	}
 	
-	# defaults
-	$configfile = {
-		ensure 	=> file,
-		mode	=> '0644',
-	}
-	
-	$servicedefault = {
-	        ensure => running,
-	        hasstatus => true,
-	        hasrestart => true,
-	        enable => true,
-	}
-	
 	define vclmgmt::vclcopy(
 		$path,
 		$tgtdir,
@@ -179,7 +166,7 @@ class vclmgmt(
 	
 	create_resources(file, $postfiles)
 	
-	create_resources(file, $configs, $configfile)
+	create_resources(file, $configs, $vclmgmt::params::configfile)
 	
 	create_resources(vclmgmt::vclcopy, $vclcopyfiles)
     
