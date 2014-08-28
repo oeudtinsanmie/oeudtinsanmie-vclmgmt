@@ -13,10 +13,7 @@
 # [Remember: No empty lines between comments and class definition]
 
 
-class vclmgmt {	
-    include xcat
-    include vclmgmt::params
-    
+class vclmgmt inherits vclmgmt::params {	
     define vclmgmt::vclcopy(
 	$path,
 	$tgtdir,
