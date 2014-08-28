@@ -1,7 +1,7 @@
 define vclmgmt::vclcopy(
-  $path,
-  $target,
+	$path,
 	$tgtdir,
+	$target,
 ) {
 		
 		file { $tgtdir :
