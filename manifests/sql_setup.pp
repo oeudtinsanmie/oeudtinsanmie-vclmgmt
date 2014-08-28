@@ -3,12 +3,6 @@ define vclmgmt::sql_setup($vcldb, $vcluser, $root_pw, $vcluser_pw) {
     class {'::mysql::server':
         root_password => $root_pw,
         require => Class['vclmgmt::params'],
-#        users => { 
-#            "${vcluser}@localhost" => {
-#                ensure => present,
-#                password_hash => mysql_password($vcluser_pw),
-#            },
-#        },
     }
 
     mysql::db { $vcldb :
