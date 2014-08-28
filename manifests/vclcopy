@@ -5,7 +5,7 @@ define vclmgmt::vclcopy(
 ) {
 		
 		file { $tgtdir :
-			ensure => "present",
+			ensure => "directory",
 		} ->
 		exec { "cp ${path} ${tgtdir}/${target}" :
 			refreshonly => true,
