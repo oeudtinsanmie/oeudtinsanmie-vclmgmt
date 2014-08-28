@@ -17,7 +17,16 @@ class vclmgmt {
     include xcat
     include vclmgmt::params
 
-    create_resources(yumrepo, $vclmgmt::params::repos, $vclmgmt::params::defaultrepo)
+    case $::osfamily {
+
+    	'RedHat': {
+    		create_resources(yumrepo, $vclmgmt::params::repos, $vclmgmt::params::defaultrepo)
+    	}
+
+    	default: {
+      		fail("Unsupported osfamily: ${::osfamily} operatingsystem: ${::operatingsystem}, module ${module_name} only support osfamily RedHat and Debian")
+    	}
+    }
     
     create_resources(package, $vclmgmt::params::pkg_list, { ensure => "latest", provider => "yum", })
     create_resources(package, $vclmgmt::params::pkg_exclude, { ensure => "absent", })
@@ -26,8 +35,7 @@ class vclmgmt {
     
     file { $vclmgmt::params::vcldir :
 	ensure  => "directory",
-    }
-
+    } ->
     subversion::checkout { "vcl" :
 	repopath	=> "/repos/asf/vcl/trunk",
 	workingdir	=> $vclmgmt::params::vcldir,
@@ -57,4 +65,9 @@ class vclmgmt {
     }
 
     create_resources(service, $vclmgmt::params::service_list, $vclmgmt::params::servicedefault)
+    
+    Yumrepo <| |> -> Package <| |> -> Vclmgmt::Cpan <| |> -> Subversion::Checkout <| |> -> Archive <| |> -> File <| name != $vclmgmt::params::vcldir |> -> Exec['genkeys'] -> Service <| |>
+    
+    File['vcldconf'] ~> Service['vcld']
+    Subversion::Checkout['vcl'] ~> Vclmgmt::Copy <| |>
 }
