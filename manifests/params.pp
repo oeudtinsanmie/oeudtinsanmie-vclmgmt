@@ -92,6 +92,7 @@ class vclmgmt::params {
     			"perl-XML-Simple", 
     			"perl-YAML", 
     			"xmlsec1-openssl",
+			"xCAT.x86_64",
     		]
             	$pkg_exclude = [ ]
             	$service_list = { 
@@ -108,7 +109,19 @@ class vclmgmt::params {
     	}
     }
 
-    $cpan_list = [ "CPAN", "DBI", "Scalar::Util", "Digest::SHA1", "LWP::Protocol::https", "Mail::Mailer", "Mo::builder", "Object::InsideOut", "RPC::XML", "URI", "YAML" ]
+    $cpan_list = [ 
+	"CPAN", 
+	"DBI", 
+	"Scalar::Util", 
+	"Digest::SHA1", 
+	"LWP::Protocol::https", 
+	"Mail::Mailer", 
+	"Mo::builder", 
+	"Object::InsideOut", 
+	"RPC::XML", 
+	"URI", 
+	"YAML" 
+    ]
 
     $firedefaults = {
     	require => Class['ncsufirewall::pre'],

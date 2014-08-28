@@ -1,4 +1,5 @@
 include stdlib
+include xcat
 
 # Class: mgmt
 #
@@ -366,5 +367,7 @@ class vclmgmt(
     
 	Class['mysql::server']-> Mysql::Db[$vcldb]
 	Package<| |> -> Xcat_site_attribute <| |> ~> Service['xcatd']
+
+	Xcat_network <| |> -> Xcat_node<| |>
 }
 
