@@ -97,6 +97,7 @@ class vclmgmt::params {
             		"xinetd", 
             		"httpd", 
             		"vcld",
+            		"xcatd",
             		"ipmi",
             	]
     	}
