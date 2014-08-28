@@ -1,5 +1,3 @@
-include vclmgmt
-
 define vclmgmt::xcat_vlan(
 	$master_if, 
 	$master_mac, 
