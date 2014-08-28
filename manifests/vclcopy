@@ -4,11 +4,10 @@ define vclmgmt::vclcopy(
 	$tgtdir,
 ) {
 		
-		exec { "mkdir ${tgtdir}" :
-			unless => "ls ${mydir}"
-		}
-
+		file { $tgtdir :
+			ensure => "present",
+		} ->
 		exec { "cp ${path} ${tgtdir}/${target}" :
-		
+			refreshonly => true,
 		}
 }
