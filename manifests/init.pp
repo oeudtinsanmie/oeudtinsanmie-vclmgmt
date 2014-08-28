@@ -42,9 +42,13 @@ class vclmgmt {
 	host		=> "svn.apache.org",
 	method		=> "http",
 	#revision	=> "",
+    } ->
+    archive { "dojo-release-${vclmgmt::params::dojo}" :
+	url	=> "http://download.dojotoolkit.org/release-${vclmgmt::params::dojo}/dojo-release-${vclmgmt::params::dojo}.tar.gz",
+	target	=> "${vcldir}/web/",
+	ensure 	=> present,
+    	timeout => 0,
     }
-    
-    create_resources(archive, $vclmgmt::params::archives, $vclmgmt::params::webarchive)
     
     create_resources(file, $vclmgmt::params::postfiles)
     
@@ -66,7 +70,8 @@ class vclmgmt {
 
     create_resources(service, $vclmgmt::params::service_list, $vclmgmt::params::servicedefault)
     
-    Yumrepo <| |> -> Package <| |> -> Vclmgmt::Cpan <| |> -> Subversion::Checkout <| |> -> Archive <| |> -> File <| name != $vclmgmt::params::vcldir |> -> Exec['genkeys'] -> Service <| |>
+    Yumrepo <| |> -> Package <| |> -> Vclmgmt::Cpan <| |> -> Subversion::Checkout <| |> 
+    Archive ["dojo-release-${vclmgmt::params::dojo}"] -> File <| name != $vclmgmt::params::vcldir |> -> Exec['genkeys'] -> Service <| |>
     
     File['vcldconf'] ~> Service['vcld']
     Subversion::Checkout['vcl'] ~> Vclmgmt::Copy <| |>
