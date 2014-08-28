@@ -10,6 +10,13 @@ class vclmgmt::params {
 
     $htinc = "${vclweb}/.ht-inc"
     
+    $archives = {
+        "dojo-release-${vclmgmt::params::dojo}" => {
+		url	=> "http://download.dojotoolkit.org/release-${vclmgmt::params::dojo}/dojo-release-${vclmgmt::params::dojo}.tar.gz",
+		target	=> "${vcldir}/web/",
+	},
+    }
+    
     $postfiles = {
         "${vclweb}"	=> {
         	ensure 	=> "link",
@@ -74,13 +81,6 @@ class vclmgmt::params {
 	'confphp' => {
 		path	=> "${vclmgmt::params::htinc}/conf.php",
 		content => template('vclmgmt/conf.php.erb'),
-	},
-    }
-    
-    $archives = {
-        "dojo-release-${vclmgmt::params::dojo}" => {
-		url	=> "http://download.dojotoolkit.org/release-${vclmgmt::params::dojo}/dojo-release-${vclmgmt::params::dojo}.tar.gz",
-		target	=> "${vclmgmt::params::vclweb}/",
 	},
     }
     
