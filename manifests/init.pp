@@ -342,6 +342,13 @@ class vclmgmt(
 		$newpods = set_defaults($pods, $private_if, $private_ip, $private_mac, $ipmi_if, $ipmi_ip, $ipmi_mac)
 		create_resources(vclmgmt::xcat_pod, $newpods)
 	}
+
+        exec { "makehosts" :
+                command => "/opt/xcat/sbin/makehosts",
+                refreshonly => "true",
+        }
+
+        Exec["makehosts"] <~ Vclmgmt::Compute_node <| |>
 	
 	Yumrepo <| |> -> Package <| |> -> Vclmgmt::Cpan <| |> -> Subversion::Checkout <| |> 
     	Archive ["dojo-release-${dojo}"] -> File <| name != $vcldir |> -> Vclmgmt::Copy <| |> -> Exec['genkeys'] -> Service <| |>
