@@ -30,6 +30,7 @@ class vclmgmt::params {
             	$defaultrepo = {
             		enabled  => 1,
             		gpgcheck => 1,
+			tag	 => "vclrepos",
             	}
     		$repos = {
     			'xcat-2-core' => {
@@ -93,13 +94,13 @@ class vclmgmt::params {
     			"xmlsec1-openssl",
     		]
             	$pkg_exclude = [ ]
-            	$service_list = [ 
-            		"xinetd", 
-            		"httpd", 
-            		"vcld",
-            		"xcatd",
-            		"ipmi",
-            	]
+            	$service_list = { 
+            		"xinetd" => {}, 
+            		"httpd"	 => {}, 
+            		"vcld"	 => {},
+            		"xcatd"	 => {},
+            		"ipmi"	 => {},
+            	}
     	}
 
     	default: {

@@ -37,8 +37,8 @@ class vclmgmt(
 	$pods 		= undef,
     	$vcldir 	= $vclmgmt::params::vcldir,
     	$dojo		= $vclmgmt::params::dojo,
-    	$vclweb 	= $vclmgmt::params::$vclweb,
-    	$vclnode 	= $vclmgmt::params::$vclnode,
+    	$vclweb 	= $vclmgmt::params::vclweb,
+    	$vclnode 	= $vclmgmt::params::vclnode,
     	$vclimages	= "${vcldir}/images",
 ) inherits vclmgmt::params {
 
@@ -74,6 +74,7 @@ class vclmgmt(
 			path	=> '/etc/init.d/vcld',
 			ensure	=> "present",
 			mode	=> "a+x",
+			tag	=> "postcopy",
 		},
 		"images" => {
 			path	=> $vclimages,
@@ -110,6 +111,31 @@ class vclmgmt(
 			content => template('vclmgmt/conf.php.erb'),
 		},
 	}
+
+	$myfirewalls = {
+		'110 accept forward from me across bridges' => {
+        		chain => 'FORWARD',
+        		proto => 'all',
+        		action => 'accept',
+			source => $private_ip,
+		},
+    		"115 accept tftp" => {
+        		chain => 'INPUT',
+        		proto => 'udp',
+        		dport => 69,
+        		action => 'accept',
+        		destination => $private_ip,
+    		},
+        	"116 accept sending tftp" => {
+        	        chain => 'INPUT',
+        	        proto => 'udp',
+        	        dport => 69,
+        	        action => 'accept',
+        	        source => $private_ip,
+        	},
+	}
+
+	$firewalls = merge($vclmgmt::params::firewalls, $myfirewalls) 
 	
 	define vclmgmt::vclcopy(
 		$path,
@@ -117,7 +143,7 @@ class vclmgmt(
 		$target,
 	) {
 		file { $tgtdir :
-			ensure => "directory",
+			ensure  => "present",
 		} ->
 		exec { "cp ${path} ${tgtdir}/${target}" :
 			refreshonly => true,
@@ -142,10 +168,16 @@ class vclmgmt(
 	    	}
 	}
 	
-	create_resources(package, $vclmgmt::params::pkg_list, { ensure => "latest", provider => "yum", })
-	create_resources(package, $vclmgmt::params::pkg_exclude, { ensure => "absent", })
+	package { $vclmgmt::params::pkg_list:
+		ensure => "latest", 
+		provider => "yum", 
+		tag	 => "vclinstall",
+	}
+	package { $vclmgmt::params::pkg_exclude: 
+		ensure => "absent", 
+	}
 	
-	create_resources(vclmgmt::cpan, $vclmgmt::params::cpan_list)
+	vclmgmt::cpan { $vclmgmt::params::cpan_list: }
 	
 	file { $vcldir :
 		ensure  => "directory",
@@ -164,7 +196,7 @@ class vclmgmt(
 	    	timeout => 0,
 	}
 	
-	create_resources(file, $postfiles)
+	create_resources(file, $postfiles, { tag => "vclpostfiles", })
 	
 	create_resources(file, $configs, $vclmgmt::params::configfile)
 	
@@ -176,7 +208,7 @@ class vclmgmt(
 		creates	=> "${htinc}/keys.pem",
     	}
     
-    	create_resources(firewall, $vclmgmt::params::firewalls, $vclmgmt::params::firedefaults)
+    	create_resources(firewall, $firewalls, $vclmgmt::params::firedefaults)
     
     	if str2bool("$selinux") {
     		create_resources(selboolean, $vclmgmt::params::sebools)
@@ -241,29 +273,6 @@ class vclmgmt(
 		}
 	}
 
-    	firewall { '110 accept forward from me across bridges' :
-        	chain => 'FORWARD',
-        	proto => 'all',
-        	action => 'accept',
-		source => $private_ip,
-    	}
-
-    	firewall { "115 accept tftp" :
-        	chain => 'INPUT',
-        	proto => 'udp',
-        	dport => 69,
-        	action => 'accept',
-        	destination => $private_ip,
-    	}
-
-        firewall { "116 accept sending tftp" :
-                chain => 'INPUT',
-                proto => 'udp',
-                dport => 69,
-                action => 'accept',
-                source => $private_ip,
-        }
-
 	class {'::mysql::server':
 		root_password => $root_pw,
 		require => Class['vclmgmt::params'],
@@ -275,7 +284,6 @@ class vclmgmt(
 		host => 'localhost',
 		grant => ['GRANT', 'SELECT', 'INSERT', 'UPDATE', 'DELETE', 'CREATE TEMPORARY TABLES'],
 		sql => "${vclmgmt::params::vcldir}/mysql/vcl.sql",
-		require => Class['vclmgmt::subversion'],
 	}
 
         xcat_site_attribute { "master" :
@@ -350,12 +358,13 @@ class vclmgmt(
 
         Exec["makehosts"] <~ Vclmgmt::Compute_node <| |>
 	
-	Yumrepo <| |> -> Package <| |> -> Vclmgmt::Cpan <| |> -> Subversion::Checkout <| |> 
-    	Archive ["dojo-release-${dojo}"] -> File <| name != $vcldir |> -> Vclmgmt::Copy <| |> -> Exec['genkeys'] -> Service <| |>
+	Yumrepo <| tag == "vclrepos" |> -> Package <| tag == "vclinstall" |> -> Vclmgmt::Cpan <| |> -> Subversion::Checkout[ 'vcl'] 
+    	Archive ["dojo-release-${dojo}"] -> File <| tag == "vclpostfiles" and tag != "postcopy" |> -> Vclmgmt::Vclcopy <| |> -> File <| tag == "postcopy" |> -> Mysql::Db[$vcldb] -> Exec['genkeys'] -> Service <| name == $vclmgmt::params::service_list |>
     
     	File['vcldconf'] ~> Service['vcld']
-    	Subversion::Checkout['vcl'] ~> Vclmgmt::Copy <| |>
+    	Subversion::Checkout['vcl'] ~> Vclmgmt::Vclcopy <| |>
     
-	Class['mysql::server']->Mysql::Db[$vcldb]
+	Class['mysql::server']-> Mysql::Db[$vcldb]
 	Package<| |> -> Xcat_site_attribute <| |> ~> Service['xcatd']
 }
+
