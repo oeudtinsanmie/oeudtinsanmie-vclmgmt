@@ -8,7 +8,6 @@ define vclmgmt::compute_node(
 	$tgt_domain,
 	$tgt_os = 'Linux', 
 	$tgt_arch = 'x86_64', 
-	$slotid, 
 	$ipmi_ip, 
 	$ipmi_mac, 
 	$ipmi_net, 
@@ -21,36 +20,19 @@ define vclmgmt::compute_node(
 	$admin_pw
 ) {
 	xcat_node { $name :
-		groups 		=> [ "compute", "all"],
+		groups 		=> [ "ipmi", "compute", "all"],
 		ip		=> $tgt_ip,
 		mac		=> $tgt_mac,
-		interface	=> $master_if,
-		bmc		=> "${name}-ipmi",
+		bmc		=>  "${name}-ipmi",
 		bmcusername	=> $ipmi_user,
 		bmcpassword	=> $ipmi_pw,
-		bmcport		=> 0,
 		mgt		=> "ipmi",
-		netboot		=> "pxe",
-		tftpserver	=> $master_ip,
-		nfsserver	=> $master_ip,
-		nfsdir		=> "/install",
-		installnic	=> $tgt_if,
-		primarynic	=> $tft_if,
-		xcatmaster	=> $master_ip,
-		os		=> $tgt_os,
-		arch		=> $tgt_arch,
-		provmethod	=> "install",
-		mpa		=> "${name}-ipmi",
-		slotid		=> $slotid,
-	        domainadminuser => $admin_user,
-        	domainadminpassword => $admin_pw,
 	}
 	
-	xcat_node { "${name}-ipmi" :
-		groups 		=> [ "ipmi", "all"],
+	xcat_node {  "${name}-ipmi" :
+		groups 		=> [ "all"],
                 ip              => $ipmi_ip,
                 mac             => $ipmi_mac,
-                interface	=> $master_ipmi_if,
 	}
 
 	dhcp::hosts { $name:

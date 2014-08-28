@@ -135,4 +135,11 @@ define vclmgmt::mgmt_node(
 		$newpods = set_defaults($pods, $private_if, $private_ip, $private_mac, $ipmi_if, $ipmi_ip, $ipmi_mac)
 		create_resources(vclmgmt::xcat_pod, $newpods)
 	}
+
+	exec { "makehosts" :
+		command => "/opt/xcat/sbin/makehosts",
+		refreshonly => "true",
+	}
+
+	Exec["makehosts"] <~ Vclmgmt::Compute_node <| |>
 }
