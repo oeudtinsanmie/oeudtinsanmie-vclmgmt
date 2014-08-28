@@ -29,6 +29,12 @@ class vclmgmt {
 		refreshonly => true,
 	}
     }
+    
+    class vclmgmt::cpan {
+	exec { "/usr/bin/cpanp -i --skiptest ${name}" :
+		refreshonly => true,
+	}
+    }
 
     case $::osfamily {
 
