@@ -16,6 +16,19 @@
 class vclmgmt {	
     include xcat
     include vclmgmt::params
+    
+    define vclmgmt::vclcopy(
+	$path,
+	$tgtdir,
+	$target,
+    ) {
+	file { $tgtdir :
+		ensure => "directory",
+	} ->
+	exec { "cp ${path} ${tgtdir}/${target}" :
+		refreshonly => true,
+	}
+    }
 
     case $::osfamily {
 
