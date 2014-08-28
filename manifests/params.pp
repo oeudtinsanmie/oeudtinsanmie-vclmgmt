@@ -10,13 +10,6 @@ class vclmgmt::params {
 
     $htinc = "${vclweb}/.ht-inc"
     
-    $archives = {
-        "dojo-release-${vclmgmt::params::dojo}" => {
-		url	=> "http://download.dojotoolkit.org/release-${vclmgmt::params::dojo}/dojo-release-${vclmgmt::params::dojo}.tar.gz",
-		target	=> "${vcldir}/web/",
-	},
-    }
-    
     $postfiles = {
         "${vclweb}"	=> {
         	ensure 	=> "link",
@@ -85,11 +78,6 @@ class vclmgmt::params {
     }
     
     # defaults
-    $webarchive = {
-	ensure 	=> present,
-    	timeout => 0,
-    }
-    
     $configfile = {
 	ensure 	=> file,
 	mode	=> '0644',
