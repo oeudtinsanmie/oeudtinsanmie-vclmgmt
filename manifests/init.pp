@@ -134,6 +134,20 @@ class vclmgmt(
         	        action => 'accept',
         	        source => $private_ip,
         	},
+		"117 accept xcat calls 3001" => {
+                        chain => 'INPUT',
+                        proto => 'tcp',
+                        dport => 3001,
+                        action => 'accept',
+                        destination => $private_ip,
+                },
+                "118 accept xcat calls 3002" => {
+                        chain => 'INPUT',
+                        proto => 'tcp',
+                        dport => 3002,
+                        action => 'accept',
+                        destination => $private_ip,
+                },
 	}
 
 	$firewalls = merge($vclmgmt::params::firewalls, $myfirewalls) 

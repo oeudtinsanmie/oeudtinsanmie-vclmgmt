@@ -55,7 +55,7 @@ define vclmgmt::xcat_vlan(
 	routers => [ $myvlan_alias_ip, ],
 	netmask => $netmask,
 	domain_name => $domain,
-	other_opts => ['filename "pxelinux.0"', "next-server ${myvlan_alias_ip}"],
+	other_opts => ['filename "pxelinux.0"', "next-server ${master_ip}"],
 	require => Class['::dhcp::server'],
     }
 
