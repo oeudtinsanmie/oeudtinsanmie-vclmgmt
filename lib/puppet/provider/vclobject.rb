@@ -89,11 +89,7 @@ class Puppet::Provider::Vclobject < Puppet::Provider
       return {}
     end
 
-    output
-  end
-
-  def list_obj (obj_name = nil)
-    self.class.list_obj(obj_name)
+    output.split("\n")
   end
   
   def self.make_hash(obj_str)
@@ -109,7 +105,11 @@ class Puppet::Provider::Vclobject < Puppet::Provider
     i = 0
     @@tbls.each { |tbl|
       @@columns[tbl].each { |col, param|
-        inst_hash[param] = hash_list[i].strip
+        if (hash_list[i].include? ",")
+          inst_hash[param] = hash_list[i].strip.split(",")
+        else
+          inst_hash[param] = hash_list[i].strip
+        end
         i = i+1 
       } 
     }
@@ -123,16 +123,7 @@ class Puppet::Provider::Vclobject < Puppet::Provider
       end
     }
 
-#    debug = "\n{\n"
-#    inst_hash.each { |key, val| debug << "#{key} => #{val},\n" }
-#    debug << "}\n\n"
-#    Puppet.debug(debug)
-
-    inst_hash
-  end
-
-  def make_hash(obj_str)
-    self.class.make_hash(obj_str)
+    Puppet::Util::symbolizehash(inst_hash)
   end
 
   def self.prefetch(resources)
