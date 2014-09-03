@@ -152,160 +152,151 @@ class Puppet::Provider::Vclobject < Puppet::Provider
   end
   
   def flush
-    if !@property_flush.empty? then
-      if (@property_flush[:ensure] == :absent)
-        # remove rows
-        qry = "DELETE FROM image WHERE name = '#{resource[:name]}'; " 
-        qry <<  "DELETE FROM imagerevision WHERE imageid NOT IN (SELECT id FROM image); "
-        qry <<  "DELETE FROM resource WHERE resourcetypeid = '13' AND subid NOT IN (SELECT id FROM image); "
+    if (!@property_flush.empty? and @property_flush[:ensure] == :absent)
+      # remove rows
+      qry = "DELETE FROM image WHERE name = '#{resource[:name]}'; " 
+      qry <<  "DELETE FROM imagerevision WHERE imageid NOT IN (SELECT id FROM image); "
+      qry <<  "DELETE FROM resource WHERE resourcetypeid = '13' AND subid NOT IN (SELECT id FROM image); "
 
-        cmd_list = @@cmd_base + [ qry ]
-        begin
-          mysql(cmd_list)
-        rescue Puppet::ExecutionFailure => e
-          raise Puppet::Error, "mysql #{cmd_list} failed to run: #{e}"
-        end
-        @property_hash.clear
-      else
-        if (@property_flush[:ensure] == :present) then
-          # add base image
-          qry  = "SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '#{@@db}' AND TABLE_NAME = 'image'"
-          
-          cmd_list = @@cmd_base + [ qry ]
-          begin
-            imageid = mysql(cmd_list).strip
-            Puppet.debug(imageid)
-          rescue Puppet::ExecutionFailure => e
-            raise Puppet::Error, "mysql #{cmd_list} had an error -> #{e}"
+      cmd_list = @@cmd_base + [ qry ]
+      begin
+        mysql(cmd_list)
+      rescue Puppet::ExecutionFailure => e
+        raise Puppet::Error, "mysql #{cmd_list} failed to run: #{e}"
+      end
+    else if (!@property_flush.empty? and @property_flush[:ensure] == :present)
+      # add base image
+      qry  = "SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '#{@@db}' AND TABLE_NAME = '#{@@maintbl}'"
+      
+      cmd_list = @@cmd_base + [ qry ]
+      begin
+        imageid = mysql(cmd_list).strip
+        Puppet.debug(imageid)
+      rescue Puppet::ExecutionFailure => e
+        raise Puppet::Error, "mysql #{cmd_list} had an error -> #{e}"
+      end
+
+      qry  = "INSERT INTO image (id, "
+      vals = ""
+      @@columns["image"].each { |col, param| 
+        qry  << "image.#{col}, "
+        if @@tinyintbools.include?(param) then
+          if resource[param] == :true then
+            vals << "'1', "
+          else
+            vals << "'0', "
           end
+        elsif resource[param] == nil then
+          vals << "NULL, "
+        else
+          vals << "'#{resource[param]}', "
+        end  
+      }
+      @@wheres.each { |img, totabl| 
+        qry  << "#{img}, "
+        vals << "#{totabl}, " 
+      }
+      qry.chomp!(", ")
+      vals.chomp!(", ")
+      othertbls = @@columns.keys
+      othertbls.delete("image")
+      if (othertbls.length > 0)
+        qry << ") SELECT NULL, "
+        qry << vals
 
-          qry  = "INSERT INTO image (id, "
-          vals = ""
-          @@columns["image"].each { |col, param| 
-            qry  << "image.#{col}, "
+        qry << " FROM #{othertbls.join(", ")}"
+        qry << " WHERE"
+        othertbls.each { |tbl|
+          @@columns[tbl].each { |col, param|
             if @@tinyintbools.include?(param) then
               if resource[param] == :true then
-                vals << "'1', "
+                qry << " #{tbl}.#{col} = '1' AND"
               else
-                vals << "'0', "
+                qry << " #{tbl}.#{col} = '0' AND"
+              end
+            elsif resource[param] == nil then   
+              qry << " #{tbl}.#{col} = NULL AND"
+            else
+              qry << " #{tbl}.#{col} = '#{resource[param]}' AND"
+            end
+          }
+        }
+        qry.chomp!(" AND")
+      else
+        qry << ") VALUES (NULL, "
+        qry << vals
+        qry << ")"
+      end
+
+      qry << "; "
+      qry << "INSERT INTO imagerevision (id, imageid, revision, userid, datecreated, production, imagename) "
+      qry <<                    "VALUES (NULL, '#{imageid}', '1', '1', NOW(), '1', '#{resource[:name]}' ); "
+      qry << "INSERT INTO resource (id, resourcetypeid, subid) VALUES (NULL, '13', '#{imageid}');"
+
+      if resource[:deleted] then
+        qry << " UPDATE imagerevision SET deleted = '1', datedeleted = NOW() WHERE imageid = (SELECT id FROM image WHERE name = '#{resource[:name]}'); "
+      end
+
+      cmd_list = @@cmd_base + [ qry ]
+      begin
+        mysql(cmd_list)
+      rescue Puppet::ExecutionFailure => e
+        raise Puppet::Error, "mysql #{cmd_list} failed to run: #{e}"
+      end
+    else
+      # change existing definition
+      qry = "UPDATE #{@@tbls.join(", ")} SET"
+      @@columns["image"].each { |col, param|
+        if @@tinyintbools.include?(param) then
+          if resource[param] == :true then
+            qry << " image.#{col}='1',"
+          else
+            qry << " image.#{col}='0',"
+   	      end  
+        elsif resource[param] == nil then
+          qry << " image.#{col}=NULL,"
+   	    else
+          qry << " image.#{col}='#{resource[param]}',"
+        end  
+      } 
+      @@wheres.each { |img, totabl|
+        qry << " #{img}=#{totabl},"
+      }
+      qry.chomp!(",")
+      othertbls = @@columns.keys
+      othertbls.delete("image")
+      if (othertbls.length > 0)
+        qry << " WHERE"
+        othertbls.each { |tbl| 
+          @@columns[tbl].each { |col, param|
+            if @@tinyintbools.include?(param) then
+              if resource[param] == :true then
+                qry << " #{tbl}.#{col}='1' AND"
+              else
+                qry << " #{tbl}.#{col}='0' AND"
               end
             elsif resource[param] == nil then
-              vals << "NULL, "
+              qry << " #{tbl}.#{col}=NULL AND"
             else
-              vals << "'#{resource[param]}', "
-            end  
+              qry << " #{tbl}.#{col}='#{resource[param]}' AND"
+            end
           }
-          @@wheres.each { |img, totabl| 
-            qry  << "#{img}, "
-            vals << "#{totabl}, " 
-          }
-          qry.chomp!(", ")
-          vals.chomp!(", ")
-          othertbls = @@columns.keys
-          othertbls.delete("image")
-          if (othertbls.length > 0)
-            qry << ") SELECT NULL, "
-            qry << vals
-
-            qry << " FROM #{othertbls.join(", ")}"
-            qry << " WHERE"
-            othertbls.each { |tbl|
-              @@columns[tbl].each { |col, param|
-                if @@tinyintbools.include?(param) then
-                  if resource[param] == :true then
-                    qry << " #{tbl}.#{col} = '1' AND"
-                  else
-                    qry << " #{tbl}.#{col} = '0' AND"
-                  end
-                elsif resource[param] == nil then   
-                  qry << " #{tbl}.#{col} = NULL AND"
-                else
-                  qry << " #{tbl}.#{col} = '#{resource[param]}' AND"
-                end
-              }
-            }
-            qry.chomp!(" AND")
-          else
-            qry << ") VALUES (NULL, "
-            qry << vals
-            qry << ")"
-          end
-
-          qry << "; "
-          qry << "INSERT INTO imagerevision (id, imageid, revision, userid, datecreated, production, imagename) "
-          qry <<                    "VALUES (NULL, '#{imageid}', '1', '1', NOW(), '1', '#{resource[:name]}' ); "
-          qry << "INSERT INTO resource (id, resourcetypeid, subid) VALUES (NULL, '13', '#{imageid}');"
-
-          if resource[:deleted] then
-            qry << " UPDATE imagerevision SET deleted = '1', datedeleted = NOW() WHERE imageid = (SELECT id FROM image WHERE name = '#{resource[:name]}'); "
-          end
-
-          cmd_list = @@cmd_base + [ qry ]
-          begin
-            mysql(cmd_list)
-          rescue Puppet::ExecutionFailure => e
-            raise Puppet::Error, "mysql #{cmd_list} failed to run: #{e}"
-          end
-        else
-          # change existing definition
-          qry = "UPDATE #{@@tbls.join(", ")} SET"
-          @@columns["image"].each { |col, param|
-            if @@tinyintbools.include?(param) then
-              if resource[param] == :true then
-                qry << " image.#{col}='1',"
-              else
-                qry << " image.#{col}='0',"
-       	      end  
-            elsif resource[param] == nil then
-              qry << " image.#{col}=NULL,"
-       	    else
-              qry << " image.#{col}='#{resource[param]}',"
-            end  
-          } 
-          @@wheres.each { |img, totabl|
-            qry << " #{img}=#{totabl},"
-          }
-          qry.chomp!(",")
-          othertbls = @@columns.keys
-          othertbls.delete("image")
-          if (othertbls.length > 0)
-            qry << " WHERE"
-            othertbls.each { |tbl| 
-              @@columns[tbl].each { |col, param|
-                if @@tinyintbools.include?(param) then
-                  if resource[param] == :true then
-                    qry << " #{tbl}.#{col}='1' AND"
-                  else
-                    qry << " #{tbl}.#{col}='0' AND"
-                  end
-                elsif resource[param] == nil then
-                  qry << " #{tbl}.#{col}=NULL AND"
-                else
-                  qry << " #{tbl}.#{col}='#{resource[param]}' AND"
-                end
-              }
-            }
-            qry << " image.name = '#{resource[:name]}';"
-          else
-            qry << " WHERE image.name = '#{resource[:name]}';"
-          end
-
-       	  if @property_flush[:deleted] then
-            qry << " UPDATE imagerevision SET deleted = '1', datedeleted = NOW() WHERE imageid = (SELECT id FROM image WHERE name = '#{resource[:name]}'); "
-       	  end
-
-          cmd_list = @@cmd_base + [ qry ]
-          begin
-            mysql(cmd_list)
-          rescue Puppet::ExecutionFailure => e
-            raise Puppet::Error, "mysql #{cmd_list} failed to run: #{e}"
-          end
-        end
+        }
+        qry << " image.name = '#{resource[:name]}';"
+      else
+        qry << " WHERE image.name = '#{resource[:name]}';"
       end
-      @property_flush.clear
-      @flush_needed = :false
-      # refresh @property_hash
-      @property_hash = make_hash(list_obj(resource[:name]))
+
+   	  if @property_flush[:deleted] then
+        qry << " UPDATE imagerevision SET deleted = '1', datedeleted = NOW() WHERE imageid = (SELECT id FROM image WHERE name = '#{resource[:name]}'); "
+   	  end
+
+      cmd_list = @@cmd_base + [ qry ]
+      begin
+        mysql(cmd_list)
+      rescue Puppet::ExecutionFailure => e
+        raise Puppet::Error, "mysql #{cmd_list} failed to run: #{e}"
+      end
     end
   end
 end
