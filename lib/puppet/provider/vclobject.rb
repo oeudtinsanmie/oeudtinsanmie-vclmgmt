@@ -1,5 +1,5 @@
 class Puppet::Provider::Vclobject < Puppet::Provider
-
+  
   @@tbls = [ "image", "OS", "platform" ]
   @@maintbl = "image"
   @@columns = {
@@ -34,28 +34,6 @@ class Puppet::Provider::Vclobject < Puppet::Provider
   @@db = nil
   @@cmd_base = nil
 
-  # copied from mk_resource_methods
-
-  [resource_type.validproperties, resource_type.parameters].flatten.each do |attr|
-    attr = attr.intern
-    next if attr == :name
-    define_method(attr) do
-      if @property_hash[attr].nil?
-        :absent
-      else
-        @property_hash[attr]
-      end
-    end
-
-    define_method(attr.to_s + "=") do |val|
-      if (@property_hash[attr] != val) then
-        @property_hash[attr] = val
-        @property_flush[attr] = val
-      end
-    end
-  end
-
-  
   commands  :mysql => '/usr/bin/mysql'
     
   def initialize(value={})
@@ -76,17 +54,17 @@ class Puppet::Provider::Vclobject < Puppet::Provider
             
   def self.instances
     
-    list_obj().collect { |obj|
+    list_obj.collect { |obj|
       begin
         new(make_hash(obj))
       rescue StandardError => e
-        raise Puppet::Error, "Constructor failed: #{e}"
+        raise Puppet::DevError, "Constructor failed: #{e}"
       end
     }
 
   end
   
-  def self.list_obj (obj_name = nil)
+  def self.list_obj 
     qry = "SELECT "
 
     @@tbls.each { |tbl|
@@ -94,23 +72,14 @@ class Puppet::Provider::Vclobject < Puppet::Provider
         qry << "#{tbl}.#{col}, "
       } 
     }
-    qry.chomp!(", ")
     
-    qry << " FROM #{@@tbls.join(", ")}" 
+    qry << "GROUP_CONCAT(resourcegroup.name SEPARATOR ',') as groups FROM #{@@tbls.join(", ")}, resource, resourcegroup, resourcegroupmembers" 
 
-    if @@wheres.length > 0
-      qry << " WHERE"
-      @@wheres.each { |key, val| qry << " #{key}=#{val} AND" }
-      
-      if (obj_name != nil)
-        qry << " image.name = '#{obj_name}'"
-      else
-        qry.chomp!(" AND")
-      end
-    elsif (obj_name != nil)
-      qry << " WHERE image.name = '#{obj_name}'"
-    end
-
+    qry << " WHERE"
+    @@wheres.each { |key, val| qry << " #{key}=#{val} AND" }
+    
+    qry << " resource.subid=image.id AND resourcegroupmembers.resourceid=resource.id AND resourcegroup.id=resourcegroupmembers.resourcegroupid GROUP BY image.id"
+    
     cmd_list = @@cmd_base + [ qry ]
 
     begin
