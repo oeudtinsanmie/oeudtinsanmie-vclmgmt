@@ -34,27 +34,7 @@ Puppet::Type.type(:vcl_image).provide(:mysql) do
   @@db = nil
   @@cmd_base = nil
 
-  # copied from mk_resource_methods
-
-  [resource_type.validproperties, resource_type.parameters].flatten.each do |attr|
-    attr = attr.intern
-    next if attr == :name
-    define_method(attr) do
-      if @property_hash[attr].nil?
-        :absent
-      else
-        @property_hash[attr]
-      end
-    end
-
-    define_method(attr.to_s + "=") do |val|
-      if (@property_hash[attr] != val) then
-        @property_hash[attr] = val
-        @property_flush[attr] = val
-      end
-    end
-  end
-
+  mk_resource_methods
   
   commands  :mysql => '/usr/bin/mysql'
     
@@ -122,10 +102,6 @@ Puppet::Type.type(:vcl_image).provide(:mysql) do
 
     output
   end
-
-  def list_obj (obj_name = nil)
-    self.class.list_obj(obj_name)
-  end
   
   def self.make_hash(obj_str)
     if (obj_str == nil) 
@@ -160,10 +136,6 @@ Puppet::Type.type(:vcl_image).provide(:mysql) do
 #    Puppet.debug(debug)
 
     inst_hash
-  end
-
-  def make_hash(obj_str)
-    self.class.make_hash(obj_str)
   end
 
   def self.prefetch(resources)
