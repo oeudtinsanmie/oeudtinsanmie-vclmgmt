@@ -2,6 +2,7 @@ class Puppet::Provider::Vclobject < Puppet::Provider
   
   @@tbls = [ "image", "OS", "platform" ]
   @@maintbl = "image"
+  @@revtbl = nil #"imagerevision"
   @@columns = {
     "image"     => { 
       "name"          => :name, 
@@ -78,7 +79,7 @@ class Puppet::Provider::Vclobject < Puppet::Provider
     qry << " WHERE"
     @@wheres.each { |key, val| qry << " #{key}=#{val} AND" }
     
-    qry << " resource.subid=image.id AND resourcegroupmembers.resourceid=resource.id AND resourcegroup.id=resourcegroupmembers.resourcegroupid GROUP BY image.id"
+    qry << " resource.subid=#{@@maintbl}.id AND resourcegroupmembers.resourceid=resource.id AND resourcegroup.id=resourcegroupmembers.resourcegroupid GROUP BY image.id"
     
     cmd_list = @@cmd_base + [ qry ]
 
@@ -154,9 +155,12 @@ class Puppet::Provider::Vclobject < Puppet::Provider
   def flush
     if (!@property_flush.empty? and @property_flush[:ensure] == :absent)
       # remove rows
-      qry = "DELETE FROM image WHERE name = '#{resource[:name]}'; " 
-      qry <<  "DELETE FROM imagerevision WHERE imageid NOT IN (SELECT id FROM image); "
-      qry <<  "DELETE FROM resource WHERE resourcetypeid = '13' AND subid NOT IN (SELECT id FROM image); "
+      qry = "DELETE FROM #{@@maintbl} WHERE name = '#{resource[:name]}'; " 
+      if @@revtbl
+        qry << "DELETE FROM #{@@revtbl} WHERE #{@@maintbl}id NOT IN (SELECT id FROM #{@@maintbl}); "
+      end
+      qry << "DELETE FROM resource WHERE resourcetypeid = resourcetype.id AND resourcetype.name=#{@@resourcetype} AND resource.subid NOT IN (SELECT id FROM #{@@maintbl}); "
+      qry << "DELETE FROM resourcegroupmembers WHERE resourceid NOT IN (SELECT id FROM resource)"
 
       cmd_list = @@cmd_base + [ qry ]
       begin
