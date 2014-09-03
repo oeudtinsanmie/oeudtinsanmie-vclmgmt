@@ -73,7 +73,7 @@ class Puppet::Provider::Vclobject < Puppet::Provider
       } 
     }
     
-    qry << "GROUP_CONCAT(resourcegroup.name SEPARATOR ',') as groups FROM #{@@tbls.join(", ")}, resource, resourcegroup, resourcegroupmembers" 
+    qry << "GROUP_CONCAT(resourcegroup.name SEPARATOR ',') FROM #{@@tbls.join(", ")}, resource, resourcegroup, resourcegroupmembers" 
 
     qry << " WHERE"
     @@wheres.each { |key, val| qry << " #{key}=#{val} AND" }
@@ -113,6 +113,11 @@ class Puppet::Provider::Vclobject < Puppet::Provider
         i = i+1 
       } 
     }
+    if (hash_list[i].include? ",")
+      inst_hash[:groups] = hash_list[i].strip.split(",")
+    else
+      inst_hash[:groups] = hash_list[i].strip
+    end
 
     inst_hash.merge!(inst_hash) { |key, oldval, val| val == 'NULL' ? nil : val }
     @@tinyintbools.each { |key| 
