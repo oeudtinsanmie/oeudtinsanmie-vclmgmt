@@ -196,17 +196,7 @@ class Puppet::Provider::Vclobject < Puppet::Provider
       # change existing definition
       qry = "UPDATE #{@columns.keys.join(", ")} SET"
       @columns["image"].each { |col, param|
-        if @tinyintbools.include?(param) then
-          if resource[param] == :true then
-            qry << " image.#{col}='1',"
-          else
-            qry << " image.#{col}='0',"
-   	      end  
-        elsif resource[param] == nil then
-          qry << " image.#{col}=NULL,"
-   	    else
-          qry << " image.#{col}='#{resource[param]}',"
-        end  
+        qry << " #{@maintbl}.#{col}=#{paramVal(param)}"
       } 
       @wheres.each { |img, totabl|
         qry << " #{img}=#{totabl},"
