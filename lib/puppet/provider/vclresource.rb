@@ -133,7 +133,7 @@ class Puppet::Provider::Vclresource < Puppet::Provider
     qry = "INSERT INTO resourcegroupmembers (resourceid, resourcegroupid) SELECT resource.id, resourcegroup.id FROM resourcegroup, resource, #{@maintbl} WHERE #{@maintbl}.name='#{resource[:name]}' AND #{@maintbl}.id=resource.subid"
     if (resource[:groups].is_a?(Array)) then
       qry << " AND ("
-      resource[:groups].each { |group}
+      resource[:groups].each { |group|
         qry << "resourcegroup.name='#{group}' OR "
       }
       qry.chomp!(" OR ")
