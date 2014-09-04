@@ -173,14 +173,11 @@ class Puppet::Provider::Vclobject < Puppet::Provider
   def flush
     if (@property_flush and @property_flush[:ensure] == :absent)
       # remove rows
-      qry = "DELETE FROM #{@@maintbl} WHERE name = '#{resource[:name]}'; " 
-      if @@revtbl
-        qry << "DELETE FROM #{@@revtbl} WHERE #{@@maintbl}id NOT IN (SELECT id FROM #{@@maintbl}); "
-      end
+      qry =  "DELETE FROM #{@@maintbl} WHERE name = '#{resource[:name]}'; " 
       qry << "DELETE FROM resource WHERE resourcetypeid = resourcetype.id AND resourcetype.name=#{@@resourcetype} AND resource.subid NOT IN (SELECT id FROM #{@@maintbl}); "
       qry << "DELETE FROM resourcegroupmembers WHERE resourceid NOT IN (SELECT id FROM resource)"
-
       runCommand(@@cmd_base + [ qry ])
+      
     else if (@property_flush and @property_flush[:ensure] == :present)
       # add base image
       qry  = "INSERT INTO #{@@maintbl} (id, "
@@ -215,38 +212,24 @@ class Puppet::Provider::Vclobject < Puppet::Provider
         qry << vals
         qry << ")"
       end
-
-      objid = nextId(@@maintbl)
       runCommand(@@cmd_base + [ qry ])
       
-      # FIX THIS!!!
-      if @@revtbl
-        qry = "INSERT INTO #{@@revtbl} (id, #{@@maintbl}id, revision, userid, datecreated, production, imagename) "
-        qry <<                    "VALUES (NULL, '#{objid}', '1', '1', NOW(), '1', '#{resource[:name]}' ); "
-      end
+      qry = "INSERT INTO resource (id, resourcetypeid, subid) SELECT NULL, resourcetype.id, #{@@maintbl}.id FROM resourcetype, #{@@maintbl} WHERE resourcetype.name = #{@@resourcetype} AND #{@@maintbl}.name = #{resource[:name]}"
       runCommand(@@cmd_base + [ qry ])
       
-      qry = "INSERT INTO resource (id, resourcetypeid, subid) SELECT NULL, resourcetype.id, '#{objid}' FROM resourcetype WHERE resourcetype.name = #{@@resourcetype};"
-      resid = nextId("resource")
-      runCommand(@@cmd_base + [ qry ])
-      
-      qry = "INSERT INTO resourcegroupmembers (resourceid, resourcegroupid) SELECT #{resid}, resourcegroup.id FROM resourcegroup WHERE "
+      qry = "INSERT INTO resourcegroupmembers (resourceid, resourcegroupid) SELECT resource.id, resourcegroup.id FROM resourcegroup, resource, #{@@maintbl} WHERE #{@@maintbl}.name = #{resource[:name]} AND #{@@maintbl}.id = resource.subid"
       if resource[:groups].is_a?(Array)
+        qry << " AND ("
         resource[:groups].each { |group|
           qry << "resourcegroup.name = #{group} OR "
         }
         qry.chomp!(" OR")
+        qry << ")"
       else
-        qry << "resourcegroup.name = #{resource[:groups]}"
+        qry << " AND resourcegroup.name = #{resource[:groups]}"
       end
       runCommand(@@cmd_base + [ qry ])
 
-      ## FIX THIS!!!
-      if resource[:deleted] then
-        qry = " UPDATE imagerevision SET deleted = '1', datedeleted = NOW() WHERE imageid = (SELECT id FROM image WHERE name = '#{resource[:name]}'); "
-      end
-      runCommand(@@cmd_base + [ qry ])
-      
     else
       # change existing definition
       qry = "UPDATE #{@@tbls.join(", ")} SET"
@@ -273,34 +256,16 @@ class Puppet::Provider::Vclobject < Puppet::Provider
         qry << " WHERE"
         othertbls.each { |tbl| 
           @@columns[tbl].each { |col, param|
-            if @@tinyintbools.include?(param) then
-              if resource[param] == :true then
-                qry << " #{tbl}.#{col}='1' AND"
-              else
-                qry << " #{tbl}.#{col}='0' AND"
-              end
-            elsif resource[param] == nil then
-              qry << " #{tbl}.#{col}=NULL AND"
-            else
-              qry << " #{tbl}.#{col}='#{resource[param]}' AND"
-            end
+            qry << " #{tbl}.#{col}=#{paramVal(param)} AND"
           }
         }
-        qry << " image.name = '#{resource[:name]}';"
+        qry << " #{@@maintbl}.name = '#{resource[:name]}';"
       else
-        qry << " WHERE image.name = '#{resource[:name]}';"
+        qry << " WHERE #{@@maintbl}.name = '#{resource[:name]}'"
       end
+      runCommand(@@cmd_base + [ qry ])
 
-   	  if @property_flush[:deleted] then
-        qry << " UPDATE imagerevision SET deleted = '1', datedeleted = NOW() WHERE imageid = (SELECT id FROM image WHERE name = '#{resource[:name]}'); "
-   	  end
-
-      cmd_list = @@cmd_base + [ qry ]
-      begin
-        mysql(cmd_list)
-      rescue Puppet::ExecutionFailure => e
-        raise Puppet::Error, "mysql #{cmd_list} failed to run: #{e}"
-      end
+   	  
     end
   end
 end
