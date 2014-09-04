@@ -214,17 +214,7 @@ class Puppet::Provider::Vclobject < Puppet::Provider
         qry << " WHERE"
         othertbls.each { |tbl|
           @@columns[tbl].each { |col, param|
-            if @@tinyintbools.include?(param) then
-              if resource[param] == :true then
-                qry << " #{tbl}.#{col} = '1' AND"
-              else
-                qry << " #{tbl}.#{col} = '0' AND"
-              end
-            elsif resource[param] == nil then   
-              qry << " #{tbl}.#{col} = NULL AND"
-            else
-              qry << " #{tbl}.#{col} = '#{resource[param]}' AND"
-            end
+            qry << " #{tbl}.#{col} = #{paramVal(param)} AND"
           }
         }
         qry.chomp!(" AND")
