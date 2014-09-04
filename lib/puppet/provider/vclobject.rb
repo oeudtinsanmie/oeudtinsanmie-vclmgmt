@@ -80,7 +80,7 @@ class Puppet::Provider::Vclobject < Puppet::Provider
     
     qry << " resource.subid=#{@@maintbl}.id AND resourcegroupmembers.resourceid=resource.id AND resourcegroup.id=resourcegroupmembers.resourcegroupid GROUP BY image.id"
     
-    runCommand(@@cmd_base + [ qry ]).split("\n")
+    runQuery(qry).split("\n")
   end
   
   def self.make_hash(obj_str)
@@ -155,15 +155,9 @@ class Puppet::Provider::Vclobject < Puppet::Provider
     "'#{resource[param]}'"
   end
   
-  def self.nextId (tbl) 
-    cmd_list = @@cmd_base + [ "SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '#{@@db}' AND TABLE_NAME = '#{tbl}'" ]
-    
-    nextid = runCommand(cmd_list)
-  end
-  
-  def self.runCommand (cmd_list)
+  def self.runQuery (qry)
     begin
-      output = mysql(cmd_list).strip
+      output = mysql(@@cmd_base + [ qry ]).strip
     rescue Puppet::ExecutionFailure => e
       raise Puppet::DevError, "mysql #{cmd_list.join(' ')} had an error -> #{e}"
     end
@@ -176,7 +170,7 @@ class Puppet::Provider::Vclobject < Puppet::Provider
       qry =  "DELETE FROM #{@@maintbl} WHERE name = '#{resource[:name]}'; " 
       qry << "DELETE FROM resource WHERE resourcetypeid = resourcetype.id AND resourcetype.name=#{@@resourcetype} AND resource.subid NOT IN (SELECT id FROM #{@@maintbl}); "
       qry << "DELETE FROM resourcegroupmembers WHERE resourceid NOT IN (SELECT id FROM resource)"
-      runCommand(@@cmd_base + [ qry ])
+      runQuery(qry)
       
     else if (@property_flush and @property_flush[:ensure] == :present)
       # add base image
@@ -212,10 +206,10 @@ class Puppet::Provider::Vclobject < Puppet::Provider
         qry << vals
         qry << ")"
       end
-      runCommand(@@cmd_base + [ qry ])
+      runQuery(qry)
       
       qry = "INSERT INTO resource (id, resourcetypeid, subid) SELECT NULL, resourcetype.id, #{@@maintbl}.id FROM resourcetype, #{@@maintbl} WHERE resourcetype.name = #{@@resourcetype} AND #{@@maintbl}.name = #{resource[:name]}"
-      runCommand(@@cmd_base + [ qry ])
+      runQuery(qry)
       
       qry = "INSERT INTO resourcegroupmembers (resourceid, resourcegroupid) SELECT resource.id, resourcegroup.id FROM resourcegroup, resource, #{@@maintbl} WHERE #{@@maintbl}.name = #{resource[:name]} AND #{@@maintbl}.id = resource.subid"
       if resource[:groups].is_a?(Array)
@@ -228,7 +222,7 @@ class Puppet::Provider::Vclobject < Puppet::Provider
       else
         qry << " AND resourcegroup.name = #{resource[:groups]}"
       end
-      runCommand(@@cmd_base + [ qry ])
+      runQuery(qry)
 
     else
       # change existing definition
@@ -263,9 +257,22 @@ class Puppet::Provider::Vclobject < Puppet::Provider
       else
         qry << " WHERE #{@@maintbl}.name = '#{resource[:name]}'"
       end
-      runCommand(@@cmd_base + [ qry ])
+      runQuery(qry)
 
-   	  
+   	  qry =  "DELETE FROM resourcegroupmembers WHERE resourceid=resource.id AND #{@@maintbl}.name = #{resource[:name]} AND #{@@maintbl}.id = resource.subid;"
+      qry << "INSERT INTO resourcegroupmembers (resourceid, resourcegroupid) SELECT resource.id, resourcegroup.id FROM resourcegroup, resource, #{@@maintbl} WHERE #{@@maintbl}.name = #{resource[:name]} AND #{@@maintbl}.id = resource.subid"
+      if resource[:groups].is_a?(Array)
+        qry << " AND ("
+        resource[:groups].each { |group|
+          qry << "resourcegroup.name = #{group} OR "
+        }
+        qry.chomp!(" OR")
+        qry << ")"
+      else
+        qry << " AND resourcegroup.name = #{resource[:groups]}"
+      end
+      runQuery(qry)
+      
     end
   end
 end
