@@ -44,7 +44,9 @@ class Puppet::Provider::Vclobject < Puppet::Provider
     qry << "GROUP_CONCAT(resourcegroup.name SEPARATOR ',') FROM #{@columns.keys.join(", ")}, resource, resourcegroup, resourcegroupmembers" 
 
     qry << " WHERE"
-    @wheres.each { |key, val| qry << " #{key}=#{val} AND" }
+    @wheres.each { |key, val| 
+      qry << " #{key}=#{val} AND" 
+    }
     
     qry << " resource.subid=#{@maintbl}.id AND resourcegroupmembers.resourceid=resource.id AND resourcegroup.id=resourcegroupmembers.resourcegroupid GROUP BY image.id"
     
@@ -72,7 +74,7 @@ class Puppet::Provider::Vclobject < Puppet::Provider
         i = i+1 
       } 
     }
-    if (hash_list[i].include? ",")
+    if (hash_list[i].include? ",") 
       inst_hash[:groups] = hash_list[i].strip.split(",")
     else
       inst_hash[:groups] = hash_list[i].strip
@@ -80,7 +82,7 @@ class Puppet::Provider::Vclobject < Puppet::Provider
 
     inst_hash.merge!(inst_hash) { |key, oldval, val| val == 'NULL' ? nil : val }
     @tinyintbools.each { |key| 
-      if (inst_hash[key] == '1') then
+      if (inst_hash[key] == '1') 
         inst_hash[key] = :true
       else
         inst_hash[key] = :false
@@ -133,105 +135,105 @@ class Puppet::Provider::Vclobject < Puppet::Provider
   end
 
   def flush
-    if (@property_flush and @property_flush[:ensure] == :absent)
-      # remove rows
-      qry =  "DELETE FROM #{@maintbl} WHERE name = '#{resource[:name]}'; " 
-      qry << "DELETE FROM resource WHERE resourcetypeid = resourcetype.id AND resourcetype.name=#{@resourcetype} AND resource.subid NOT IN (SELECT id FROM #{@maintbl}); "
-      qry << "DELETE FROM resourcegroupmembers WHERE resourceid NOT IN (SELECT id FROM resource)"
-      runQuery(qry)
-      
-    else if (@property_flush and @property_flush[:ensure] == :present)
-      # add base image
-      qry  = "INSERT INTO #{@maintbl} (id, "
-      vals = ""
-      @columns[@maintbl].each { |col, param| 
-        qry  << "#{@maintbl}.#{col}, "
-        vals << "#{paramVal(param)}, "
-      }
-      @wheres.each { |img, totabl| 
-        qry  << "#{img}, "
-        vals << "#{totabl}, " 
-      }
-      
-      qry.chomp!(", ")
-      vals.chomp!(", ")
-      othertbls = @columns.keys
-      othertbls.delete(@maintbl)
-      if (othertbls.length > 0)
-        qry << ") SELECT NULL, "
-        qry << vals
-
-        qry << " FROM #{othertbls.join(", ")}"
-        qry << " WHERE"
-        othertbls.each { |tbl|
-          @columns[tbl].each { |col, param|
-            qry << " #{tbl}.#{col} = #{paramVal(param)} AND"
-          }
-        }
-        qry.chomp!(" AND")
-      else
-        qry << ") VALUES (NULL, "
-        qry << vals
-        qry << ")"
-      end
-      runQuery(qry)
-      
-      qry = "INSERT INTO resource (id, resourcetypeid, subid) SELECT NULL, resourcetype.id, #{@maintbl}.id FROM resourcetype, #{@maintbl} WHERE resourcetype.name = #{@resourcetype} AND #{@maintbl}.name = #{resource[:name]}"
-      runQuery(qry)
-      
-      qry = "INSERT INTO resourcegroupmembers (resourceid, resourcegroupid) SELECT resource.id, resourcegroup.id FROM resourcegroup, resource, #{@maintbl} WHERE #{@maintbl}.name = #{resource[:name]} AND #{@maintbl}.id = resource.subid"
-      if resource[:groups].is_a?(Array)
-        qry << " AND ("
-        resource[:groups].each { |group|
-          qry << "resourcegroup.name = #{group} OR "
-        }
-        qry.chomp!(" OR")
-        qry << ")"
-      else
-        qry << " AND resourcegroup.name = #{resource[:groups]}"
-      end
-      runQuery(qry)
-
-    else
-      # change existing definition
-      qry = "UPDATE #{@columns.keys.join(", ")} SET"
-      @columns["image"].each { |col, param|
-        qry << " #{@maintbl}.#{col}=#{paramVal(param)}"
-      } 
-      @wheres.each { |img, totabl|
-        qry << " #{img}=#{totabl},"
-      }
-      qry.chomp!(",")
-      othertbls = @columns.keys
-      othertbls.delete("image")
-      if (othertbls.length > 0)
-        qry << " WHERE"
-        othertbls.each { |tbl| 
-          @columns[tbl].each { |col, param|
-            qry << " #{tbl}.#{col}=#{paramVal(param)} AND"
-          }
-        }
-        qry << " #{@maintbl}.name = '#{resource[:name]}';"
-      else
-        qry << " WHERE #{@maintbl}.name = '#{resource[:name]}'"
-      end
-      runQuery(qry)
-
-   	  qry =  "DELETE FROM resourcegroupmembers WHERE resourceid=resource.id AND #{@maintbl}.name = #{resource[:name]} AND #{@maintbl}.id = resource.subid;"
-      qry << "INSERT INTO resourcegroupmembers (resourceid, resourcegroupid) SELECT resource.id, resourcegroup.id FROM resourcegroup, resource, #{@maintbl} WHERE #{@maintbl}.name = #{resource[:name]} AND #{@maintbl}.id = resource.subid"
-      if resource[:groups].is_a?(Array)
-        qry << " AND ("
-        resource[:groups].each { |group|
-          qry << "resourcegroup.name = #{group} OR "
-        }
-        qry.chomp!(" OR")
-        qry << ")"
-      else
-        qry << " AND resourcegroup.name = #{resource[:groups]}"
-      end
-      runQuery(qry)
-      
-    end
-  end
+#    if (@property_flush and @property_flush[:ensure] == :absent)
+#      # remove rows
+#      qry =  "DELETE FROM #{@maintbl} WHERE name = '#{resource[:name]}'; " 
+#      qry << "DELETE FROM resource WHERE resourcetypeid = resourcetype.id AND resourcetype.name=#{@resourcetype} AND resource.subid NOT IN (SELECT id FROM #{@maintbl}); "
+#      qry << "DELETE FROM resourcegroupmembers WHERE resourceid NOT IN (SELECT id FROM resource)"
+#      runQuery(qry)
+#      
+#    else if (@property_flush and @property_flush[:ensure] == :present)
+#      # add base image
+#      qry  = "INSERT INTO #{@maintbl} (id, "
+#      vals = ""
+#      @columns[@maintbl].each { |col, param| 
+#        qry  << "#{@maintbl}.#{col}, "
+#        vals << "#{paramVal(param)}, "
+#      }
+#      @wheres.each { |img, totabl| 
+#        qry  << "#{img}, "
+#        vals << "#{totabl}, " 
+#      }
+#      
+#      qry.chomp!(", ")
+#      vals.chomp!(", ")
+#      othertbls = @columns.keys
+#      othertbls.delete(@maintbl)
+#      if (othertbls.length > 0)
+#        qry << ") SELECT NULL, "
+#        qry << vals
+#
+#        qry << " FROM #{othertbls.join(", ")}"
+#        qry << " WHERE"
+#        othertbls.each { |tbl|
+#          @columns[tbl].each { |col, param|
+#            qry << " #{tbl}.#{col} = #{paramVal(param)} AND"
+#          }
+#        }
+#        qry.chomp!(" AND")
+#      else
+#        qry << ") VALUES (NULL, "
+#        qry << vals
+#        qry << ")"
+#      end
+#      runQuery(qry)
+#      
+#      qry = "INSERT INTO resource (id, resourcetypeid, subid) SELECT NULL, resourcetype.id, #{@maintbl}.id FROM resourcetype, #{@maintbl} WHERE resourcetype.name = #{@resourcetype} AND #{@maintbl}.name = #{resource[:name]}"
+#      runQuery(qry)
+#      
+#      qry = "INSERT INTO resourcegroupmembers (resourceid, resourcegroupid) SELECT resource.id, resourcegroup.id FROM resourcegroup, resource, #{@maintbl} WHERE #{@maintbl}.name = #{resource[:name]} AND #{@maintbl}.id = resource.subid"
+#      if resource[:groups].is_a?(Array)
+#        qry << " AND ("
+#        resource[:groups].each { |group|
+#          qry << "resourcegroup.name = #{group} OR "
+#        }
+#        qry.chomp!(" OR")
+#        qry << ")"
+#      else
+#        qry << " AND resourcegroup.name = #{resource[:groups]}"
+#      end
+#      runQuery(qry)
+#
+#    else
+#      # change existing definition
+#      qry = "UPDATE #{@columns.keys.join(", ")} SET"
+#      @columns["image"].each { |col, param|
+#        qry << " #{@maintbl}.#{col}=#{paramVal(param)}"
+#      } 
+#      @wheres.each { |img, totabl|
+#        qry << " #{img}=#{totabl},"
+#      }
+#      qry.chomp!(",")
+#      othertbls = @columns.keys
+#      othertbls.delete("image")
+#      if (othertbls.length > 0)
+#        qry << " WHERE"
+#        othertbls.each { |tbl| 
+#          @columns[tbl].each { |col, param|
+#            qry << " #{tbl}.#{col}=#{paramVal(param)} AND"
+#          }
+#        }
+#        qry << " #{@maintbl}.name = '#{resource[:name]}';"
+#      else
+#        qry << " WHERE #{@maintbl}.name = '#{resource[:name]}'"
+#      end
+#      runQuery(qry)
+#
+#   	  qry =  "DELETE FROM resourcegroupmembers WHERE resourceid=resource.id AND #{@maintbl}.name = #{resource[:name]} AND #{@maintbl}.id = resource.subid;"
+#      qry << "INSERT INTO resourcegroupmembers (resourceid, resourcegroupid) SELECT resource.id, resourcegroup.id FROM resourcegroup, resource, #{@maintbl} WHERE #{@maintbl}.name = #{resource[:name]} AND #{@maintbl}.id = resource.subid"
+#      if resource[:groups].is_a?(Array)
+#        qry << " AND ("
+#        resource[:groups].each { |group|
+#          qry << "resourcegroup.name = #{group} OR "
+#        }
+#        qry.chomp!(" OR")
+#        qry << ")"
+#      else
+#        qry << " AND resourcegroup.name = #{resource[:groups]}"
+#      end
+#      runQuery(qry)
+#      
+#    end
+#  end
 end
 
