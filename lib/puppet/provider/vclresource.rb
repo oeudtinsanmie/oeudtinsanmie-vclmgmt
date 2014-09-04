@@ -2,6 +2,7 @@ class Puppet::Provider::Vclresource < Puppet::Provider
   @@db = nil
   @@cmd_base = nil
   
+  initvars
   commands :mysql => '/usr/bin/mysql'
   
   def initialize(value={})
@@ -10,11 +11,16 @@ class Puppet::Provider::Vclresource < Puppet::Provider
     if (@@db == nil) then
       vcldconf = File.new("/etc/vcl/vcld.conf", "r")
       while(@@db == nil and line = vcldconf.gets)
-        if (line.starts_with? "database") then
+        if (line.start_with? "database") then
           @@db = line.split('=').at(1).strip.delete("'")
         end
       end
-      @@cmd_base = [ "--defaults-extra-file=/root/.my.conf", "-D", @@db, "-NBe" ]
+      if File.file?("#{Facter.value(:root_home)}/.my.cnf")
+        @@cmd_base = [ "--defaults-extra-file=#{Facter.value(:root_home)}/.my.cnf" ]
+      else
+        @@cmd_base = []
+      end 
+      @@cmd_base += [ "-D", @@db, "-NBe" ]
     end
   end
   
@@ -122,7 +128,8 @@ class Puppet::Provider::Vclresource < Puppet::Provider
   
   def self.runQuery (qry)
     begin
-      output = mysql(@@cmd_base + [ qry ]).strip
+      cmd_list = @@cmd_base + [ "\"#{qry}\"" ]
+      output = mysql(cmd_list).strip
     rescue Puppet::ExecutionFailure => e
       raise Puppet::DevError, "mysql #{cmd_list.join(' ')} had an error -> #{e}"
     end
