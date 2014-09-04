@@ -1,5 +1,5 @@
-require File.expand_path(File.join(File.dirname(__FILE__), '..', 'vclobject'))
-Puppet::Type.type(:vcl_image).provide(:mysql, :parent => Puppet::Provider::Vclobject) do
+require File.expand_path(File.join(File.dirname(__FILE__), '..', 'vclresource'))
+Puppet::Type.type(:vcl_image).provide(:mysql, :parent => Puppet::Provider::Vclresource) do
 
   @maintbl = "image"
   @columns = {
