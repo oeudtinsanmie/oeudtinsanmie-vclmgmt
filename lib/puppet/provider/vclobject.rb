@@ -80,16 +80,7 @@ class Puppet::Provider::Vclobject < Puppet::Provider
     
     qry << " resource.subid=#{@@maintbl}.id AND resourcegroupmembers.resourceid=resource.id AND resourcegroup.id=resourcegroupmembers.resourcegroupid GROUP BY image.id"
     
-    cmd_list = @@cmd_base + [ qry ]
-
-    begin
-      output = mysql(cmd_list)
-    rescue Puppet::ExecutionFailure => e
-      Puppet.debug "mysql had an error -> #{e.inspect}"
-      return {}
-    end
-
-    output.split("\n")
+    runCommand(@@cmd_base + [ qry ]).split("\n")
   end
   
   def self.make_hash(obj_str)
@@ -164,6 +155,21 @@ class Puppet::Provider::Vclobject < Puppet::Provider
     "'#{resource[param]}'"
   end
   
+  def self.nextId (tbl) 
+    cmd_list = @@cmd_base + [ "SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '#{@@db}' AND TABLE_NAME = '#{tbl}'" ]
+    
+    nextid = runCommand(cmd_list)
+  end
+  
+  def self.runCommand (cmd_list)
+    begin
+      output = mysql(cmd_list).strip
+    rescue Puppet::ExecutionFailure => e
+      raise Puppet::DevError, "mysql #{cmd_list.join(' ')} had an error -> #{e}"
+    end
+    output
+  end
+
   def flush
     if (@property_flush and @property_flush[:ensure] == :absent)
       # remove rows
@@ -174,23 +180,9 @@ class Puppet::Provider::Vclobject < Puppet::Provider
       qry << "DELETE FROM resource WHERE resourcetypeid = resourcetype.id AND resourcetype.name=#{@@resourcetype} AND resource.subid NOT IN (SELECT id FROM #{@@maintbl}); "
       qry << "DELETE FROM resourcegroupmembers WHERE resourceid NOT IN (SELECT id FROM resource)"
 
-      cmd_list = @@cmd_base + [ qry ]
-      begin
-        mysql(cmd_list)
-      rescue Puppet::ExecutionFailure => e
-        raise Puppet::Error, "mysql #{cmd_list} failed to run: #{e}"
-      end
+      runCommand(@@cmd_base + [ qry ])
     else if (@property_flush and @property_flush[:ensure] == :present)
       # add base image
-      qry  = "SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '#{@@db}' AND TABLE_NAME = '#{@@maintbl}'"
-      
-      cmd_list = @@cmd_base + [ qry ]
-      begin
-        objid = mysql(cmd_list).strip
-      rescue Puppet::ExecutionFailure => e
-        raise Puppet::DevError, "mysql #{cmd_list.join(' ')} had an error -> #{e}"
-      end
-
       qry  = "INSERT INTO #{@@maintbl} (id, "
       vals = ""
       @@columns[@@maintbl].each { |col, param| 
@@ -224,21 +216,37 @@ class Puppet::Provider::Vclobject < Puppet::Provider
         qry << ")"
       end
 
-      qry << "; "
-      qry << "INSERT INTO imagerevision (id, imageid, revision, userid, datecreated, production, imagename) "
-      qry <<                    "VALUES (NULL, '#{imageid}', '1', '1', NOW(), '1', '#{resource[:name]}' ); "
-      qry << "INSERT INTO resource (id, resourcetypeid, subid) VALUES (NULL, '13', '#{imageid}');"
+      objid = nextId(@@maintbl)
+      runCommand(@@cmd_base + [ qry ])
+      
+      # FIX THIS!!!
+      if @@revtbl
+        qry = "INSERT INTO #{@@revtbl} (id, #{@@maintbl}id, revision, userid, datecreated, production, imagename) "
+        qry <<                    "VALUES (NULL, '#{objid}', '1', '1', NOW(), '1', '#{resource[:name]}' ); "
+      end
+      runCommand(@@cmd_base + [ qry ])
+      
+      qry = "INSERT INTO resource (id, resourcetypeid, subid) SELECT NULL, resourcetype.id, '#{objid}' FROM resourcetype WHERE resourcetype.name = #{@@resourcetype};"
+      resid = nextId("resource")
+      runCommand(@@cmd_base + [ qry ])
+      
+      qry = "INSERT INTO resourcegroupmembers (resourceid, resourcegroupid) SELECT #{resid}, resourcegroup.id FROM resourcegroup WHERE "
+      if resource[:groups].is_a?(Array)
+        resource[:groups].each { |group|
+          qry << "resourcegroup.name = #{group} OR "
+        }
+        qry.chomp!(" OR")
+      else
+        qry << "resourcegroup.name = #{resource[:groups]}"
+      end
+      runCommand(@@cmd_base + [ qry ])
 
+      ## FIX THIS!!!
       if resource[:deleted] then
-        qry << " UPDATE imagerevision SET deleted = '1', datedeleted = NOW() WHERE imageid = (SELECT id FROM image WHERE name = '#{resource[:name]}'); "
+        qry = " UPDATE imagerevision SET deleted = '1', datedeleted = NOW() WHERE imageid = (SELECT id FROM image WHERE name = '#{resource[:name]}'); "
       end
-
-      cmd_list = @@cmd_base + [ qry ]
-      begin
-        mysql(cmd_list)
-      rescue Puppet::ExecutionFailure => e
-        raise Puppet::Error, "mysql #{cmd_list} failed to run: #{e}"
-      end
+      runCommand(@@cmd_base + [ qry ])
+      
     else
       # change existing definition
       qry = "UPDATE #{@@tbls.join(", ")} SET"
