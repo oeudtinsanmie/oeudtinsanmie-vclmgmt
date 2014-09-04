@@ -24,6 +24,24 @@ class Puppet::Provider::Vclresource < Puppet::Provider
     end
   end
   
+  def self.vcldb
+    vcldconf = File.new("/etc/vcl/vcld.conf", "r")
+    while(line = vcldconf.gets)
+      if (line.start_with? "database") then
+        return line.split('=').at(1).strip.delete("'")
+      end
+    end
+  end
+  
+  def self.cmd_base
+    if File.file?("#{Facter.value(:root_home)}/.my.cnf")
+      cmd_base = [ "--defaults-extra-file=#{Facter.value(:root_home)}/.my.cnf" ]
+    else
+      cmd_base = []
+    end 
+    cmd_base += [ "-D", @@db, "-NBe" ]
+  end
+  
   def self.instances
     list_obj.collect { |obj|
       begin
@@ -128,7 +146,7 @@ class Puppet::Provider::Vclresource < Puppet::Provider
   
   def self.runQuery (qry)
     begin
-      cmd_list = @@cmd_base + [ "\"#{qry}\"" ]
+      cmd_list = cmd_base + [ "\"#{qry}\"" ]
       output = mysql(cmd_list).strip
     rescue Puppet::ExecutionFailure => e
       raise Puppet::DevError, "mysql #{cmd_list.join(' ')} had an error -> #{e}"
