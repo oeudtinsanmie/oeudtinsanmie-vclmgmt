@@ -129,7 +129,7 @@ Puppet::Type.newtype(:vcl_image) do
   
   newproperty(:reloadtime) do
     desc ''
-    
+    defaultto 10
   end
   
   newproperty(:test) do

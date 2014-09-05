@@ -39,19 +39,19 @@ class Puppet::Provider::Vclresource < Puppet::Provider
   def self.list_obj
     qry = "SELECT "
     
-    @columns.keys.each { |tbl|
-      @columns[tbl].each { |col, param|
+    @@columns.keys.each { |tbl|
+      @@columns[tbl].each { |col, param|
         qry << "#{tbl}.#{col}, "
       }
     }
     
-    qry << "GROUP_CONCAT(resourcegroup.name SEPARATOR ',') FROM #{@columns.keys.join(", ")}, resource, resourcegroup, resourcegroupmembers"
+    qry << "GROUP_CONCAT(resourcegroup.name SEPARATOR ',') FROM #{@@columns.keys.join(", ")}, resource, resourcegroup, resourcegroupmembers"
     qry << " WHERE"
-    @wheres.each { |key, val|
+    @@wheres.each { |key, val|
       qry << " #{key}=#{val} AND"
     }
     
-    qry << " resource.subid=#{@maintbl}.id AND resourcegroupmembers.resourceid=resource.id AND resourcegroup.id=resourcegroupmembers.resourcegroupid GROUP BY image.id"
+    qry << " resource.subid=#{@@maintbl}.id AND resourcegroupmembers.resourceid=resource.id AND resourcegroup.id=resourcegroupmembers.resourcegroupid GROUP BY image.id"
     
     runQuery(qry.split("\n"))
   end
@@ -67,12 +67,20 @@ class Puppet::Provider::Vclresource < Puppet::Provider
     
     inst_hash[:ensure] = :present
     i = 0
-    @columns.keys.each { |tbl|
-      @columns[tbl].each { |col, param|
+    @@columns.keys.each { |tbl|
+      @@columns[tbl].each { |col, param|
         if (hash_list[i].include? ",") then
-          inst_hash[param] = hash_list[i].strip.split(",")
+          inst_hash[param[0]] = hash_list[i].strip.split(",")
         else
-          inst_hash[param] = hash_list[i].strip
+          if (param[1] === :tinybool) then
+            if (hash_list[i] == '1') then
+              inst_hash[param[0]] = :true
+            else
+              inst_hash[param[0]] = :false
+            end
+          else
+            inst_hash[param[0]] = hash_list[i].strip
+          end
         end
         i = i+1
       }
@@ -84,13 +92,6 @@ class Puppet::Provider::Vclresource < Puppet::Provider
     end
     
     inst_hash.merge!(inst_hash) { |key, oldval, val| val == 'NULL' ? nil : val }
-    @tinyintbools.each { |key|
-      if (inst_hash[key] == '1') then
-        inst_hash[key] = :true
-      else
-        inst_hash[key] = :false
-      end
-    }
     
     Puppet::Util::symbolizehash(inst_hash)
   end
@@ -115,17 +116,24 @@ class Puppet::Provider::Vclresource < Puppet::Provider
     @property_flush[:ensure] = :absent
   end
   
-  def self.paramVal (param)
-    if (@tinyintbools.include?(param)) then
-      if (resource[param] == :true) then
-        return "'1'"
-      else
-        return "'0'"
-      end
-    elsif (resource[param] == nil) then
+  def paramVal (param)
+    if (resource[param[0]] == nil) then
       return "NULL"
     end
-    "'#{resource[param]}'" 
+    case param[1]
+      when :tinybool
+        if (resource[param[0]] == :true) then
+          1
+        else
+          0
+        end
+      when :string
+        "'#{resource[param[0]]}'" 
+      when :numeric
+        resource[param[0]]
+      else
+        raise Puppet::DevError, "Unknown parameter type: #{param[2]}"
+    end
   end
   
   def self.runQuery (qry)
@@ -140,7 +148,7 @@ class Puppet::Provider::Vclresource < Puppet::Provider
   end
   
   def insertGroupMembersQry
-    qry = "INSERT INTO resourcegroupmembers (resourceid, resourcegroupid) SELECT resource.id, resourcegroup.id FROM resourcegroup, resource, #{@maintbl} WHERE #{@maintbl}.name='#{resource[:name]}' AND #{@maintbl}.id=resource.subid"
+    qry = "INSERT INTO resourcegroupmembers (resourceid, resourcegroupid) SELECT resource.id, resourcegroup.id FROM resourcegroup, resource, #{@@maintbl} WHERE #{@@maintbl}.name='#{resource[:name]}' AND #{@@maintbl}.id=resource.subid"
     if (resource[:groups].is_a?(Array)) then
       qry << " AND ("
       resource[:groups].each { |group|
@@ -148,47 +156,47 @@ class Puppet::Provider::Vclresource < Puppet::Provider
       }
       qry.chomp!(" OR ")
       qry << ")"
-      Puppet.debug "Adding #{resource[:name]} to groups [ #{resource[:groups].join(", ")} ]"
     else
-      Puppet.debug "Adding #{resource[:name]} to groups [ #{resource[:groups]} ]"
       qry << " AND resourcegroup.name='#{resource[:groups]}'"
     end
     qry
   end
   
   def flush
-    if (@property_flush[:ensure] == :absent) then
+    Puppet.debug "Flushing #{resource[:name]}"
+    if (@property_flush[:ensure] === :absent) then
       # remove rows
-      qry =  "DELETE FROM #{maintbl} WHERE name = '#{resource[:name]}'; "
-      qry << "DELETE FROM resource WHERE resourcetypeid = resourcetype.id AND resourcetype.name='#{@resourcetype}' AND resource.subid NOT IN (SELECT d FROM #{@maintbl}); "
+      Puppet.debug "Deleting #{resource[:name]}"
+      qry =  "DELETE FROM #{@@maintbl} WHERE name = '#{resource[:name]}'; "
+      qry << "DELETE FROM resource WHERE resource.resourcetypeid IN (SELECT resourcetype.id FROM resourcetype WHERE resourcetype.name='#{@@resourcetype}' ) AND resource.subid NOT IN (SELECT id FROM #{@@maintbl}); "
       qry << "DELETE FROM resourcegroupmembers WHERE resourceid NOT IN (SELECT id FROM resource)"
-      Puppet.debug "Deleting VCL Resource #{resource[:name]}"
-      runQuery(qry)
+      self.class.runQuery(qry)
       
-    elsif (@property_flush[:ensure == :present]) then
+    elsif (@property_flush[:ensure] === :present) then
       # add resource
-      qry = "INSERT INTO #{@maintbl} (id, "
+      Puppet.debug "Adding new VCL Resource: #{resource[:name]}"
+      qry = "INSERT INTO #{@@maintbl} (id, "
       vals = ""
-      @columns[@maintbl].each { |col, param|
-        qry  << "#{@maintbl}.#{col}, "
-        vals << "#{totabl}, "
+      @@columns[@@maintbl].each { |col, param|
+        qry  << "#{@@maintbl}.#{col}, "
+        vals << "#{paramVal(param)}, "
       }
-      @wheres.each { |linkid, totabl|
+      @@wheres.each { |linkid, totabl|
         qry  << "#{linkid}, "
         vals << "#{totabl}, "
       }
       
       qry.chomp!(", ")
       vals.chomp!(", ")
-      othertbls = @columns.keys
-      othertbls.delete(@maintbl)
+      othertbls = @@columns.keys
+      othertbls.delete(@@maintbl)
       if (othertbls.length > 0) then
         qry << ") SELECT NULL, "
         qry << vals 
         
         qry << " FROM #{othertbls.join(", ")} WHERE"
         othertbls.each { |tbl|
-          @columns[tbl].each { |col, param|
+          @@columns[tbl].each { |col, param|
             qry << " #{tbl}.#{col}=#{paramVal(param)} AND"
           }
         }
@@ -198,46 +206,45 @@ class Puppet::Provider::Vclresource < Puppet::Provider
         qry << vals
         qry << ")"
       end
-      Puppet.debug "Creating VCL Resource #{resource[:name]}"
-      runQuery(qry)
+      self.class.runQuery(qry)
       
       qry = "INSERT INTO resource (id, resourcetypeid, subid) SELECT NULL, resourcetype.id, #{@maintbl}.id FROM resourcetype, #{@maintbl} WHERE resourcetype.name='#{@resourcetype}' AND #{@maintbl}.name='#{resource[:name]}'"
 
       Puppet.debug "Adding recource entry for #{resource[:name]}"
-      runQuery(qry)
+      self.class.runQuery(qry)
       
-      runQuery(insertGroupMembersQry)
+      self.class.runQuery(insertGroupMembersQry)
       
     else
       # change existing definition
-      qry = "UPDATE #{columns.keys.join(", ")} SET"
-      @columns[@maintbl].each { |col, param|
-        qry << " #{@maintbl}.#{col}=#{paramVal(param)}"
+      Puppet.debug "Updating records for #{resource[:name]}"
+      qry = "UPDATE #{@@columns.keys.join(", ")} SET"
+      @@columns[@@maintbl].each { |col, param|
+        qry << " #{@@maintbl}.#{col}=#{paramVal(param)}"
       }
-      @wheres.each { |linkid, totabl|
+      @@wheres.each { |linkid, totabl|
         qry << " #{linkid}=#{totabl}"
       }
       qry.chomp!(",")
-      othertbls = @columns.keys
-      othertbls.delete(@maintbl)
+      othertbls = @@columns.keys
+      othertbls.delete(@@maintbl)
       if (othertbls.length > 0) then
         qry << " WHERE"
         othertbls.each { |tbl|
-          @columns[tbl].each { |col, param|
+          @@columns[tbl].each { |col, param|
             qry << " #{tbl}.#{col}=#{paramVal(param)} AND"
           }
         }
-        qry <<        " #{@maintbl}.name='#{resource[:name]}'"
+        qry <<        " #{@@maintbl}.name='#{resource[:name]}'"
       else
-        qry << " WHERE  #{@maintbl}.name='#{resource[:name]}'"
+        qry << " WHERE  #{@@maintbl}.name='#{resource[:name]}'"
       end
-      Puppet.debug "Refreshing VCL Resource #{resource[:name]}"
-      runQuery(qry)
+      self.class.runQuery(qry)
       
       Puppet.debug "Refreshing VCL Resource groups for #{resource[:name]}"
       qry =  "DELETE FROM resourcegroupmembers WHERE resourceid=resource.id AND #{@maintbl}.name='#{resource[:name]}' AND #{@maintbl}.id=resource.subid; "
       qry << insertGroupMembersQry
-      runQuery(qry)
+      self.class.runQuery(qry)
     end
   end
 end
