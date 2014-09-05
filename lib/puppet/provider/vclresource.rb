@@ -129,6 +129,7 @@ class Puppet::Provider::Vclresource < Puppet::Provider
   end
   
   def self.runQuery (qry)
+    Puppet.debug "Executing SQL query: \"#{qry}\""
     begin
       cmd_list = cmd_base + [ qry ]
       output = mysql(cmd_list).strip
@@ -147,7 +148,9 @@ class Puppet::Provider::Vclresource < Puppet::Provider
       }
       qry.chomp!(" OR ")
       qry << ")"
+      Puppet.debug "Adding #{resource[:name]} to groups [ #{resource[:groups].join(", ")} ]"
     else
+      Puppet.debug "Adding #{resource[:name]} to groups [ #{resource[:groups]} ]"
       qry << " AND resourcegroup.name='#{resource[:groups]}'"
     end
     qry
@@ -159,6 +162,7 @@ class Puppet::Provider::Vclresource < Puppet::Provider
       qry =  "DELETE FROM #{maintbl} WHERE name = '#{resource[:name]}'; "
       qry << "DELETE FROM resource WHERE resourcetypeid = resourcetype.id AND resourcetype.name='#{@resourcetype}' AND resource.subid NOT IN (SELECT d FROM #{@maintbl}); "
       qry << "DELETE FROM resourcegroupmembers WHERE resourceid NOT IN (SELECT id FROM resource)"
+      Puppet.debug "Deleting VCL Resource #{resource[:name]}"
       runQuery(qry)
       
     elsif (@property_flush[:ensure == :present]) then
@@ -194,9 +198,12 @@ class Puppet::Provider::Vclresource < Puppet::Provider
         qry << vals
         qry << ")"
       end
+      Puppet.debug "Creating VCL Resource #{resource[:name]}"
       runQuery(qry)
       
       qry = "INSERT INTO resource (id, resourcetypeid, subid) SELECT NULL, resourcetype.id, #{@maintbl}.id FROM resourcetype, #{@maintbl} WHERE resourcetype.name='#{@resourcetype}' AND #{@maintbl}.name='#{resource[:name]}'"
+
+      Puppet.debug "Adding recource entry for #{resource[:name]}"
       runQuery(qry)
       
       runQuery(insertGroupMembersQry)
@@ -224,8 +231,10 @@ class Puppet::Provider::Vclresource < Puppet::Provider
       else
         qry << " WHERE  #{@maintbl}.name='#{resource[:name]}'"
       end
+      Puppet.debug "Refreshing VCL Resource #{resource[:name]}"
       runQuery(qry)
       
+      Puppet.debug "Refreshing VCL Resource groups for #{resource[:name]}"
       qry =  "DELETE FROM resourcegroupmembers WHERE resourceid=resource.id AND #{@maintbl}.name='#{resource[:name]}' AND #{@maintbl}.id=resource.subid; "
       qry << insertGroupMembersQry
       runQuery(qry)
