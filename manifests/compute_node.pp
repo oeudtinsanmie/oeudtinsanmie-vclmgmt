@@ -4,7 +4,7 @@ define vclmgmt::compute_node(
 	$tgt_ip, 
 	$tgt_mac, 
 	$tgt_if, 
-	$groups = [ "ipmi, "compute", "all" ],
+	$groups = [ "ipmi", "compute", "all" ],
 
 #	$tgt_net, 
 #	$tgt_domain,
