@@ -208,7 +208,7 @@ class Puppet::Provider::Vclresource < Puppet::Provider
       end
       self.class.runQuery(qry)
       
-      qry = "INSERT INTO resource (id, resourcetypeid, subid) SELECT NULL, resourcetype.id, #{@maintbl}.id FROM resourcetype, #{@maintbl} WHERE resourcetype.name='#{@resourcetype}' AND #{@maintbl}.name='#{resource[:name]}'"
+      qry = "INSERT INTO resource (id, resourcetypeid, subid) SELECT NULL, resourcetype.id, #{self.class.maintbl}.id FROM resourcetype, #{self.class.maintbl} WHERE resourcetype.name='#{@resourcetype}' AND #{self.class.maintbl}.name='#{resource[:name]}'"
 
       Puppet.debug "Adding recource entry for #{resource[:name]}"
       self.class.runQuery(qry)
@@ -242,7 +242,7 @@ class Puppet::Provider::Vclresource < Puppet::Provider
       self.class.runQuery(qry)
       
       Puppet.debug "Refreshing VCL Resource groups for #{resource[:name]}"
-      qry =  "DELETE FROM resourcegroupmembers WHERE resourceid=resource.id AND #{@maintbl}.name='#{resource[:name]}' AND #{@maintbl}.id=resource.subid; "
+      qry =  "DELETE FROM resourcegroupmembers WHERE resourceid=resource.id AND #{self.class.maintbl}.name='#{resource[:name]}' AND #{self.class.maintbl}.id=resource.subid; "
       qry << insertGroupMembersQry
       self.class.runQuery(qry)
     end
