@@ -93,6 +93,8 @@ class vclmgmt::params {
     			"perl-YAML", 
     			"xmlsec1-openssl",
 			"xCAT.x86_64",
+			"OpenIPMI",
+			"ipmitool",
     		]
             	$pkg_exclude = [ ]
             	$service_list = { 

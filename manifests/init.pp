@@ -350,6 +350,7 @@ class vclmgmt(
         }
 
         Exec["makehosts"] <~ Vclmgmt::Compute_node <| |>
+        Exec["makehosts"] <~ Vclmgmt::Xcat_pod <| |>
 	
 	Yumrepo <| tag == "vclrepos" |> -> Package <| tag == "vclinstall" |> -> Vclmgmt::Cpan <| |> -> Subversion::Checkout[ 'vcl'] 
     	Archive ["dojo-release-${dojo}"] -> File <| tag == "vclpostfiles" and tag != "postcopy" |> -> Vclmgmt::Vclcopy <| |> -> File <| tag == "postcopy" |> -> Mysql::Db[$vcldb] -> Exec['genkeys'] -> Service <| name == $vclmgmt::params::service_list |>
@@ -360,6 +361,7 @@ class vclmgmt(
 	Class['mysql::server']-> Mysql::Db[$vcldb]
 	Package<| |> -> Xcat_site_attribute <| |> ~> Service['xcatd']
 
-	Xcat_network <| |> -> Xcat_node<| |>
+	Xcat_network <| |> -> Xcat_node<| |> -> Package <| |>
+
 }
 
