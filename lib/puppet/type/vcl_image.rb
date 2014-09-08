@@ -14,6 +14,7 @@ Puppet::Type.newtype(:vcl_image) do
   
   newproperty(:groups, :array_matching => :all) do
     desc 'resource groups this image belogs to. Valid groups are allImages, newimages, newvmimages, allVMimages'
+    defaultto :allImages
     def insync?(is)
       # The current value may be nil and we don't
       # want to call sort on it so make sure we have arrays 
@@ -24,16 +25,19 @@ Puppet::Type.newtype(:vcl_image) do
         is == @should
       end
     end
-    validate do |values|
+    validate do |value|
+      if (value == nil) then 
+        return
+      end
       if value.is_a?(Array)
         value.each { |val|
           if ![ :allImages, :newimages, :newvmimages, :allVMimages ].include? val
-            raise ArgumentError, "%s is not a valid group for images.  Please use allImages, newimages, newvmimages and/or allVMimages"
+            raise ArgumentError, "#{val} is not a valid group for images.  Please use allImages, newimages, newvmimages and/or allVMimages"
           end
         }
       else
         if ![ :allImages, :newimages, :newvmimages, :allVMimages ].include? value
-          raise ArgumentError, "%s is not a valid group for images.  Please use allImages, newimages, newvmimages and/or allVMimages"
+          raise ArgumentError, "#{value} is not a valid group for images.  Please use allImages, newimages, newvmimages and/or allVMimages"
         end
       end
     end
