@@ -47,7 +47,7 @@ Puppet::Type.type(:vcl_image).provide(:mysql, :parent => Puppet::Provider::Vclre
       self.class.runQuery(qry)
     end
     
-    super.flush
+    super
     
     if (@property_flush[:ensure] == :absent) then
       # remove rows 
