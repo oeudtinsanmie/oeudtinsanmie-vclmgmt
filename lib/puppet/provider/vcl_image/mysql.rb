@@ -43,18 +43,20 @@ Puppet::Type.type(:vcl_image).provide(:mysql, :parent => Puppet::Provider::Vclre
 
   def flush
     super.flush
-    if (@property_flush[:ensure] == :absent)
+    
+    if (@property_flush[:ensure] == :absent) then
       # remove rows 
       qry = "DELETE FROM imagerevision WHERE imageid NOT IN (SELECT id FROM image)"
       runQuery(qry)
     else 
-      if (@property_flush[:ensure] == :present)
+      if (@property_flush[:ensure] == :present) then
         qry =  "INSERT INTO imagerevision (id, imageid, revision, userid, datecreated, production, imagename) "
         qry <<                    "SELECT NULL, image.id, '1', '1', NOW(), '1', '#{resource[:name]}' FROM image WHERE image.name='#{resource[:name]}'"
         runQuery(qry)
       end
-      if @property_flush[:deleted] then
+      if (@property_flush[:deleted] == :true) then
         qry << " UPDATE imagerevision SET deleted = '1', datedeleted = NOW() WHERE imageid = (SELECT id FROM image WHERE name = '#{resource[:name]}'); "
+        runQuery(qry)
    	  end
    	end
   end
