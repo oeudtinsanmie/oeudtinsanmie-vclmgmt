@@ -208,7 +208,7 @@ class Puppet::Provider::Vclresource < Puppet::Provider
       end
       self.class.runQuery(qry)
       
-      qry = "INSERT INTO resource (id, resourcetypeid, subid) SELECT NULL, resourcetype.id, #{self.class.maintbl}.id FROM resourcetype, #{self.class.maintbl} WHERE resourcetype.name='#{@resourcetype}' AND #{self.class.maintbl}.name='#{resource[:name]}'"
+      qry = "INSERT INTO resource (id, resourcetypeid, subid) SELECT NULL, resourcetype.id, #{self.class.maintbl}.id FROM resourcetype, #{self.class.maintbl} WHERE resourcetype.name='#{self.class.resourcetype}' AND #{self.class.maintbl}.name='#{resource[:name]}'"
 
       Puppet.debug "Adding recource entry for #{resource[:name]}"
       self.class.runQuery(qry)
