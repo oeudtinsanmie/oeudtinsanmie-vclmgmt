@@ -38,6 +38,7 @@ class vclmgmt(
 	$pods 		= undef,
     	$vcldir 	= $vclmgmt::params::vcldir,
     	$dojo		= $vclmgmt::params::dojo,
+    	$dojo_checksum	= $vclmgmt::params::dojo_checksum,
     	$vclweb 	= $vclmgmt::params::vclweb,
     	$vclnode 	= $vclmgmt::params::vclnode,
     	$vclimages	= "${vcldir}/images",
@@ -80,7 +81,11 @@ class vclmgmt(
 		"images" => {
 			path	=> $vclimages,
 			ensure 	=> "directory",
-		}
+		},
+		"etcvcl" => {
+			path	=> "/etc/vcl",
+			ensure	=> "directory",
+		},
 	}
 	
 	$vclcopyfiles = {
@@ -193,6 +198,15 @@ class vclmgmt(
 	}
 	
 	vclmgmt::cpan { $vclmgmt::params::cpan_list: }
+
+	# These files really should be served somewhere from the VCL project
+	# Temporary workarounds:
+	define vclmgmt::regexfile ($root, $tgt) {
+		file { $name :
+			source 	=> "puppet:///modules/vclmgmt/${tgt}/${name}",
+			path	=> "${root}/${tgt}/${name}",
+		} 		
+	}
 	
 	file { $vcldir :
 		ensure  => "directory",
@@ -209,6 +223,17 @@ class vclmgmt(
 		target	=> "${vcldir}/web/",
 		ensure 	=> present,
 	    	timeout => 0,
+		checksum=> $dojo_checksum,
+	} 
+
+	vclmgmt::regexfile { $vcldojo : 
+		root => "${$vcldir}/web/dojo-release-${dojo}",
+		tgt  => "dojo",
+	}
+
+	vclmgmt::regexfile { $vcldojonls : 
+		root => "${$vcldir}/web/dojo-release-${dojo}",
+		tgt  => "dojo/nls",
 	}
 	
 	create_resources(file, $postfiles, { tag => "vclpostfiles", })
@@ -352,16 +377,16 @@ class vclmgmt(
         Exec["makehosts"] <~ Vclmgmt::Compute_node <| |>
         Exec["makehosts"] <~ Vclmgmt::Xcat_pod <| |>
 	
-	Yumrepo <| tag == "vclrepos" |> -> Package <| tag == "vclinstall" |> -> Vclmgmt::Cpan <| |> -> Subversion::Checkout[ 'vcl'] 
+	Yumrepo <| tag == "vclrepos" |> -> Package <| tag == "vclinstall" |> -> Subversion::Checkout[ 'vcl'] ~> Vclmgmt::Cpan <| |>
     	Archive ["dojo-release-${dojo}"] -> File <| tag == "vclpostfiles" and tag != "postcopy" |> -> Vclmgmt::Vclcopy <| |> -> File <| tag == "postcopy" |> -> Mysql::Db[$vcldb] -> Exec['genkeys'] -> Service <| name == $vclmgmt::params::service_list |>
     
     	File['vcldconf'] ~> Service['vcld']
     	Subversion::Checkout['vcl'] ~> Vclmgmt::Vclcopy <| |>
     
 	Class['mysql::server']-> Mysql::Db[$vcldb]
-	Package<| |> -> Xcat_site_attribute <| |> ~> Service['xcatd']
+	Package <| |> -> Xcat_site_attribute <| |> ~> Service['xcatd']
 
-	Xcat_network <| |> -> Xcat_node<| |> -> Package <| |>
+	Package <| |> -> Xcat_network <| |> -> Xcat_node<| |>
 
+	Archive[ "dojo-release-${dojo}" ] ~> Vclmgmt::Regexfile <| |>
 }
-
