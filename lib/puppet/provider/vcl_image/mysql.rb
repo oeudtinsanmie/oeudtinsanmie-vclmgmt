@@ -1,35 +1,43 @@
 require File.expand_path(File.join(File.dirname(__FILE__), '..', 'vclresource'))
 Puppet::Type.type(:vcl_image).provide(:mysql, :parent => Puppet::Provider::Vclresource) do
 
-  @@resourcetype = "image"
-  @@maintbl = "image"
-  @@columns = {
-    "image"     => { 
-      "name"          => [ :name, 		:string   ],
-      "prettyname"    => [ :prettyname, 	:string   ],
-      "minram"        => [ :minram, 		:numeric  ],
-      "minprocnumber" => [ :minprocnumber, 	:numeric  ],
-      "minprocspeed"  => [ :minprocspeed, 	:numeric  ],
-      "minnetwork"    => [ :minnetwork, 	:numeric  ],
-      "maxconcurrent" => [ :maxconcurrent, 	:numeric  ],
-      "reloadtime"    => [ :reloadtime, 	:numeric  ],
-      "deleted"       => [ :deleted, 		:tinybool ],
-      "test"          => [ :test, 		:tinybool ],
-      "lastupdate"    => [ :lastupdate, 	:string   ],
-      "forcheckout"   => [ :forcheckout, 	:tinybool ],
-      "project"       => [ :project, 		:string   ],
-      "size"          => [ :size, 		:numeric  ],
-      "architecture"  => [ :architecture, 	:string   ],
-      "description"   => [ :description, 	:string   ],
-      "usage"         => [ :usage, 		:string   ],
-    },
-    "OS"        => { "name" => [ :os, 		:string   ], },
-    "platform"  => { "name" => [ :platform, 	:string   ], },
-  }
-  @@wheres = { 
-    "image.osid" => "OS.id", 
-    "image.platformid" => "platform.id" 
-  }
+  def self.resourcetype 
+    "image"
+  end
+  def self.maintbl 
+    "image"
+  end
+  def self.columns 
+    {
+      "image"     => { 
+        "name"          => [ :name, 		:string   ],
+        "prettyname"    => [ :prettyname, 	:string   ],
+        "minram"        => [ :minram, 		:numeric  ],
+        "minprocnumber" => [ :minprocnumber, 	:numeric  ],
+        "minprocspeed"  => [ :minprocspeed, 	:numeric  ],
+        "minnetwork"    => [ :minnetwork, 	:numeric  ],
+        "maxconcurrent" => [ :maxconcurrent, 	:numeric  ],
+        "reloadtime"    => [ :reloadtime, 	:numeric  ],
+        "deleted"       => [ :deleted, 		:tinybool ],
+        "test"          => [ :test, 		:tinybool ],
+        "lastupdate"    => [ :lastupdate, 	:string   ],
+        "forcheckout"   => [ :forcheckout, 	:tinybool ],
+        "project"       => [ :project, 		:string   ],
+        "size"          => [ :size, 		:numeric  ],
+        "architecture"  => [ :architecture, 	:string   ],
+        "description"   => [ :description, 	:string   ],
+        "usage"         => [ :usage, 		:string   ],
+      },
+      "OS"        => { "name" => [ :os, 		:string   ], },
+      "platform"  => { "name" => [ :platform, 	:string   ], },
+    }
+  end
+  def self.wheres 
+    { 
+      "image.osid" => "OS.id", 
+      "image.platformid" => "platform.id" 
+    }
+  end
     
   mk_resource_methods
 

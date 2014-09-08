@@ -39,19 +39,19 @@ class Puppet::Provider::Vclresource < Puppet::Provider
   def self.list_obj
     qry = "SELECT "
     
-    @@columns.keys.each { |tbl|
-      @@columns[tbl].each { |col, param|
+    columns.keys.each { |tbl|
+      columns[tbl].each { |col, param|
         qry << "#{tbl}.#{col}, "
       }
     }
     
-    qry << "GROUP_CONCAT(resourcegroup.name SEPARATOR ',') FROM #{@@columns.keys.join(", ")}, resource, resourcegroup, resourcegroupmembers"
+    qry << "GROUP_CONCAT(resourcegroup.name SEPARATOR ',') FROM #{columns.keys.join(", ")}, resource, resourcegroup, resourcegroupmembers"
     qry << " WHERE"
-    @@wheres.each { |key, val|
+    wheres.each { |key, val|
       qry << " #{key}=#{val} AND"
     }
     
-    qry << " resource.subid=#{@@maintbl}.id AND resourcegroupmembers.resourceid=resource.id AND resourcegroup.id=resourcegroupmembers.resourcegroupid GROUP BY image.id"
+    qry << " resource.subid=#{maintbl}.id AND resourcegroupmembers.resourceid=resource.id AND resourcegroup.id=resourcegroupmembers.resourcegroupid GROUP BY image.id"
     
     runQuery(qry.split("\n"))
   end
@@ -67,8 +67,8 @@ class Puppet::Provider::Vclresource < Puppet::Provider
     
     inst_hash[:ensure] = :present
     i = 0
-    @@columns.keys.each { |tbl|
-      @@columns[tbl].each { |col, param|
+    columns.keys.each { |tbl|
+      columns[tbl].each { |col, param|
         if (hash_list[i].include? ",") then
           inst_hash[param[0]] = hash_list[i].strip.split(",")
         else
@@ -148,7 +148,7 @@ class Puppet::Provider::Vclresource < Puppet::Provider
   end
   
   def insertGroupMembersQry
-    qry = "INSERT INTO resourcegroupmembers (resourceid, resourcegroupid) SELECT resource.id, resourcegroup.id FROM resourcegroup, resource, #{@@maintbl} WHERE #{@@maintbl}.name='#{resource[:name]}' AND #{@@maintbl}.id=resource.subid"
+    qry = "INSERT INTO resourcegroupmembers (resourceid, resourcegroupid) SELECT resource.id, resourcegroup.id FROM resourcegroup, resource, #{self.class.maintbl} WHERE #{self.class.maintbl}.name='#{resource[:name]}' AND #{self.class.maintbl}.id=resource.subid"
     if (resource[:groups].is_a?(Array)) then
       qry << " AND ("
       resource[:groups].each { |group|
@@ -167,36 +167,36 @@ class Puppet::Provider::Vclresource < Puppet::Provider
     if (@property_flush[:ensure] === :absent) then
       # remove rows
       Puppet.debug "Deleting #{resource[:name]}"
-      qry =  "DELETE FROM #{@@maintbl} WHERE name = '#{resource[:name]}'; "
-      qry << "DELETE FROM resource WHERE resource.resourcetypeid IN (SELECT resourcetype.id FROM resourcetype WHERE resourcetype.name='#{@@resourcetype}' ) AND resource.subid NOT IN (SELECT id FROM #{@@maintbl}); "
+      qry =  "DELETE FROM #{self.class.maintbl} WHERE name = '#{resource[:name]}'; "
+      qry << "DELETE FROM resource WHERE resource.resourcetypeid IN (SELECT resourcetype.id FROM resourcetype WHERE resourcetype.name='#{self.class.resourcetype}' ) AND resource.subid NOT IN (SELECT id FROM #{self.class.maintbl}); "
       qry << "DELETE FROM resourcegroupmembers WHERE resourceid NOT IN (SELECT id FROM resource)"
       self.class.runQuery(qry)
       
     elsif (@property_flush[:ensure] === :present) then
       # add resource
       Puppet.debug "Adding new VCL Resource: #{resource[:name]}"
-      qry = "INSERT INTO #{@@maintbl} (id, "
+      qry = "INSERT INTO #{self.class.maintbl} (id, "
       vals = ""
-      @@columns[@@maintbl].each { |col, param|
-        qry  << "#{@@maintbl}.#{col}, "
+      self.class.columns[self.class.maintbl].each { |col, param|
+        qry  << "#{self.class.maintbl}.#{col}, "
         vals << "#{paramVal(param)}, "
       }
-      @@wheres.each { |linkid, totabl|
+      self.class.wheres.each { |linkid, totabl|
         qry  << "#{linkid}, "
         vals << "#{totabl}, "
       }
       
       qry.chomp!(", ")
       vals.chomp!(", ")
-      othertbls = @@columns.keys
-      othertbls.delete(@@maintbl)
+      othertbls = self.class.columns.keys
+      othertbls.delete(self.class.maintbl)
       if (othertbls.length > 0) then
         qry << ") SELECT NULL, "
         qry << vals 
         
         qry << " FROM #{othertbls.join(", ")} WHERE"
         othertbls.each { |tbl|
-          @@columns[tbl].each { |col, param|
+          self.class.columns[tbl].each { |col, param|
             qry << " #{tbl}.#{col}=#{paramVal(param)} AND"
           }
         }
@@ -218,26 +218,26 @@ class Puppet::Provider::Vclresource < Puppet::Provider
     else
       # change existing definition
       Puppet.debug "Updating records for #{resource[:name]}"
-      qry = "UPDATE #{@@columns.keys.join(", ")} SET"
-      @@columns[@@maintbl].each { |col, param|
-        qry << " #{@@maintbl}.#{col}=#{paramVal(param)}"
+      qry = "UPDATE #{self.class.columns.keys.join(", ")} SET"
+      self.class.columns[self.class.maintbl].each { |col, param|
+        qry << " #{self.class.maintbl}.#{col}=#{paramVal(param)}"
       }
-      @@wheres.each { |linkid, totabl|
+      self.class.wheres.each { |linkid, totabl|
         qry << " #{linkid}=#{totabl}"
       }
       qry.chomp!(",")
-      othertbls = @@columns.keys
-      othertbls.delete(@@maintbl)
+      othertbls = self.class.columns.keys
+      othertbls.delete(self.class.maintbl)
       if (othertbls.length > 0) then
         qry << " WHERE"
         othertbls.each { |tbl|
-          @@columns[tbl].each { |col, param|
+          self.class.columns[tbl].each { |col, param|
             qry << " #{tbl}.#{col}=#{paramVal(param)} AND"
           }
         }
-        qry <<        " #{@@maintbl}.name='#{resource[:name]}'"
+        qry <<        " #{self.class.maintbl}.name='#{resource[:name]}'"
       else
-        qry << " WHERE  #{@@maintbl}.name='#{resource[:name]}'"
+        qry << " WHERE  #{self.class.maintbl}.name='#{resource[:name]}'"
       end
       self.class.runQuery(qry)
       
