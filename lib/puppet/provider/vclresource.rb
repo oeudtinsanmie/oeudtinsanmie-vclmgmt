@@ -224,10 +224,10 @@ class Puppet::Provider::Vclresource < Puppet::Provider
       Puppet.debug "Updating records for #{resource[:name]}"
       qry = "UPDATE #{self.class.columns.keys.join(", ")} SET"
       self.class.columns[self.class.maintbl].each { |col, param|
-        qry << " #{self.class.maintbl}.#{col}=#{paramVal(param)}"
+        qry << " #{self.class.maintbl}.#{col}=#{paramVal(param)},"
       }
       self.class.wheres.each { |linkid, totabl|
-        qry << " #{linkid}=#{totabl}"
+        qry << " #{linkid}=#{totabl},"
       }
       qry.chomp!(",")
       othertbls = self.class.columns.keys
