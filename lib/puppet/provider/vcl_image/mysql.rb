@@ -42,6 +42,11 @@ Puppet::Type.type(:vcl_image).provide(:mysql, :parent => Puppet::Provider::Vclre
   mk_resource_methods
 
   def flush
+    if (resource[:deleted] == :true) then
+      qry = "UPDATE imagerevision, image SET deleted=1, datedeleted=NOW() WHERE imagerevision.imageid=image.id AND image.name='#{resource[:name]}' AND imagerevision.deleted!=1"
+      self.class.runQuery(qry)
+    end
+    
     super.flush
     
     if (@property_flush[:ensure] == :absent) then
@@ -54,10 +59,6 @@ Puppet::Type.type(:vcl_image).provide(:mysql, :parent => Puppet::Provider::Vclre
         qry <<                    "SELECT NULL, image.id, '1', '1', NOW(), '1', '#{resource[:name]}' FROM image WHERE image.name='#{resource[:name]}'"
         self.class.runQuery(qry)
       end
-      if (@property_flush[:deleted] == :true) then
-        qry << " UPDATE imagerevision SET deleted = '1', datedeleted = NOW() WHERE imageid = (SELECT id FROM image WHERE name = '#{resource[:name]}'); "
-        self.class.runQuery(qry)
-   	  end
    	end
   end
 end

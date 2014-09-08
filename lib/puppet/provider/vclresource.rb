@@ -249,6 +249,7 @@ class Puppet::Provider::Vclresource < Puppet::Provider
       qry =  "DELETE FROM resourcegroupmembers WHERE resourceid IN SELECT resource.id FROM resource, #{self.class.maintbl} WHERE #{self.class.maintbl}.name='#{resource[:name]}' AND #{self.class.maintbl}.id=resource.subid; "
       qry << insertGroupMembersQry
       self.class.runQuery(qry)
+      Puppet.debug "Done"
     end
   end
 end
