@@ -112,26 +112,31 @@ Puppet::Type.newtype(:vcl_image) do
     vmwareubuntu   | Ubuntu (VMware)                         | linux   | vmware'
     
     newvalues(:sun4x_58, :win2k, :rhel3, :winxp, :realmrhel3, :realmrhel4, :win2003, :rh3image, :rhel4, :rh4image, :fc5image, :rhfc5, :vmwarewinxp, :rhfc7, :fc7image, :rhel5, :esx35, :vmwareesxwinxp, :realmrhel5, :sun4x_510, :centos5, :rh5image, :rhfc9, :fc9image, :winvista, :centos5image, :ubuntuimage, :vmwarewin2008, :win2008, :vmwarewinvista, :win7, :vmwarewin7, :vmwarelinux, :vmwarewin2003, 'esxi4.1', :vmwareosx, :rhel6, :rh6image, :fedora16, :fedoraimage, :vmwareubuntu)
+    defaultto :centos5
   end
   
   newproperty(:minram) do
     desc ''
     
+    defaultto 0
   end
   
   newproperty(:minprocnumber) do
     desc ''
     
+    defaultto 0
   end
   
   newproperty(:minprocspeed) do
     desc ''
     
+    defaultto 0
   end
   
   newproperty(:minnetwork) do
     desc ''
     
+    defaultto 0
   end
     
   newproperty(:deleted) do
@@ -157,10 +162,6 @@ Puppet::Type.newtype(:vcl_image) do
     defaultto :false
   end
   
-  newproperty(:lastupdate) do
-    desc ''
-  end
-  
   newproperty(:forcheckout) do
     desc ''
     newvalues(:true, :false)
@@ -178,6 +179,7 @@ Puppet::Type.newtype(:vcl_image) do
   newproperty(:size) do
     desc ''
     
+    defaultto 0
   end
 
   newproperty(:architecture) do
