@@ -69,15 +69,8 @@ class Puppet::Provider::Vclresource < Puppet::Provider
     i = 0
     columns.keys.each { |tbl|
       columns[tbl].each { |col, param|
-        if (hash_list[i].include? "," and resource_type.validproperty? param[0]) then 
-          case (resource_type.property(param[0]).array_matching)
-            when :all
-              inst_hash[param[0]] = hash_list[i].split(",")
-            when :first
-              inst_hash[param[0]] = hash_list[i].split(",")[0]
-            else
-              raise Puppet::DevError, "Unsupported array matching scheme: #{resource_type.property(param[0]).array_matching}"
-          end
+        if (hash_list[i].include? ",") then 
+          inst_hash[param[0]] = hash_list[i].split(",")
         else
           if (param[1] == :tinybool) then
             if (hash_list[i] == '1') then
@@ -135,15 +128,8 @@ class Puppet::Provider::Vclresource < Puppet::Provider
           0
         end
       when :string
-        if (resource[param[0]].is_a?(Array) and resource_type.validproperty? param[0]) then 
-          case (resource_type.property(param[0]).array_matching)
-            when :all
-              "'#{resource[param[0]].join(',')}'"
-            when :first
-              "'#{resource[param[0]][0]}'"
-            else
-              raise Puppet::DevError, "Unsupported array matching scheme: #{resource_type.property(param[0]).array_matching}"
-          end
+        if (resource[param[0]].is_a?(Array)) then 
+          "'#{resource[param[0]].join(',')}'"
         else
           "'#{resource[param[0]]}'"
         end 
