@@ -32,10 +32,14 @@ Puppet::Type.type(:vcl_image).provide(:mysql, :parent => Puppet::Provider::Vclre
       "platform"  => { "name" => [ :platform, 	:string   ], },
     }
   end
-  def self.wheres 
+  def self.foreign_keys 
     { 
-      "image.osid" => "OS.id", 
-      "image.platformid" => "platform.id" 
+      "OS"        => {
+        "name" => [ "image.osid",           "OS.id"       ],
+      },
+      "platform"  => {
+        "name" => [ "computer.platformid",  "platform.id" ],
+      },
     }
   end
     

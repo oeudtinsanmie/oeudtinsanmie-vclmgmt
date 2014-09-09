@@ -44,15 +44,24 @@ class Puppet::Provider::Vclresource < Puppet::Provider
         qry << "#{tbl}.#{col}, "
       }
     }
-    
-    qry << "GROUP_CONCAT(resourcegroup.name SEPARATOR ',') FROM #{columns.keys.join(", ")}, resource, resourcegroup, resourcegroupmembers"
-    qry << " WHERE"
-    wheres.each { |key, val|
-      qry << " #{key}=#{val} AND"
+
+    othertbls = self.class.columns.keys
+    othertbls.delete(self.class.maintbl)
+
+    qry << "GROUP_CONCAT(resourcegroup.name SEPARATOR ',') FROM #{maintbl} INNER JOIN resource ON resource.subid=#{maintbl}.id INNER JOIN resourcegroupmembers ON resourcegroupmembers.resourceid=resource.id INNER JOIN resourcegroup ON resourcegroup.id=resourcegroupmembers.resourcegroupid"
+    foreign_keys.each { |tbl, lnks|
+      if (lnks.empty?) then 
+        raise Puppet::DevError, "Link missing foreign keys for #{tbl} in foreign_keys variable of vclresource child provider"
+      end
+      qry << " LEFT JOIN #{tbl} ON ("
+      lnks.each { |col, lnk|
+        qry << "#{lnk[0]}=#{lnk[1]} AND"
+      }
+      qry.chomp!(" AND")
+      qry << ")"
     }
     
-    qry << " resource.subid=#{maintbl}.id AND resourcegroupmembers.resourceid=resource.id AND resourcegroup.id=resourcegroupmembers.resourcegroupid GROUP BY image.id"
-    
+    qry << " GROUP BY image.id"
     runQuery(qry).split("\n")
   end
   
@@ -185,35 +194,44 @@ class Puppet::Provider::Vclresource < Puppet::Provider
       Puppet.debug "Adding new VCL Resource: #{resource[:name]}"
       qry = "INSERT INTO #{self.class.maintbl} (id, "
       vals = ""
+      whr = " WHERE"
+      
       self.class.columns[self.class.maintbl].each { |col, param|
         qry  << "#{self.class.maintbl}.#{col}, "
         vals << "#{paramVal(param)}, "
       }
-      self.class.wheres.each { |linkid, totabl|
-        qry  << "#{linkid}, "
-        vals << "#{totabl}, "
-      }
       
-      qry.chomp!(", ")
-      vals.chomp!(", ")
       othertbls = self.class.columns.keys
       othertbls.delete(self.class.maintbl)
       if (othertbls.length > 0) then
-        qry << ") SELECT NULL, "
-        qry << vals 
-        
-        qry << " FROM #{othertbls.join(", ")} WHERE"
         othertbls.each { |tbl|
           self.class.columns[tbl].each { |col, param|
-            qry << " #{tbl}.#{col}=#{paramVal(param)} AND"
+            if (resource[param[0]] == nil) then
+              qry  << " #{self.class.foreign_keys[tbl][col][0]},"
+              vals << "NULL,"
+            else
+              qry  << " #{self.class.foreign_keys[tbl][col][0]},"
+              vals << " #{self.class.foreign_keys[tbl][col][1]},"
+              whr  << " #{self.class.foreign_keys[tbl][col][1]}=#{paramVal(param)} AND"
+            end
           }
         }
-        qry.chomp!(" AND")
+      end
+      
+      qry.chomp!(", ")
+      vals.chomp!(", ")
+      if (whr.length > 6) then
+        whr.chomp!(" AND")
+        
+        qry << ") SELECT NULL, "
+        qry << vals
+        qry << whr
       else
         qry << ") VALUES (NULL, "
         qry << vals
         qry << ")"
-      end
+      end  
+      
       self.class.runQuery(qry)
       
       qry = "INSERT INTO resource (id, resourcetypeid, subid) SELECT NULL, resourcetype.id, #{self.class.maintbl}.id FROM resourcetype, #{self.class.maintbl} WHERE resourcetype.name='#{self.class.resourcetype}' AND #{self.class.maintbl}.name='#{resource[:name]}'"
@@ -230,23 +248,30 @@ class Puppet::Provider::Vclresource < Puppet::Provider
       self.class.columns[self.class.maintbl].each { |col, param|
         qry << " #{self.class.maintbl}.#{col}=#{paramVal(param)},"
       }
-      self.class.wheres.each { |linkid, totabl|
-        qry << " #{linkid}=#{totabl},"
-      }
-      qry.chomp!(",")
+      
       othertbls = self.class.columns.keys
       othertbls.delete(self.class.maintbl)
       if (othertbls.length > 0) then
-        qry << " WHERE"
+        whr = ""
         othertbls.each { |tbl|
           self.class.columns[tbl].each { |col, param|
-            qry << " #{tbl}.#{col}=#{paramVal(param)} AND"
+            if (resource[param[0]] == nil) then
+              qry << " #{self.class.foreign_keys[tbl][col][0]}=NULL"
+            else
+              qry << " #{self.class.foreign_keys[tbl][col][0]}=#{self.class.foreign_keys[tbl][col][1]},"
+              whr << " #{self.class.foreign_keys[tbl][col][1]}=#{paramVal(param)} AND"
+            end
           }
         }
-        qry <<        " #{self.class.maintbl}.name='#{resource[:name]}'"
+        whr << " #{self.class.maintbl}.name='#{resource[:name]}'"
       else
-        qry << " WHERE  #{self.class.maintbl}.name='#{resource[:name]}'"
+        whr = " WHERE  #{self.class.maintbl}.name='#{resource[:name]}'"
       end
+      
+      qry.chomp!(",")
+      qry << " WHERE"
+      qry << whr  
+      
       self.class.runQuery(qry)
       
       Puppet.debug "Refreshing VCL Resource groups for #{resource[:name]}"
