@@ -12,6 +12,8 @@ Puppet::Type.newtype(:vcl_image) do
     desc ''
   end
   
+  # This is a way of managing array properties stored as strings and whose order does not matter
+  # And so users can specify a one-entry list or a string, with the same result
   newproperty(:groups, :array_matching => :all) do
     desc 'resource groups this image belogs to. Valid groups are allImages, newimages, newvmimages, allVMimages'
     def insync?(is)
