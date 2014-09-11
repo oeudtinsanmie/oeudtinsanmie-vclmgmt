@@ -28,7 +28,7 @@ Puppet::Type.type(:vcl_image).provide(:mysql, :parent => Puppet::Provider::Vclre
         "description"   => [ :description, 	:string   ],
         "usage"         => [ :usage, 		:string   ],
       },
-      "OS"        => { "name" => [ :os, 		:string   ], },
+      "OS"        => { "name" => [ :os, 	:string   ], },
       "platform"  => { "name" => [ :platform, 	:string   ], },
     }
   end
@@ -38,7 +38,7 @@ Puppet::Type.type(:vcl_image).provide(:mysql, :parent => Puppet::Provider::Vclre
         "name" => [ "image.osid",           "OS.id"       ],
       },
       "platform"  => {
-        "name" => [ "computer.platformid",  "platform.id" ],
+        "name" => [ "image.platformid",  "platform.id" ],
       },
     }
   end
@@ -63,7 +63,7 @@ Puppet::Type.type(:vcl_image).provide(:mysql, :parent => Puppet::Provider::Vclre
         qry <<                    "SELECT NULL, image.id, '1', '1', NOW(), '1', '#{resource[:name]}' FROM image WHERE image.name='#{resource[:name]}'"
         self.class.runQuery(qry)
       end
-   	end
+    end
   end
 end
 

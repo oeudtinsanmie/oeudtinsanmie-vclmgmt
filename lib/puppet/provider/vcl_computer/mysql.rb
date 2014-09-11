@@ -1,11 +1,14 @@
 require File.expand_path(File.join(File.dirname(__FILE__), '..', 'vclresource'))
-Puppet::Type.type(:vcl_image).provide(:mysql, :parent => Puppet::Provider::Vclresource) do
+Puppet::Type.type(:vcl_computer).provide(:mysql, :parent => Puppet::Provider::Vclresource) do
 
   def self.resourcetype 
     "computer"
   end
   def self.maintbl 
     "computer"
+  end
+  def self.namevar
+    "hostname"
   end
   def self.columns 
     {
@@ -32,12 +35,12 @@ Puppet::Type.type(:vcl_image).provide(:mysql, :parent => Puppet::Provider::Vclre
       },
       "state"         => { "name"     => [ :state, 		      :string   ], },
       "platform"      => { "name"     => [ :platform,       :string   ], },
-      "schedule"      => { "name"     => [ :schedule,       :string   ], },
+      "schedule"      => { "name"     => [ :vclschedule,       :string   ], },
       "image"         => { "name"     => [ :image,          :string   ], },
-      "imagerevision" => { "name"     => [ :imagerevision,  :string   ], },
-      "provisioning"  => { "name"     => [ :provisioning,   :string   ], },
-      "vmhost"        => { "name"     => [ :vmhost,         :string   ], },
-      "vmtype"        => { "name"     => [ :vmtype,         :string   ], },
+      "imagerevision" => { "revision" => [ :imagerevision,  :numeric   ], },
+      "provisioning"  => { "prettyname"     => [ :provisioning,   :string   ], },
+#      "vmhost"        => { "name"     => [ :vmhost,         :string   ], },
+#      "vmtype"        => { "name"     => [ :vmtype,         :string   ], },
     }
   end
   def self.foreign_keys 
@@ -55,17 +58,17 @@ Puppet::Type.type(:vcl_image).provide(:mysql, :parent => Puppet::Provider::Vclre
         "name" => [ "computer.nextimageid",      "image.id"          ],
       },
       "imagerevision" => {
-        "name" => [ "computer.imagerevisionid",  "imagerevision.id"  ],
+        "revision" => [ "computer.imagerevisionid",  "imagerevision.id"  ],
       },
       "provisioning"  => {
-        "name" => [ "computer.provisioningid",   "provisioning.id"   ],
+        "prettyname" => [ "computer.provisioningid",   "provisioning.id"   ],
       },
-      "vmhost"        => {
-        "name" => [ "computer.vmhostid",         "vmhost.id"         ],
-      },
-      "vmtype"        => {
-        "name" => [ "computer.vmtypeid",         "vmtype.id"         ],
-      },
+#      "vmhost"        => {
+#        "name" => [ "computer.vmhostid",         "vmhost.id"         ],
+#      },
+#      "vmtype"        => {
+#        "name" => [ "computer.vmtypeid",         "vmtype.id"         ],
+#      },
     }
   end
     

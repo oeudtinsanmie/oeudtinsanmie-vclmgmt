@@ -1,5 +1,5 @@
 # This has to be a separate type to enable collecting
-Puppet::Type.newtype(:vcl_image) do
+Puppet::Type.newtype(:vcl_computer) do
   @doc = 'manages the mysql tables for a base image in vcl.'
 
   ensurable
@@ -160,27 +160,30 @@ Puppet::Type.newtype(:vcl_image) do
   
   newproperty(:state) do
     desc ''
+    newvalues(:available, :checkpoint, :classreserved, :cleaning, :complete, :deleted, :failed, :hpc, :image, :imageinuse, :imageprep, :inuse, :maintenance, :makeproduction, :new, :pending, :reboothard, :rebootsoft, :reinstall, :reload, :reloading, :reserved, :serverinuse, :servermodified, :timeout, :tohpc, :tomaintenance, :tovmhostinuse, :vmhostinuse)
+    defaultto :maintenance
   end
   
-  newproperty(:platform) do
+  newproperty(:vclschedule) do
     desc ''
-  end
-  
-  newproperty(:schedule) do
-    desc ''
+    defaultto "VCL 24x7"
   end
   
   newproperty(:image) do
     desc ''
+    defaultto :noimage
   end
   
   newproperty(:imagerevision) do
     desc ''
+    defaultto 0
   end
   
   newproperty(:provisioning) do
     desc ''
-  end
+     newvalues("xCAT 1.3", "Computing Lab", "xCAT 2.1", "xCAT 2.x", "VMware", "Virtual Box", "Libvirt Virtualization API", "None")
+    defaultto "xCAT 2.x"
+ end
   
   newproperty(:vmhost) do
     desc ''
