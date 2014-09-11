@@ -43,27 +43,41 @@ class Puppet::Provider::Vclresource < Puppet::Provider
   
   def self.list_obj
     qry = "SELECT "
+    frm = ""
     
-    columns.keys.each { |tbl|
-      columns[tbl].each { |col, param|
-        qry << "#{tbl}.#{col}, "
+    if (foreign_keys.empty?) then
+      columns.keys.each { |tbl|
+        columns[tbl].each { |col, param|
+          qry << "#{tbl}.#{col}, "
+        }
       }
-    }
+      qry << "GROUP_CONCAT(resourcegroup.name SEPARATOR ',') FROM #{maintbl}, resource, resourcegroupmembers, resourcegroup WHERE resource.subid=#{maintbl}.id AND resourcegroupmembers.resourceid=resource.id AND resourcegroup.id=resourcegroupmembers.resourcegroupid GROUP BY #{maintbl}.id"
+    else
+      columns[maintbl].each { |col, param|
+        qry << "vclrsc.#{col}, "
+      }
+      othertbls = columns.keys
+      othertbls.delete(maintbl)
+      othertbls.each { |tbl|
+        columns[tbl].each { |col, param|
+          qry << "#{tbl}.#{col}, "
+        }
+      }
+      qry <<  "vclrsc.groups FROM (SELECT #{maintbl}.*, GROUP_CONCAT(resourcegroup.name SEPARATOR ',') as groups FROM #{maintbl}, resource, resourcegroupmembers, resourcegroup WHERE resource.subid=#{maintbl}.id AND resourcegroupmembers.resourceid=resource.id AND resourcegroup.id=resourcegroupmembers.resourcegroupid group by #{maintbl}.id) as vclrsc"
 
-    qry << "GROUP_CONCAT(resourcegroup.name SEPARATOR ',') FROM (#{maintbl}, resource, resourcegroupmembers, resourcegroup WHERE resource.subid=#{maintbl}.id AND resourcegroupmembers.resourceid=resource.id AND resourcegroup.id=resourcegroupmembers.resourcegroupid)"
-    foreign_keys.each { |tbl, lnks|
-      if (lnks.empty?) then 
-        raise Puppet::DevError, "Link missing foreign keys for #{tbl} in foreign_keys variable of vclresource child provider"
-      end
-      qry << " LEFT JOIN #{tbl} ON ("
-      lnks.each { |col, lnk|
-        qry << "#{lnk[0]}=#{lnk[1]} AND"
+      foreign_keys.each { |tbl, lnks|
+        if (lnks.empty?) then 
+          raise Puppet::DevError, "Link missing foreign keys for #{tbl} in foreign_keys variable of vclresource child provider"
+        end
+        qry << " LEFT JOIN #{tbl} ON ("
+        lnks.each { |col, lnk|
+          qry << "#{lnk[0]}=#{lnk[1]} AND"
+        }
+        qry.chomp!(" AND")
+        qry << ")"
       }
-      qry.chomp!(" AND")
-      qry << ")"
-    }
+    end
     
-    qry << " GROUP BY image.id"
     runQuery(qry).split("\n")
   end
   
