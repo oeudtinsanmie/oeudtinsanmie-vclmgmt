@@ -51,7 +51,7 @@ class Puppet::Provider::Vclresource < Puppet::Provider
           qry << "#{tbl}.#{col}, "
         }
       }
-      qry << "GROUP_CONCAT(resourcegroup.name SEPARATOR ',') FROM #{maintbl}, resource, resourcegroupmembers, resourcegroup WHERE resource.subid=#{maintbl}.id AND resourcegroupmembers.resourceid=resource.id AND resourcegroup.id=resourcegroupmembers.resourcegroupid GROUP BY #{maintbl}.id"
+      qry << "GROUP_CONCAT(resourcegroup.name SEPARATOR ',') FROM #{maintbl}, resource, resourcegroupmembers, resourcegroup, resourcetype WHERE resource.resourcetypeid=resourcetype.id AND resourcetype.name='#{resourcetype}' AND resource.subid=#{maintbl}.id AND resourcegroupmembers.resourceid=resource.id AND resourcegroup.id=resourcegroupmembers.resourcegroupid GROUP BY #{maintbl}.id"
     else
       columns[maintbl].each { |col, param|
         qry << "vclrsc.#{col}, "
@@ -63,7 +63,7 @@ class Puppet::Provider::Vclresource < Puppet::Provider
           qry << "#{tbl}.#{col}, "
         }
       }
-      qry <<  "vclrsc.groups FROM (SELECT #{maintbl}.*, GROUP_CONCAT(resourcegroup.name SEPARATOR ',') as groups FROM #{maintbl}, resource, resourcegroupmembers, resourcegroup WHERE resource.subid=#{maintbl}.id AND resourcegroupmembers.resourceid=resource.id AND resourcegroup.id=resourcegroupmembers.resourcegroupid group by #{maintbl}.id) as vclrsc"
+      qry <<  "vclrsc.groups FROM (SELECT #{maintbl}.*, GROUP_CONCAT(resourcegroup.name SEPARATOR ',') as groups FROM #{maintbl}, resource, resourcegroupmembers, resourcegroup, resourcetype WHERE resource.resourcetypeid=resourcetype.id AND resourcetype.name='#{resourcetype}' AND resource.subid=#{maintbl}.id AND resourcegroupmembers.resourceid=resource.id AND resourcegroup.id=resourcegroupmembers.resourcegroupid group by #{maintbl}.id) as vclrsc"
 
       foreign_keys.each { |tbl, lnks|
         if (lnks.empty?) then 
@@ -71,7 +71,12 @@ class Puppet::Provider::Vclresource < Puppet::Provider
         end
         qry << " LEFT JOIN #{tbl} ON ("
         lnks.each { |col, lnk|
-          qry << "#{lnk[0]}=#{lnk[1]} AND"
+          frmtbl, frmcol = lnk[0].split('.')
+          if (frmtbl == maintbl)
+            qry << "vclrsc.#{frmcol}=#{lnk[1]} AND"
+          else
+            qry << "#{lnk[0]}=#{lnk[1]} AND"
+          end
         }
         qry.chomp!(" AND")
         qry << ")"
@@ -166,6 +171,7 @@ class Puppet::Provider::Vclresource < Puppet::Provider
   end
   
   def self.runQuery (qry)
+    puts qry
     begin
       cmd_list = cmd_base + [ qry ]
       output = mysql(cmd_list).strip
