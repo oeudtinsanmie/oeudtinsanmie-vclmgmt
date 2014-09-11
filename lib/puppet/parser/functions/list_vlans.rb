@@ -1,21 +1,31 @@
+require 'set'
 module Puppet::Parser::Functions
   newfunction(:list_vlans, :type => :rvalue) do |args|
-    pods 	= args[0]
-    private_if 	= args[1]
-    ipmi_if 	= args[2]
-    list 	= Array.new
+    poddefaults = args[0]
+    pods 	= args[1]
+    private_if 	= args[2]
+    ipmi_if 	= args[3]
+    list 	= Set[]
     pods.each_value { |val| 
-      if val["private_hash"]["vlanid"] == nil
-        list = list << "#{private_if}"
+      if (val["private_hash"]["vlanid"] == nil) then
+        if (poddefaults["private_hash"] != nil and poddefaults["private_hash"]["vlanid"] != nil) then
+          list = list << "#{private_if}.#{poddefaults["private_hash"]["vlanid"]}" 
+        else
+          list = list << "#{private_if}" 
+        end
       else
-        list = list << "#{private_if}.#{val["private_hash"]["vlanid"]}"
+        list = list << "#{private_if}.#{val["private_hash"]["vlanid"]}" 
       end
-      if val["ipmi_hash"]["vlanid"] == nil
-        list = list << "#{ipmi_if}"
+      if (val["ipmi_hash"]["vlanid"] == nil) then
+        if (poddefaults["ipmi_hash"] != nil and poddefaults["ipmi_hash"]["vlanid"] != nil) then
+          list = list << "#{private_if}.#{poddefaults["ipmi_hash"]["vlanid"]}" 
+        else
+          list = list << "#{ipmi_if}" 
+        end
       else
-        list = list << "#{ipmi_if}.#{val["ipmi_hash"]["vlanid"]}"
+        list = list << "#{ipmi_if}.#{val["ipmi_hash"]["vlanid"]}" 
       end
     }
-    list.uniq
+    list.to_a
   end
 end

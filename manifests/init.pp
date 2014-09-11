@@ -35,6 +35,7 @@ class vclmgmt(
 	$serverip 	= 'localhost', 
 	$xmlrpc_pw 	= 'just_another_password', 
 	$xml_url 	= 'localhost',
+	$poddefaults	= {},
 	$pods 		= undef,
     	$vcldir 	= $vclmgmt::params::vcldir,
     	$dojo		= $vclmgmt::params::dojo,
@@ -260,7 +261,7 @@ class vclmgmt(
 		$dhcpinterfaces = [ $private_if, $ipmi_if ]
 	}
 	else {
-		$dhcpinterfaces = list_vlans($pods, $private_if, $ipmi_if)
+		$dhcpinterfaces = list_vlans($poddefaults, $pods, $private_if, $ipmi_if)
 	}	
 
 	network::if::static { $private_if :
@@ -353,7 +354,19 @@ class vclmgmt(
 #	include bind
 #
 	if $pods != undef {
-		$newpods = set_defaults($pods, $private_if, $private_ip, $private_mac, $ipmi_if, $ipmi_ip, $ipmi_mac)
+		$masterdefault = {
+			private_hash => {
+				master_if => $private_if,
+				master_ip => $private_ip,
+				master_mac => $private_mac,
+			},
+			ipmi_hash => {
+				master_if => $ipmi_if,
+				master_ip => $ipmi_ip,
+				master_mac => $ipmi_mac,
+			},
+		}
+		$newpods = set_defaults($pods, $poddefaults, $masterdefault)
 		create_resources(vclmgmt::xcat_pod, $newpods)
 	}
 
