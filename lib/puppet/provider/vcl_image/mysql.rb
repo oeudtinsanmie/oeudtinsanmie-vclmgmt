@@ -20,7 +20,6 @@ Puppet::Type.type(:vcl_image).provide(:mysql, :parent => Puppet::Provider::Vclre
         "reloadtime"    => [ :reloadtime, 	:numeric  ],
         "deleted"       => [ :deleted, 		:tinybool ],
         "test"          => [ :test, 		:tinybool ],
-        "lastupdate"    => [ :lastupdate, 	:string   ],
         "forcheckout"   => [ :forcheckout, 	:tinybool ],
         "project"       => [ :project, 		:string   ],
         "size"          => [ :size, 		:numeric  ],

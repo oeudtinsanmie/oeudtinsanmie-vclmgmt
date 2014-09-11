@@ -1,4 +1,5 @@
 require 'set'
+# require 'pp'
 class Puppet::Provider::Vclresource < Puppet::Provider
   
   initvars
@@ -97,21 +98,15 @@ class Puppet::Provider::Vclresource < Puppet::Provider
     
     inst_hash[:ensure] = :present
     i = 0
-    columns.keys.each { |tbl|
+    othertbls = columns.keys
+    othertbls.delete(maintbl)
+    columns[maintbl].each { |col, param|
+      inst_hash[param[0]] = hashitem(hash_list[i], param)
+      i = i+1
+    }
+    othertbls.each { |tbl|
       columns[tbl].each { |col, param|
-        if (hash_list[i].include? ",") then 
-          inst_hash[param[0]] = hash_list[i].split(",")
-        else
-          if (param[1] == :tinybool) then
-            if (hash_list[i] == '1') then
-              inst_hash[param[0]] = :true
-            else
-              inst_hash[param[0]] = :false
-            end
-          else
-            inst_hash[param[0]] = hash_list[i].strip
-          end
-        end
+        inst_hash[param[0]] = hashitem(hash_list[i], param)
         i = i+1
       }
     }
@@ -122,8 +117,23 @@ class Puppet::Provider::Vclresource < Puppet::Provider
     end
     
     inst_hash.merge!(inst_hash) { |key, oldval, val| val == 'NULL' ? nil : val }
-    
+
+#    pp inst_hash
     Puppet::Util::symbolizehash(inst_hash)
+  end
+  
+  def self.hashitem (item, param)
+    if (item.include? ",") then
+      item.split(",")
+    elsif (param[1] == :tinybool) then
+      if (item == 1) then
+        :true
+      else
+        :false
+      end
+    else
+      item
+    end
   end
   
   def self.prefetch (resources) 
@@ -171,7 +181,7 @@ class Puppet::Provider::Vclresource < Puppet::Provider
   end
   
   def self.runQuery (qry)
-    puts qry
+#    puts qry
     begin
       cmd_list = cmd_base + [ qry ]
       output = mysql(cmd_list).strip
