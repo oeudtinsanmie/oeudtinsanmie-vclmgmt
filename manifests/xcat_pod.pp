@@ -2,7 +2,7 @@ define vclmgmt::xcat_pod(
 	$private_hash, 
 	$ipmi_hash, 
 	$defaults = undef, 
-	$nodes
+	$nodes = undef,
 ) {
 	ensure_resource(vclmgmt::xcat_vlan, $name, $private_hash)
 	ensure_resource(vclmgmt::xcat_vlan, "${name}-ipmi", $ipmi_hash)
@@ -18,5 +18,7 @@ define vclmgmt::xcat_pod(
 		$mydefaults = merge($tmphash, $defaults)
 	}
 
-	create_resources(vclmgmt::compute_node, $nodes, $mydefaults)
+	if $nodes != undef {
+		create_resources(vclmgmt::compute_node, $nodes, $mydefaults)
+	}
 }

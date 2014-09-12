@@ -4,9 +4,19 @@ module Puppet::Parser::Functions
     poddefaults 	= args[1]
     masterdefaults 	= args[2]
 
-    private_default = masterdefaults["private_hash"]
-    ipmi_default    = masterdefaults["ipmi_hash"]
+    Puppet.debug "Parsing defaults for vclmgmt node" 
+    private_default = { 
+	"master_if" => masterdefaults["private_if"], 
+	"master_ip" => masterdefaults["private_ip"], 
+	"master_mac" => masterdefaults["private_mac"] 
+    }
+    ipmi_default    = { 
+	"master_if" => masterdefaults["ipmi_if"], 
+	"master_ip" => masterdefaults["ipmi_ip"], 
+	"master_mac" => masterdefaults["ipmi_mac"] 
+    }
 
+    Puppet.debug "boo"
     if (poddefaults != nil and poddefaults["private_hash"] != nil) then
       private_default.merge!(poddefaults["private_hash"])
     end
@@ -15,11 +25,12 @@ module Puppet::Parser::Functions
     end
 
     pods.each_value { |val|
-      val.merge!(poddefaults) 				{ | key, v1, v1 | v1 }
       val["private_hash"].merge!(private_default) 	{ | key, v1, v2 | v1 }
       val["ipmi_hash"].merge!(ipmi_default) 		{ | key, v1, v2 | v1 }
+      val.merge!(poddefaults) 				{ | key, v1, v2 | v1 }
     }
 
+    Puppet.debug "done"
     pods
   end
 end

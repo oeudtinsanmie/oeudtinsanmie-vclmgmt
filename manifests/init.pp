@@ -355,16 +355,12 @@ class vclmgmt(
 #
 	if $pods != undef {
 		$masterdefault = {
-			private_hash => {
-				master_if => $private_if,
-				master_ip => $private_ip,
-				master_mac => $private_mac,
-			},
-			ipmi_hash => {
-				master_if => $ipmi_if,
-				master_ip => $ipmi_ip,
-				master_mac => $ipmi_mac,
-			},
+			private_if => $private_if,
+			private_ip => $private_ip,
+			private_mac => $private_mac,
+			ipmi_if => $ipmi_if,
+			ipmi_ip => $ipmi_ip,
+			ipmi_mac => $ipmi_mac,
 		}
 		$newpods = set_defaults($pods, $poddefaults, $masterdefault)
 		create_resources(vclmgmt::xcat_pod, $newpods)
