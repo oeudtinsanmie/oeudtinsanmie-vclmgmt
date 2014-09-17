@@ -8,15 +8,21 @@ define vclmgmt::compute_node(
 	$private_ip, 
 	$private_mac, 
 	$private_if, 
+        $private_net,
+        $private_domain,
 	$xcat_groups	= [ 'ipmi', 'compute', 'all' ],
 	$vcl_groups 	= [ 'allComputers' ],
 	$tgt_os, 
 	$tgt_arch	= undef,
 	$ipmi_ip, 
 	$ipmi_mac, 
+        $ipmi_net,
+        $ipmi_domain,
 	$ipmi_user, 
 	$ipmi_pw, 
 	$master_ip,
+        $master_private_if,
+        $master_ipmi_if,
 	$profile,
 	$username,
 	$password,
@@ -73,6 +79,48 @@ define vclmgmt::compute_node(
                 ip		=> $ipmi_ip,
                 mac		=> $ipmi_mac,
 	}
+
+	dhcp::hosts { $hostname:
+                subnet    => $private_net,
+                hash_data => {
+                        "${hostname}.${private_domain}" => {
+                                interfaces => {
+                                        "${master_private_if}" => $private_mac,
+                                }
+                        }
+                }
+        }
+
+	dhcp::hosts { "${hostname}-ipmi":
+                subnet    => $ipmi_net,
+                hash_data => {
+                        "${hostname}-ipmi.${ipmi_domain}" => {
+                                interfaces => {
+                                        "${master_ipmi_if}" => $ipmi_mac,
+                                }
+                        }
+                }
+        }
+
+
+
+	bind::a { $hostname:
+                ensure => present,
+                zone => $private_domain,
+                ptr => false,
+                hash_data => {
+                        "${hostname}" => { owner => $private_ip, },
+                }
+        }
+
+	bind::a { "${hostname}-ipmi":
+                ensure => present,
+                zone => $ipmi_domain,
+                ptr => false,
+                hash_data => {
+                        "${hostname}-ipmi" => { owner => $ipmi_ip, },
+                }
+        }
 	
 	vcl_computer { $hostname :
 		ensure		=> $ensure,

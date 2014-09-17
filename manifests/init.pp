@@ -346,13 +346,10 @@ class vclmgmt(
 	       	value => "/opt/xcat",
 	}
 
-#	class { 'dhcp::server':
-#        #	opts => ['domain-name "toto.ltd"',
-#        #               'domain-name-servers 192.168.21.1'],                      
-#        }
-#
-#	include bind
-#
+	class { 'dhcp::server': }
+
+	include bind
+
 	if $pods != undef {
 		$masterdefault = {
 			private_if => $private_if,

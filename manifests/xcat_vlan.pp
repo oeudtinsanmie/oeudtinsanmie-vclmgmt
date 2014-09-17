@@ -18,10 +18,23 @@ define vclmgmt::xcat_vlan(
         mask => $netmask,
     }
 
+    $subdef = {
+        netmask => $netmask,
+        domain_name => $domain,
+        other_opts => ['filename "pxelinux.0"', "next-server ${master_ip}"],
+        require => Class['::dhcp::server'],
+    }
+
     if $vlan_alias_ip == undef {
 	$nethash = {
-		"${domain}" => {}
+	    "${domain}" => {}
 	}
+
+        $subnet = { 
+            "${network}" => {
+                routers => [ $master_ip, ],
+            }
+        }
     }
     else {
 
@@ -33,6 +46,11 @@ define vclmgmt::xcat_vlan(
 		vlan 		=> true,
 		domain 		=> $domain,
 	}
+        $subnet = { 
+            "${network}" => {
+                routers => [ $vlan_alias_ip, ],
+            }
+        }
 
 	$nethash = {
 		"${domain}" => {
@@ -43,5 +61,13 @@ define vclmgmt::xcat_vlan(
     }
 
     create_resources(xcat_network, $nethash, $default)
+    create_resources(dhcp::subnet, $subnet, $subdef)
 
+    bind::zone { $domain :
+        zone_contact => 'netlabs@help.ncsu.edu',
+        zone_ns      => $master_ip,
+        zone_serial  => '2012112901',
+        zone_ttl     => '604800',
+        zone_origin  => $domain,
+    }
 }

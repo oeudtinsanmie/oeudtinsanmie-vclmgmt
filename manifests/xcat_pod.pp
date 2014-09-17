@@ -9,6 +9,14 @@ define vclmgmt::xcat_pod(
 
 	$tmphash = {
 		master_ip	=> $private_hash[master_ip],
+		private_if
+		private_net
+		private_domain
+		ipmi_if
+		ipmi_net
+		ipmi_domain
+		master_private_if
+		master_ipmi_if
 	}
 
 	if $defaults == undef {
