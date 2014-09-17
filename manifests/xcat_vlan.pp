@@ -6,6 +6,7 @@ define vclmgmt::xcat_vlan(
 	$domain, 
 	$network, 
 	$netmask, 
+	$broadcast,
 	$vlanid = undef
 ) {
     $default = {
@@ -19,6 +20,7 @@ define vclmgmt::xcat_vlan(
     }
 
     $subdef = {
+        broadcast => $broadcast,
         netmask => $netmask,
         domain_name => $domain,
         other_opts => ['filename "pxelinux.0"', "next-server ${master_ip}"],
