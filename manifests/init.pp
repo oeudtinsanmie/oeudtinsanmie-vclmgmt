@@ -366,19 +366,20 @@ class vclmgmt(
         exec { "makehosts" :
                 command => "/opt/xcat/sbin/makehosts",
                 refreshonly => "true",
-        }~>
-        exec { "makedhcpn" :
-                command => "/opt/xcat/sbin/makedhcp -n",
-                refreshonly => "true",
-        }~>
-        exec { "makedhcpa" :
-                command => "/opt/xcat/sbin/makedhcp -a",
-                refreshonly => "true",
-        }~>
-        exec { "makedns"  :
-                command => "/opt/xcat/sbin/makedns -n",
-                refreshonly => "true",
         }
+#~>
+#        exec { "makedhcpn" :
+#                command => "/opt/xcat/sbin/makedhcp -n",
+#                refreshonly => "true",
+#        }~>
+#        exec { "makedhcpa" :
+#                command => "/opt/xcat/sbin/makedhcp -a",
+#                refreshonly => "true",
+#        }~>
+#        exec { "makedns"  :
+#                command => "/opt/xcat/sbin/makedns -n",
+#                refreshonly => "true",
+#        }
 
         Exec["makehosts"] <~ Vclmgmt::Compute_node <| |>
         Exec["makehosts"] <~ Vclmgmt::Xcat_pod <| |>
