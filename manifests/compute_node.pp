@@ -54,7 +54,7 @@ define vclmgmt::compute_node(
 		bmcusername		=> $ipmi_user,
 		bmcpassword		=> $ipmi_pw,
 		mgt			=> "ipmi",
-        	installnic		=> $private_if,
+        	installnic		=> 'bootif',
 		primarynic		=> $private_if,
 		netboot			=> $netboot,
 		os			=> $tgt_os,
