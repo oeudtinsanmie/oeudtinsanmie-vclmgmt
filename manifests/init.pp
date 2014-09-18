@@ -31,21 +31,31 @@ class vclmgmt(
 	$vcluser 	= 'vcluser', 
 	$root_pw, 
 	$vcluser_pw, 
+	$system_user = 'root',
+	$system_pw,
 	$vclhost 	= 'localhost', 
 	$serverip 	= 'localhost', 
 	$xmlrpc_pw 	= 'just_another_password', 
 	$xml_url 	= 'localhost',
 	$poddefaults	= {},
 	$pods 		= undef,
-    	$vcldir 	= $vclmgmt::params::vcldir,
-    	$dojo		= $vclmgmt::params::dojo,
-    	$dojo_checksum	= $vclmgmt::params::dojo_checksum,
-    	$vclweb 	= $vclmgmt::params::vclweb,
-    	$vclnode 	= $vclmgmt::params::vclnode,
-    	$vclimages	= "${vcldir}/images",
+	$vcldir 	= $vclmgmt::params::vcldir,
+	$dojo		= $vclmgmt::params::dojo,
+	$dojo_checksum	= $vclmgmt::params::dojo_checksum,
+	$vclweb 	= $vclmgmt::params::vclweb,
+	$vclnode 	= $vclmgmt::params::vclnode,
+	$vclimages	= undef,
 ) inherits vclmgmt::params {
 
 	$htinc = "${vclweb}/.ht-inc"
+	
+	if $vclimages == undef {
+    $vclimgs = "${vcldir}/images"  
+	}
+	else {
+	  $vclimgs = $vclimages 
+	}
+	
 	
 	$postfiles = {
 	        "${vclweb}"	=> {
@@ -80,7 +90,7 @@ class vclmgmt(
 			tag	=> "postcopy",
 		},
 		"images" => {
-			path	=> $vclimages,
+			path	=> $vclimgs,
 			ensure 	=> "directory",
 		},
 		"etcvcl" => {
@@ -332,13 +342,18 @@ class vclmgmt(
 	}
 	
 	xcat_site_attribute { "ntpservers" :
-	       sitename => 'clustersite',
-	       value => 'time.ncsu.edu',
+	 sitename => 'clustersite',
+	 value => 'time.ncsu.edu',
 	}
 	
 	xcat_site_attribute { "xcatroot" :
-	       	sitename => 'clustersite',
+	  sitename => 'clustersite',
 		value => "/opt/xcat",
+	}
+	
+	xcat_passwd_tbl { "system" :
+	  username => $system_user,
+	  password => $system_pw,
 	}
 	
 	xcat_site_attribute	{ "xcatprefix" :
