@@ -373,6 +373,8 @@ class vclmgmt(
 			ipmi_if => $ipmi_if,
 			ipmi_ip => $ipmi_ip,
 			ipmi_mac => $ipmi_mac,
+			system_user => $system_user,
+			system_pw => $system_pw,
 		}
 		$newpods = set_defaults($pods, $poddefaults, $masterdefault)
 		create_resources(vclmgmt::xcat_pod, $newpods)

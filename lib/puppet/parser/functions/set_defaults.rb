@@ -26,6 +26,18 @@ module Puppet::Parser::Functions
       val["private_hash"].merge!(private_default) 	{ | key, v1, v2 | v1 }
       val["ipmi_hash"].merge!(ipmi_default) 		{ | key, v1, v2 | v1 }
       val.merge!(poddefaults) 				{ | key, v1, v2 | v1 }
+      if (val["defaults"] == nil) then
+          val["defaults"] = {}
+      end
+
+      if (val["defaults"]["username"] == nil) then
+          val["defaults"]["username"] = masterdefaults["system_user"]
+      end 
+
+      if (val["defaults"]["password"] == nil) then
+          val["defaults"]["password"] = masterdefaults["system_pw"]
+      end
+
     }
 
     pods

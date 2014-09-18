@@ -24,7 +24,7 @@ define vclmgmt::compute_node(
         $master_private_if,
         $master_ipmi_if,
 	$profile,
-	$username,
+	$username	= 'root',
 	$password,
 	$netboot	= 'pxe',
 	$provmethod	= 'install',
