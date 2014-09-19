@@ -126,7 +126,7 @@ class Puppet::Provider::Vclresource < Puppet::Provider
     if (item.include? ",") then
       item.split(",")
     elsif (param[1] == :tinybool) then
-      if (item == 1) then
+      if (item == '1') then
         :true
       else
         :false
