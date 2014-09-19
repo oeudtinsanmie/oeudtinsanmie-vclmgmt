@@ -357,7 +357,7 @@ class vclmgmt(
 	
 	xcat_site_attribute { "xcatroot" :
 	  sitename => 'clustersite',
-		value => "/opt/xcat",
+	  value => "/opt/xcat",
 	}
 	
 	xcat_passwd_tbl { "system" :
