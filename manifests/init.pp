@@ -1,5 +1,4 @@
 include stdlib
-include xcat
 
 # Class: mgmt
 #
@@ -46,6 +45,8 @@ class vclmgmt(
 	$vclnode 	= $vclmgmt::params::vclnode,
 	$vclimages	= undef,
 ) inherits vclmgmt::params {
+
+	class { "xcat": }
 
 	$htinc = "${vclweb}/.ht-inc"
 	
@@ -281,12 +282,20 @@ class vclmgmt(
 		macaddress => $private_mac,
 		require => Class['vclmgmt::params'],
 	}
+	$privatenet = split($private_ip, '\.')
+	xcat_network { "${privatenet[0]}_${privatenet[1]}_${privatenet[2]}_0-255_255_255_0":
+		ensure => absent,
+	}
 	network::if::static { $ipmi_if :
 		ensure => 'up',
 		ipaddress => $ipmi_ip,
 		netmask   => '255.255.255.0',
 		macaddress => $ipmi_mac,
 		require => Class['vclmgmt::params'],
+	}
+	$ipminet = split($ipmi_ip, '\.')
+	xcat_network { "${ipminet[0]}_${ipminet[1]}_${ipminet[2]}_0-255_255_255_0":
+		ensure => absent,
 	}
 
 	if $public_ip == 'dhcp' {
@@ -363,7 +372,7 @@ class vclmgmt(
 
 	class { 'dhcp::server': }
 
-	include bind
+	class {"bind": }
 
 	if $pods != undef {
 		$masterdefault = {
@@ -401,16 +410,16 @@ class vclmgmt(
         Exec["makehosts"] <~ Vclmgmt::Compute_node <| |>
         Exec["makehosts"] <~ Vclmgmt::Xcat_pod <| |>
 	
-	Yumrepo <| tag == "vclrepos" |> -> Package <| tag == "vclinstall" |> -> Subversion::Checkout[ 'vcl'] ~> Vclmgmt::Cpan <| |>
+	Yumrepo <| tag == "vclrepo" or tag == "xcatrepo" |> -> Package <| tag == "vclinstall" |> -> Subversion::Checkout[ 'vcl'] ~> Vclmgmt::Cpan <| |>
     	Archive ["dojo-release-${dojo}"] -> File <| tag == "vclpostfiles" and tag != "postcopy" |> -> Vclmgmt::Vclcopy <| |> -> File <| tag == "postcopy" |> -> Mysql::Db[$vcldb] -> Exec['genkeys'] -> Service <| name == $vclmgmt::params::service_list |>
     
     	File['vcldconf'] ~> Service['vcld']
     	Subversion::Checkout['vcl'] ~> Vclmgmt::Vclcopy <| |>
     
 	Class['mysql::server']-> Mysql::Db[$vcldb]
-	Package <| |> -> Xcat_site_attribute <| |> ~> Service['xcatd']
+	Package <| tag == "vclinstall" or tag == "xcatpkg" |> -> Xcat_site_attribute <| |> ~> Service['xcatd']
 
-	Package <| |> -> Xcat_network <| |> -> Xcat_node<| |>
-
+	Package <| tag == "vclinstall" or tag == "xcatpkg" |> -> Xcat_network <| |> -> Xcat_node<| |>
+	Xcat_network <| ensure == absent |> -> Xcat_network <| ensure == present |>
 	Archive[ "dojo-release-${dojo}" ] ~> Vclmgmt::Regexfile <| |>
 }

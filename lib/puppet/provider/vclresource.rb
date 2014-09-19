@@ -212,7 +212,7 @@ class Puppet::Provider::Vclresource < Puppet::Provider
   
   def flush
     Puppet.debug "Flushing #{resource[:name]}"
-    if (@property_flush[:ensure] === :absent) then
+    if (@property_flush[:ensure] != nil) then
       # remove rows
       Puppet.debug "Deleting #{resource[:name]}"
       qry =  "DELETE FROM #{self.class.maintbl} WHERE #{self.class.namevar} = '#{resource[:name]}'"
@@ -222,61 +222,61 @@ class Puppet::Provider::Vclresource < Puppet::Provider
       qry = "DELETE FROM resourcegroupmembers WHERE resourceid NOT IN (SELECT id FROM resource)"
       self.class.runQuery(qry)
       
-    elsif (@property_flush[:ensure] === :present) then
-      # add resource
-      Puppet.debug "Adding new VCL Resource: #{resource[:name]}"
-      qry = "INSERT INTO #{self.class.maintbl} (id, "
-      vals = ""
-      frm = Set[]
-      whr = " WHERE"
+      if (@property_flush[:ensure] == :present) then
+        # add resource
+        Puppet.debug "Adding new VCL Resource: #{resource[:name]}"
+        qry = "INSERT INTO #{self.class.maintbl} (id, "
+        vals = ""
+        frm = Set[]
+        whr = " WHERE"
       
-      self.class.columns[self.class.maintbl].each { |col, param|
-        qry  << "#{self.class.maintbl}.#{col}, "
-        vals << "#{paramVal(param)}, "
-      }
-      
-      othertbls = self.class.columns.keys
-      othertbls.delete(self.class.maintbl)
-      if (othertbls.length > 0) then
-        othertbls.each { |tbl|
-          self.class.columns[tbl].each { |col, param|
-            if (resource[param[0]] == nil) then
-              qry  << " #{self.class.foreign_keys[tbl][col][0]},"
-              vals << "NULL,"
-            else
-              qry  << " #{self.class.foreign_keys[tbl][col][0]},"
-              vals << " #{self.class.foreign_keys[tbl][col][1]},"
-              whr  << " #{tbl}.#{col}=#{paramVal(param)} AND"
-              frm += [ tbl ]
-            end
-          }
+        self.class.columns[self.class.maintbl].each { |col, param|
+          qry  << "#{self.class.maintbl}.#{col}, "
+          vals << "#{paramVal(param)}, "
         }
-      end
       
-      qry.chomp!(",")
-      vals.chomp!(",")
-      if (frm.empty?) then
-        qry << ") VALUES (NULL, "
-        qry << vals
-        qry << ")"
-      else
-        whr.chomp!(" AND")
+        othertbls = self.class.columns.keys
+        othertbls.delete(self.class.maintbl)
+        if (othertbls.length > 0) then
+          othertbls.each { |tbl|
+            self.class.columns[tbl].each { |col, param|
+              if (resource[param[0]] == nil) then
+                qry  << " #{self.class.foreign_keys[tbl][col][0]},"
+                vals << "NULL,"
+              else
+                qry  << " #{self.class.foreign_keys[tbl][col][0]},"
+                vals << " #{self.class.foreign_keys[tbl][col][1]},"
+                whr  << " #{tbl}.#{col}=#{paramVal(param)} AND"
+                frm += [ tbl ]
+              end
+            }
+          }
+        end
+      
+        qry.chomp!(",")
+        vals.chomp!(",")
+        if (frm.empty?) then
+          qry << ") VALUES (NULL, "
+          qry << vals
+          qry << ")"
+        else
+          whr.chomp!(" AND")
         
-        qry << ") SELECT NULL, "
-        qry << vals
-        qry << " FROM #{frm.to_a.join(', ')}"
-        qry << whr
-      end  
+          qry << ") SELECT NULL, "
+          qry << vals
+          qry << " FROM #{frm.to_a.join(', ')}"
+          qry << whr
+        end  
       
-      self.class.runQuery(qry)
+        self.class.runQuery(qry)
       
-      qry = "INSERT INTO resource (id, resourcetypeid, subid) SELECT NULL, resourcetype.id, #{self.class.maintbl}.id FROM resourcetype, #{self.class.maintbl} WHERE resourcetype.name='#{self.class.resourcetype}' AND #{self.class.maintbl}.#{self.class.namevar}='#{resource[:name]}'"
+        qry = "INSERT INTO resource (id, resourcetypeid, subid) SELECT NULL, resourcetype.id, #{self.class.maintbl}.id FROM resourcetype, #{self.class.maintbl} WHERE resourcetype.name='#{self.class.resourcetype}' AND #{self.class.maintbl}.#{self.class.namevar}='#{resource[:name]}'"
 
-      Puppet.debug "Adding recource entry for #{resource[:name]}"
-      self.class.runQuery(qry)
+        Puppet.debug "Adding recource entry for #{resource[:name]}"
+        self.class.runQuery(qry)
       
-      self.class.runQuery(insertGroupMembersQry)
-      
+        self.class.runQuery(insertGroupMembersQry)
+      end
     else
       # change existing definition
       Puppet.debug "Updating records for #{resource[:name]}"
