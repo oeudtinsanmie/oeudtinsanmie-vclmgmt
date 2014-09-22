@@ -946,31 +946,27 @@ class vclmgmt::params {
       "vclManageGroups_ar.js",
       "vclSchedule_ja.js",
     ]
-
-    $firedefaults = {
-    	require => Class['ncsufirewall::pre'],
-	before  => Class['ncsufirewall::post'],
-    }
+    
     $firewalls = {
     	'100 accept http' => {
-	        chain => 'INPUT',
-	        proto => 'tcp',
-	        action=> 'accept',
-	        dport => 80,
-	        state => 'NEW',
-	},
-	'105 accept https' => {
-	        chain => 'INPUT',
-	        proto => 'tcp',
-	        action=> 'accept',
-	        dport => 443,
-	        state => 'NEW',
-	},
-	'112 reject foward across vlans' => {
-		chain => 'FORWARD',
-		proto => 'all',
-		action => 'reject',
-	},
+				chain => 'INPUT',
+				proto => 'tcp',
+				action=> 'accept',
+				dport => 80,
+        state => 'NEW',
+      },
+			'105 accept https' => {
+				chain => 'INPUT',
+				proto => 'tcp',
+				action=> 'accept',
+				dport => 443,
+				state => 'NEW',
+			},
+			'112 reject foward across vlans' => {
+				chain => 'FORWARD',
+				proto => 'all',
+				action => 'reject',
+			},
     }
     
     $sebools = {

@@ -44,6 +44,10 @@ class vclmgmt(
 	$vclweb 	= $vclmgmt::params::vclweb,
 	$vclnode 	= $vclmgmt::params::vclnode,
 	$vclimages	= undef,
+  $firewalldefaults = {
+    require => Class['ncsufirewall::pre'],
+    before  => Class['ncsufirewall::post'],
+  }
 ) inherits vclmgmt::params {
 
 	class { "xcat": }
@@ -260,7 +264,7 @@ class vclmgmt(
 		creates	=> "${htinc}/keys.pem",
     	}
     
-    	create_resources(firewall, $firewalls, $vclmgmt::params::firedefaults)
+    	create_resources(firewall, $firewalls, $firewalldefaults)
     
     	if str2bool("$selinux") {
     		create_resources(selboolean, $vclmgmt::params::sebools)
