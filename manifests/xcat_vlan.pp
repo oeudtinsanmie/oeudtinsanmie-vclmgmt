@@ -72,8 +72,6 @@ define vclmgmt::xcat_vlan(
     }
   }
 
-  notice ("${xcatnet[0]}_${xcatnet[1]}_${xcatnet[2]}_0-${xcatmask[0]}_${xcatmask[1]}_${xcatmask[2]}_${xcatmask[3]}")
-  
   create_resources(xcat_network, $nethash, $default)
   create_resources(dhcp::subnet, $subnet, $subdef)
 
