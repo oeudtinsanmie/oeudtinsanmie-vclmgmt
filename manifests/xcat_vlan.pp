@@ -9,67 +9,73 @@ define vclmgmt::xcat_vlan(
 	$broadcast,
 	$vlanid = undef
 ) {
-    $default = {
-    	mgtifname => $master_if,
-        nameservers => $master_ip,
-        dhcpserver => $master_ip,
-        tftpserver => $master_ip,
-        domain => $domain,
-        net => $network,
-        mask => $netmask,
-    }
+  
+  $xcatnet = split($master_ip, '\.')
+  $xcatbcast = split($broadcast, '\.')
+  xcat_network { "${xcatnet[0]}_${xcatnet[1]}_${xcatnet[2]}_0-${xcatbcast[0]}_${xcatbcast[1]}_${xcatbcast[2]}_${xcatbcast[3]}":
+    ensure => absent,
+  }
+  
+  $default = {
+  	mgtifname => $master_if,
+    nameservers => $master_ip,
+    dhcpserver => $master_ip,
+    tftpserver => $master_ip,
+    domain => $domain,
+    net => $network,
+    mask => $netmask,
+  }
 
-    $subdef = {
-        broadcast => $broadcast,
-        netmask => $netmask,
-        domain_name => $domain,
-        other_opts => ['filename "pxelinux.0"', "next-server ${master_ip}"],
-        require => Class['::dhcp::server'],
-    }
+  $subdef = {
+    broadcast => $broadcast,
+    netmask => $netmask,
+    domain_name => $domain,
+    other_opts => ['filename "pxelinux.0"', "next-server ${master_ip}"],
+    require => Class['::dhcp::server'],
+  }
 
-    if $vlan_alias_ip == undef {
-	$nethash = {
+  if $vlan_alias_ip == undef {
+		$nethash = {
 	    "${domain}" => {}
-	}
-
-        $subnet = { 
-            "${network}" => {
-                routers => [ $master_ip, ],
-            }
-        }
-    }
-    else {
-
-	network::if::static { "${master_if}.${vlanid}" :
-		ensure 		=> 'up',
-		ipaddress 	=> $vlan_alias_ip,
-		netmask 	=> $netmask,
-		macaddress 	=> $master_mac,
-		vlan 		=> true,
-		domain 		=> $domain,
-	}
-        $subnet = { 
-            "${network}" => {
-                routers => [ $vlan_alias_ip, ],
-            }
-        }
-
-	$nethash = {
-		"${domain}" => {
-			vlanid => $vlanid,
 		}
-	}
 
+    $subnet = { 
+        "${network}" => {
+            routers => [ $master_ip, ],
+        }
+    }
+  }
+  else {
+		network::if::static { "${master_if}.${vlanid}" :
+			ensure 		=> 'up',
+			ipaddress 	=> $vlan_alias_ip,
+			netmask 	=> $netmask,
+			macaddress 	=> $master_mac,
+			vlan 		=> true,
+			domain 		=> $domain,
+		}
+		
+    $subnet = { 
+      "${network}" => {
+        routers => [ $vlan_alias_ip, ],
+      }
     }
 
-    create_resources(xcat_network, $nethash, $default)
-    create_resources(dhcp::subnet, $subnet, $subdef)
+		$nethash = {
+			"${domain}" => {
+				vlanid => $vlanid,
+			}
+		}
+  }
 
-    bind::zone { $domain :
-        zone_contact => 'netlabs@help.ncsu.edu',
-        zone_ns      => $master_ip,
-        zone_serial  => '2012112901',
-        zone_ttl     => '604800',
-        zone_origin  => $domain,
-    }
+  create_resources(xcat_network, $nethash, $default)
+  create_resources(dhcp::subnet, $subnet, $subdef)
+
+  bind::zone { $domain :
+    zone_contact => 'netlabs@help.ncsu.edu',
+    zone_ns      => $master_ip,
+    zone_serial  => '2012112901',
+    zone_ttl     => '604800',
+    zone_origin  => $domain,
+  }
 }
