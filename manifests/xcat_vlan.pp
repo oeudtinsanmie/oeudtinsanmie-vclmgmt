@@ -10,14 +10,8 @@ define vclmgmt::xcat_vlan(
 	$vlanid = undef
 ) {
   
-  $xcatnet = split($master_ip, '\.')
-  $xcatbcast = split($broadcast, '\.')
-  xcat_network { "${xcatnet[0]}_${xcatnet[1]}_${xcatnet[2]}_0-${xcatbcast[0]}_${xcatbcast[1]}_${xcatbcast[2]}_${xcatbcast[3]}":
-    ensure => absent,
-  }
-  
   $default = {
-  	mgtifname => $master_if,
+    mgtifname => $master_if,
     nameservers => $master_ip,
     dhcpserver => $master_ip,
     tftpserver => $master_ip,
@@ -34,10 +28,16 @@ define vclmgmt::xcat_vlan(
     require => Class['::dhcp::server'],
   }
 
+  $xcatmask = split($netmask, '\.')
+
   if $vlan_alias_ip == undef {
-		$nethash = {
-	    "${domain}" => {}
-		}
+    $xcatnet = split($master_ip, '\.')
+    $nethash = {
+      "${domain}" => {},
+      "${xcatnet[0]}_${xcatnet[1]}_${xcatnet[2]}_0-${xcatmask[0]}_${xcatmask[1]}_${xcatmask[2]}_${xcatmask[3]}" => {
+        ensure => absent,
+      }
+    }
 
     $subnet = { 
         "${network}" => {
@@ -46,14 +46,15 @@ define vclmgmt::xcat_vlan(
     }
   }
   else {
-		network::if::static { "${master_if}.${vlanid}" :
-			ensure 		=> 'up',
-			ipaddress 	=> $vlan_alias_ip,
-			netmask 	=> $netmask,
-			macaddress 	=> $master_mac,
-			vlan 		=> true,
-			domain 		=> $domain,
-		}
+    $xcatnet = split($vlan_alias_ip, '\.')
+    network::if::static { "${master_if}.${vlanid}" :
+      ensure 		=> 'up',
+      ipaddress 	=> $vlan_alias_ip,
+      netmask 	=> $netmask,
+      macaddress 	=> $master_mac,
+      vlan 		=> true,
+      domain 		=> $domain,
+    }
 		
     $subnet = { 
       "${network}" => {
@@ -61,15 +62,22 @@ define vclmgmt::xcat_vlan(
       }
     }
 
-		$nethash = {
-			"${domain}" => {
-				vlanid => $vlanid,
-			}
-		}
+    $nethash = {
+      "${domain}" => {
+        vlanid => $vlanid,
+      },
+      "${xcatnet[0]}_${xcatnet[1]}_${xcatnet[2]}_0-${xcatmask[0]}_${xcatmask[1]}_${xcatmask[2]}_${xcatmask[3]}" => {
+        ensure => absent,
+      }
+    }
   }
 
+  notice ("${xcatnet[0]}_${xcatnet[1]}_${xcatnet[2]}_0-${xcatmask[0]}_${xcatmask[1]}_${xcatmask[2]}_${xcatmask[3]}")
+  
   create_resources(xcat_network, $nethash, $default)
   create_resources(dhcp::subnet, $subnet, $subdef)
+
+  Xcat_network <| ensure == absent |> -> Xcat_network <| ensure != absent |>
 
   bind::zone { $domain :
     zone_contact => 'netlabs@help.ncsu.edu',

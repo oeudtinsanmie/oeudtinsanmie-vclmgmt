@@ -420,6 +420,6 @@ class vclmgmt(
 	Package <| tag == "vclinstall" or tag == "xcatpkg" |> -> Xcat_site_attribute <| |> ~> Service['xcatd']
 
 	Package <| tag == "vclinstall" or tag == "xcatpkg" |> -> Xcat_network <| |> -> Xcat_node<| |>
-	Xcat_network <| ensure == absent |> -> Xcat_network <| ensure == present |>
+	Xcat_network <| ensure == absent |> -> Xcat_network <| ensure != absent |>
 	Archive[ "dojo-release-${dojo}" ] ~> Vclmgmt::Regexfile <| |>
 }
