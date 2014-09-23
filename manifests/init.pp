@@ -305,8 +305,8 @@ class vclmgmt(
 #	  }
 #  }
 # For now, pulling out individual known conflicts for checks here:
-  if ! defined(Package["mod_ssl"]) {
-    package {"mod_ssl":
+  if ! defined(Package["openssl-devel"]) {
+    package {"openssl-devel":
       ensure => "latest", 
 	    provider => "yum", 
 	    tag  => "vclinstall",
@@ -340,6 +340,7 @@ class vclmgmt(
     path  => $vcldir,
     provider => svn,
     source   => "http://svn.apache.org/repos/asf/vcl/trunk",
+    revision => "1626815",
 	} ->
 	archive { "dojo-release-${dojo}" :
 		url	=> "http://download.dojotoolkit.org/release-${vclmgmt::params::dojo}/dojo-release-${dojo}.tar.gz",
@@ -428,9 +429,11 @@ class vclmgmt(
 		}
 	}
 
-	class {'::mysql::server':
-		root_password => $root_pw,
-		require => Class['vclmgmt::params'],
+	if ! defined(Class['::mysql::server']) {
+		class {'::mysql::server':
+			root_password => $root_pw,
+			require => Class['vclmgmt::params'],
+		}
 	}
 	
 	mysql::db { $vcldb :
@@ -521,13 +524,15 @@ class vclmgmt(
         Exec["makehosts"] <~ Vclmgmt::Compute_node <| |>
         Exec["makehosts"] <~ Vclmgmt::Xcat_pod <| |>
 	
-	Yumrepo <| tag == "vclrepo" or tag == "xcatrepo" |> -> Package <| tag == "vclinstall" |> -> Vcsrepo[ 'vcl'] ~> Vclmgmt::Cpan <| |>
+	Yumrepo <| tag == "vclrepo" or tag == "xcatrepo" |> -> Class['apache'] -> Package <| tag == "vclinstall" |> -> Vcsrepo[ 'vcl'] ~> Vclmgmt::Cpan <| |>
     	Archive ["dojo-release-${dojo}"] -> File <| tag == "vclpostfiles" and tag != "postcopy" |> -> Vclmgmt::Vclcopy <| |> -> File <| tag == "postcopy" |> -> Mysql::Db[$vcldb] -> Exec['genkeys'] -> Service <| name == $vclmgmt::params::service_list |>
     
     	File['vcldconf'] ~> Service['vcld']
     	Vcsrepo['vcl'] ~> Vclmgmt::Vclcopy <| |>
     
 	Class['mysql::server']-> Mysql::Db[$vcldb]
+	Mysql::Db[$vcldb] -> Vcl_computer <| |>
+	Mysql::Db[$vcldb] -> Vcl_image <| |>
 	Package <| tag == "vclinstall" or tag == "xcatpkg" |> -> Xcat_site_attribute <| |> ~> Service['xcatd']
 
 	Package <| tag == "vclinstall" or tag == "xcatpkg" |> -> Xcat_network <| |> -> Xcat_node<| |>
