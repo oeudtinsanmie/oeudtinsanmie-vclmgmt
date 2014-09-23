@@ -47,7 +47,8 @@ class vclmgmt(
   $firewalldefaults = {
     require => Class['ncsufirewall::pre'],
     before  => Class['ncsufirewall::post'],
-  }
+  },
+  $vclrevision = 'release-2.3.2-RC2',
 ) inherits vclmgmt::params {
 
 	class { "xcat": }
@@ -227,12 +228,11 @@ class vclmgmt(
 	file { $vcldir :
 		ensure  => "directory",
 	} ->
-	subversion::checkout { "vcl" :
-		repopath	=> "/repos/asf/vcl/trunk",
-		workingdir	=> $vcldir,
-		host		=> "svn.apache.org",
-		method		=> "http",
-		#revision	=> "",
+	vcsrepo { "vcl" :
+    path  => $vcldir,
+    provider => svn,
+    source   => "http://svn.apache.org/repos/asf/vcl/trunk",
+    revision => $vclrevision,
 	} ->
 	archive { "dojo-release-${dojo}" :
 		url	=> "http://download.dojotoolkit.org/release-${vclmgmt::params::dojo}/dojo-release-${dojo}.tar.gz",
