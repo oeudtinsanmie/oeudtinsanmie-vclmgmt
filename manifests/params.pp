@@ -57,6 +57,7 @@ class vclmgmt::params {
     		}
     		
     		$pkg_list = [ 
+			"mod-ssl",
     			"php", 
     			"php-gd", 
     			"php-mcrypt", 
@@ -75,7 +76,6 @@ class vclmgmt::params {
     			"libxml2-devel", 
     			"make", 
     			"nmap", 
-    			"openssl-devel", 
     			"perl-Archive-Tar", 
     			"perl-CPAN", 
     			"perl-Crypt-OpenSSL-RSA", 
@@ -95,7 +95,6 @@ class vclmgmt::params {
             	$pkg_exclude = [ ]
             	$service_list = { 
             		"xinetd" => {}, 
-            		"httpd"	 => {}, 
             		"vcld"	 => {},
             		"xcatd"	 => {},
             		"ipmi"	 => {},

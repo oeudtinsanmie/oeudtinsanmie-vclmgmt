@@ -224,8 +224,8 @@ class vclmgmt(
 #	  }
 #  }
 # For now, pulling out individual known conflicts for checks here:
-  if ! defined(Package["mod_ssl"]) {
-    package {"mod_ssl":
+  if ! defined(Package["openssl-devel"]) {
+    package {"openssl-devel":
       ensure => "latest", 
 	    provider => "yum", 
 	    tag  => "vclinstall",
@@ -347,9 +347,11 @@ class vclmgmt(
 		}
 	}
 
-	class {'::mysql::server':
-		root_password => $root_pw,
-		require => Class['vclmgmt::params'],
+	if ! defined(Class['::mysql::server']) {
+		class {'::mysql::server':
+			root_password => $root_pw,
+			require => Class['vclmgmt::params'],
+		}
 	}
 	
 	mysql::db { $vcldb :
