@@ -1,20 +1,101 @@
 include stdlib
 
-# Class: mgmt
+# Class: vclmgmt
 #
-# This module manages mgmt
+# This module installs VCL and manages its database and xCAT resources.  
+# Base class sets up the xcat site table, and initializes the three network interfaces used by VCL
+# If hashes are provided for public-private-ipmi network tuples (pods) and their constituent computers, 
+# relevant information from the installation is propagated as default values to resource declarations of these constituent resources
 #
 # Parameters:
-#
-# Actions:
-#
-# Requires:
-#
-# Sample Usage:
-#
-# [Remember: No empty lines between comments and class definition]
-
-
+# [*public_mac*] 
+#   - MAC address for public-network facing interface
+# [*public_if*] 
+#   - Interface name of public-network facing interface.
+#     Defaults to 'em1'
+# [*public_ip*] 
+#   - IP address for public-network facing interface 
+#     Defaults to 'dhcp' 
+# [*private_mac*] 
+#   - MAC address for private-network facing interface (network for provisioning target computers)
+# [*private_if*]
+#   - Interface name of private-network facing interface (network for provisioning target computers) 
+#     Defaults to 'em2'
+# [*private_ip*] 
+#   - IP address for private-network facing interface (network for provisioning target computers) 
+# [*private_domain*]
+#   - Domain for private-network facing interface (network for provisioning target computers) 
+# [*ipmi_mac*] 
+#   - MAC address for ipmi-network facing interface (connected to DRACs of target computers)
+# [*ipmi_ip*] 
+#   - IP address for ipmi-network facing interface (connected to DRACs of target computers)
+# [*ipmi_if*] 
+#   - Interface name of ipmi-network facing interface (connected to DRACs of target computers)
+#     Defaults to 'p4p1'
+# [*vcldb*] 
+#   - Database used by vcl
+#     Defaults to 'vcl' 
+# [*vcluser*] 
+#   - Database user for vcl
+#     Defaults to 'vcluser' 
+# [*root_pw*]
+#   - Database root password 
+# [*vcluser_pw*] 
+#   - Database vcl user password
+# [*system_user*] 
+#   - Admin account used in provisioned computers
+#     Defaults to 'root'
+# [*system_pw*]
+#   - Password for root accout in provisioned computers
+# [*vclhost*] 
+#   - Address of vcl webface
+#     Defaults to 'localhost' 
+# [*serverip*] 
+#   - Address of vcl database
+#     Defaults to 'localhost' 
+# [*xmlrpc_user*] 
+#   - xmlrpc_username must be the unityid field for a user in the user table
+#     Required for block reservation processing
+#     Defaults to 'admin' 
+# [*xmlrpc_pw*] 
+#   - Password for xmlrpc_user
+#     This parameter does not set the password.  It only fills out the vcld configuration file
+#     Defaults to 'just_another_password'
+# [*xmlrpc_url*] 
+#   - the URL will be the URL of your VCL website with a few things on the end
+#     for example, if you install the VCL web code at https://vcl.example.org/vcl/
+#     set xmlrpc_url to https://vcl.example.org/vcl/index.php?mode=xmlrpccall
+#     Defaults to "https://$fqdn/vcl/index.php?mode=xmlrpccall"
+# [*poddefaults*] 
+#   - Default values applied to pod hashes supplied in the class definition
+#     pod values take precedence over poddefaults, which take precedence over defaults derived from the management node definition
+#     Defaults to empty set
+# [*pods*] 
+#   - Hashes defining public/private/ipmi tuples (pods) supported by this management node.  If not undef, these hashes will be populated with default values from the management node and declared as puppet resources 
+#     Defaults to undef
+# [*vcldir*] 
+#   - Directory in which to place vcl svn repo 
+#     Defaults to vclmgmt::params::vcldir
+# [*dojo*] 
+#   - Dojo version
+#     Defaults to vclmgmt::params::dojo
+# [*dojo_checksum*]
+#   - Whether to look for an MD5 Checksum for dojo archive
+#     Defaults to vclmgmt::params::dojo_checksum
+# [*vclweb*]
+#   - VCL web folder location
+#     Defaults to vclmgmt::params::vclweb
+# [*vclnode*]
+#   - Alias within standard path for vcl directory
+#     Defaults to vclmgmt::params::vclnode
+# [*firewalldefaults*]
+#   - Set pre and post class requirements for the firewall declarations
+#     Defaults to
+#      {
+#        require => Class['ncsufirewall::pre'],
+#        before  => Class['ncsufirewall::post'],
+#      }
+# 
 class vclmgmt(
 	$public_mac, 
 	$public_if 	= 'em1', 
