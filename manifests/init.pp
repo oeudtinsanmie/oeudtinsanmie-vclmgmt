@@ -51,6 +51,9 @@ class vclmgmt(
 ) inherits vclmgmt::params {
 
 	class { "xcat": }
+	if ! defined(Class['apache']) {
+	  class { "apache": }
+	}
 
 	$htinc = "${vclweb}/.ht-inc"
 	
@@ -203,7 +206,31 @@ class vclmgmt(
 	      		fail("Unsupported osfamily: ${::osfamily} operatingsystem: ${::operatingsystem}, module ${module_name} only support osfamily RedHat and Debian")
 	    	}
 	}
-	
+# todo: convert to future parser each method check, once wider support
+#  each($vclmgmt::params::pkg_list) |$pkg| {
+#    if ! defined(Package[$pkg]) {
+#      package { $pkg:
+#		    ensure => "latest", 
+#		    provider => "yum", 
+#		    tag  => "vclinstall",
+#		  }
+#    }
+#  }
+#  each($vclmgmt::params::pkg_exclude) |$pkg| {
+#    if ! defined(Package[$pkg]) {
+#		  package { $pkg: 
+#		    ensure => "absent", 
+#		  }
+#	  }
+#  }
+# For now, pulling out individual known conflicts for checks here:
+  if ! defined(Package["mod_ssl"]) {
+    package {"mod_ssl":
+      ensure => "latest", 
+	    provider => "yum", 
+	    tag  => "vclinstall",
+    }
+  }
 	package { $vclmgmt::params::pkg_list:
 		ensure => "latest", 
 		provider => "yum", 

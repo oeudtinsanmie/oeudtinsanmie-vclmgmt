@@ -57,8 +57,6 @@ class vclmgmt::params {
     		}
     		
     		$pkg_list = [ 
-    			"httpd", 
-    			"mod_ssl", 
     			"php", 
     			"php-gd", 
     			"php-mcrypt", 
