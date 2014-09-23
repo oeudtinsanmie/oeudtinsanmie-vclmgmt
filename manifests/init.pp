@@ -48,7 +48,6 @@ class vclmgmt(
     require => Class['ncsufirewall::pre'],
     before  => Class['ncsufirewall::post'],
   },
-  $vclrevision = 'release-2.3.2-RC2',
 ) inherits vclmgmt::params {
 
 	class { "xcat": }
@@ -229,10 +228,10 @@ class vclmgmt(
 		ensure  => "directory",
 	} ->
 	vcsrepo { "vcl" :
+    ensure => present,
     path  => $vcldir,
     provider => svn,
     source   => "http://svn.apache.org/repos/asf/vcl/trunk",
-    revision => $vclrevision,
 	} ->
 	archive { "dojo-release-${dojo}" :
 		url	=> "http://download.dojotoolkit.org/release-${vclmgmt::params::dojo}/dojo-release-${dojo}.tar.gz",
@@ -414,11 +413,11 @@ class vclmgmt(
         Exec["makehosts"] <~ Vclmgmt::Compute_node <| |>
         Exec["makehosts"] <~ Vclmgmt::Xcat_pod <| |>
 	
-	Yumrepo <| tag == "vclrepo" or tag == "xcatrepo" |> -> Package <| tag == "vclinstall" |> -> Subversion::Checkout[ 'vcl'] ~> Vclmgmt::Cpan <| |>
+	Yumrepo <| tag == "vclrepo" or tag == "xcatrepo" |> -> Package <| tag == "vclinstall" |> -> Vcsrepo[ 'vcl'] ~> Vclmgmt::Cpan <| |>
     	Archive ["dojo-release-${dojo}"] -> File <| tag == "vclpostfiles" and tag != "postcopy" |> -> Vclmgmt::Vclcopy <| |> -> File <| tag == "postcopy" |> -> Mysql::Db[$vcldb] -> Exec['genkeys'] -> Service <| name == $vclmgmt::params::service_list |>
     
     	File['vcldconf'] ~> Service['vcld']
-    	Subversion::Checkout['vcl'] ~> Vclmgmt::Vclcopy <| |>
+    	Vcsrepo['vcl'] ~> Vclmgmt::Vclcopy <| |>
     
 	Class['mysql::server']-> Mysql::Db[$vcldb]
 	Package <| tag == "vclinstall" or tag == "xcatpkg" |> -> Xcat_site_attribute <| |> ~> Service['xcatd']
