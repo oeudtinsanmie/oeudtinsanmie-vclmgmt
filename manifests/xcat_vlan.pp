@@ -43,6 +43,7 @@ define vclmgmt::xcat_vlan(
     domain      => $domain,
     net         => $network,
     mask        => $netmask,
+    gateway     => "xcatmaster",
   }
 
   $subdef = {
