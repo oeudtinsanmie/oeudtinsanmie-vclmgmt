@@ -2,10 +2,10 @@ require 'set'
 module Puppet::Parser::Functions
   newfunction(:list_vlans, :type => :rvalue) do |args|
     poddefaults = args[0]
-    pods 	= args[1]
+    pods 	      = args[1]
     private_if 	= args[2]
-    ipmi_if 	= args[3]
-    list 	= Set[]
+    ipmi_if     = args[3]
+    list        = Set[]
     pods.each_value { |val| 
       if (val["private_hash"]["vlanid"] == nil) then
         if (poddefaults["private_hash"] != nil and poddefaults["private_hash"]["vlanid"] != nil) then

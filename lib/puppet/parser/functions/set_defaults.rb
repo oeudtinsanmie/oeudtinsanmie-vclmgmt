@@ -1,18 +1,18 @@
 module Puppet::Parser::Functions
   newfunction(:set_defaults, :type => :rvalue) do |args|
-    pods 		= args[0]
-    poddefaults 	= args[1]
-    masterdefaults 	= args[2]
+    pods            = args[0]
+    poddefaults     = args[1]
+    masterdefaults  = args[2]
 
     private_default = { 
-	"master_if" => masterdefaults["private_if"], 
-	"master_ip" => masterdefaults["private_ip"], 
-	"master_mac" => masterdefaults["private_mac"] 
+      "master_if"   => masterdefaults["private_if"], 
+      "master_ip"   => masterdefaults["private_ip"], 
+      "master_mac"  => masterdefaults["private_mac"] 
     }
     ipmi_default    = { 
-	"master_if" => masterdefaults["ipmi_if"], 
-	"master_ip" => masterdefaults["ipmi_ip"], 
-	"master_mac" => masterdefaults["ipmi_mac"] 
+      "master_if"   => masterdefaults["ipmi_if"], 
+      "master_ip"   => masterdefaults["ipmi_ip"], 
+      "master_mac"  => masterdefaults["ipmi_mac"] 
     }
 
     if (poddefaults != nil and poddefaults["private_hash"] != nil) then
@@ -23,9 +23,9 @@ module Puppet::Parser::Functions
     end
 
     pods.each_value { |val|
-      val["private_hash"].merge!(private_default) 	{ | key, v1, v2 | v1 }
-      val["ipmi_hash"].merge!(ipmi_default) 		{ | key, v1, v2 | v1 }
-      val.merge!(poddefaults) 				{ | key, v1, v2 | v1 }
+      val["private_hash"].merge!(private_default) { | key, v1, v2 | v1 }
+      val["ipmi_hash"].merge!(ipmi_default)       { | key, v1, v2 | v1 }
+      val.merge!(poddefaults)                     { | key, v1, v2 | v1 }
       if (val["defaults"] == nil) then
           val["defaults"] = {}
       end

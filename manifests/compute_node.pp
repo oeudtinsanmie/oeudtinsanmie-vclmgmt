@@ -18,19 +18,11 @@
 # [*private_mac*] 
 #   - MAC address of this computer's interface on the private network (serves images, and is boot interface)
 # [*private_if*] 
-#   - Name of this computer's interface on the private network (serves images, and is boot interface)  
-# [*private_net*] 
-#   - Network address of the private network
-# [*private_domain*] 
-#   - Domain of the private network
+#   - Name of this computer's interface on the private network (serves images, and is boot interface) 
 # [*ipmi_ip*] 
 #   - IP address for this computer on the ipmi network (connects to the DRAC ports of provisioned computers)
 # [*ipmi_mac*] 
 #   - MAC address for this computer on the ipmi network (connects to the DRAC ports of provisioned computers)
-# [*ipmi_net*] 
-#   - Network address of the ipmi network (connects to the DRAC ports of provisioned computers)
-# [*ipmi_domain*] 
-#   - Domain of the ipmi network (connects to the DRAC ports of provisioned computers)
 # [*ipmi_user*] 
 #   - Username for DRACs
 # [*ipmi_pw*] 
@@ -136,12 +128,8 @@ define vclmgmt::compute_node(
   $private_ip, 
   $private_mac, 
   $private_if, 
-  $private_net,
-  $private_domain,
   $ipmi_ip, 
   $ipmi_mac, 
-  $ipmi_net,
-  $ipmi_domain,
   $ipmi_user, 
   $ipmi_pw, 
   $master_ip,
