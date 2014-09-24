@@ -136,7 +136,7 @@ class vclmgmt(
   if ! defined(Class['apache']) {
     class { "apache": }
   }
-  Package <| title == 'httpd' |> {
+  Package <| title == 'apache' |> {
     tag => "vclinstall",
   }
 
@@ -450,10 +450,11 @@ class vclmgmt(
       require => Class['vclmgmt::params'],
     }
   }
-
-  class {'::mysql::server':
-    root_password => $root_pw,
-    require => Class['vclmgmt::params'],
+  if ! defined(Class['::mysql::server']) {
+    class {'::mysql::server':
+      root_password => $root_pw,
+      require => Class['vclmgmt::params'],
+    }
   }
   
   mysql::db { $vcldb :
@@ -544,7 +545,7 @@ class vclmgmt(
   Exec["makehosts"] <~ Vclmgmt::Compute_node <| |>
   Exec["makehosts"] <~ Vclmgmt::Xcat_pod <| |>
 
-  Yumrepo <| tag == "vclrepo" or tag == "xcatrepo" |> -> Class['apache'] -> Package <| tag == "vclinstall" |> -> Vcsrepo[ 'vcl'] ~> Vclmgmt::Cpan <| |>
+  Yumrepo <| tag == "vclrepo" or tag == "xcatrepo" |> -> Package <| tag == "vclinstall" |> -> Vcsrepo[ 'vcl'] ~> Vclmgmt::Cpan <| |>
   Archive ["dojo-release-${dojo}"] -> File <| tag == "vclpostfiles" and tag != "postcopy" |> -> Vclmgmt::Vclcopy <| |> -> File <| tag == "postcopy" |> -> Mysql::Db[$vcldb] -> Exec['genkeys'] -> Service <| name == $vclmgmt::params::service_list |>
 
   File['vcldconf'] ~> Service['vcld']
