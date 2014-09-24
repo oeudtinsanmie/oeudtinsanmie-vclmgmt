@@ -523,10 +523,6 @@ class vclmgmt(
            value => "/opt/xcat",
   }
 
-  class { 'dhcp::server': }
-
-  class {"bind": }
-
   if $pods != undef {
     $masterdefault = {
       private_if => $private_if,
@@ -545,26 +541,30 @@ class vclmgmt(
   exec { "makehosts" :
     command => "/opt/xcat/sbin/makehosts",
     refreshonly => "true",
-  } #~>   # Put this back in once xcat-generated network configuration is working. Then, remove dhcp and bind module usage  
-#  exec { "makedhcpn" :
-#    command => "/opt/xcat/sbin/makedhcp -n",
-#    refreshonly => "true",
-#  }~>
-#  exec { "makedhcpa" :
-#    command => "/opt/xcat/sbin/makedhcp -a",
-#    refreshonly => "true",
-#  }~>
-#  exec { "makedns"  :
-#    command => "/opt/xcat/sbin/makedns -n",
-#    refreshonly => "true",
-#  }
+  }~>
+  exec { "rmleases":
+    command => "rm -rf /var/lib/dhcpd/dhcpd.leases",
+    refreshonly => "true",
+  }~>   
+  exec { "makedhcpn" :
+    command => "/opt/xcat/sbin/makedhcp -n",
+    refreshonly => "true",
+  }~>
+  exec { "makedhcpa" :
+    command => "/opt/xcat/sbin/makedhcp -a",
+    refreshonly => "true",
+  }~>
+  exec { "makedns"  :
+    command => "/opt/xcat/sbin/makedns -n",
+    refreshonly => "true",
+  }
 
   # Chain declarations for vclmgmt resources
   Exec["makehosts"] <~ Vclmgmt::Compute_node <| |>
   Exec["makehosts"] <~ Vclmgmt::Xcat_pod <| |>
-
+  Exec["makedns"] ~> Service["xcatd"] ~> Service["vcld"]
   Yumrepo <| tag == "vclrepo" or tag == "xcatrepo" |> -> Package <| tag == "vclinstall" |> -> Vcsrepo[ 'vcl'] ~> Vclmgmt::Cpan <| |>
-  Archive ["dojo-release-${dojo}"] -> File <| tag == "vclpostfiles" and tag != "postcopy" |> -> Vclmgmt::Vclcopy <| |> -> File <| tag == "postcopy" |> -> Mysql::Db[$vcldb] -> Exec['genkeys'] -> Service <| name == $vclmgmt::params::service_list |>
+  Archive ["dojo-release-${dojo}"] -> File <| tag == "vclpostfiles" and tag != "postcopy" |> -> Vclmgmt::Vclcopy <| |> -> File <| tag == "postcopy" |> -> Mysql::Db[$vcldb] -> Exec['genkeys']
 
   File['vcldconf'] ~> Service['vcld']
   Vcsrepo['vcl'] ~> Vclmgmt::Vclcopy <| |>
@@ -572,9 +572,9 @@ class vclmgmt(
   Class['mysql::server']-> Mysql::Db[$vcldb]
   Mysql::Db[$vcldb] -> Vcl_computer <| |>
   Mysql::Db[$vcldb] -> Vcl_image <| |>
-  Package <| tag == "vclinstall" or tag == "xcatpkg" |> -> Xcat_site_attribute <| |> ~> Service['xcatd']
-
-  Package <| tag == "vclinstall" or tag == "xcatpkg" |> -> Xcat_network <| |> -> Xcat_node<| |>
-  Xcat_network <| ensure == absent |> -> Xcat_network <| ensure != absent |>
+  
   Archive[ "dojo-release-${dojo}" ] ~> Vclmgmt::Regexfile <| |>
+  
+  Class['vclmgmt'] -> Vclmgmt::Baseimage <| |>
+  Class['vclmgmt'] -> Service <| name == $vclmgmt::params::service_list |>
 }

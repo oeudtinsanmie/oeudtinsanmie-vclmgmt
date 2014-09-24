@@ -37,10 +37,6 @@
 #   - Password for DRACs
 # [*master_ip*] 
 #   - IP Address of management node (For the private network interface, not its vlan alias)
-# [*master_private_if*] 
-#   - Name of the management node's private interface
-# [*master_ipmi_if*] 
-#   - Name of the management node's ipmi interface
 # [*xcat_groups*] 
 #   - Groups to add this computer to within xCAT
 #     Defaults to [ 'ipmi', 'compute', 'all' ]
@@ -149,8 +145,6 @@ define vclmgmt::compute_node(
   $ipmi_user, 
   $ipmi_pw, 
   $master_ip,
-  $master_private_if,
-  $master_ipmi_if,
   $xcat_groups   = [ 'ipmi', 'compute', 'all' ],
   $vcl_groups    = [ 'allComputers' ],
   $tgt_os, 
@@ -210,46 +204,6 @@ define vclmgmt::compute_node(
     groups  => [ "all" ],
     ip      => $ipmi_ip,
     mac     => $ipmi_mac,
-  }
-
-  dhcp::hosts { $hostname:
-    subnet    => $private_net,
-    hash_data => {
-      "${hostname}.${private_domain}" => {
-        interfaces => {
-          "${master_private_if}" => $private_mac,
-        }
-      }
-    }
-  }
-
-  dhcp::hosts { "${hostname}-ipmi":
-    subnet    => $ipmi_net,
-    hash_data => {
-      "${hostname}-ipmi.${ipmi_domain}" => {
-        interfaces => {
-          "${master_ipmi_if}" => $ipmi_mac,
-        }
-      }
-    }
-  }
-
-  bind::a { $hostname:
-    ensure => present,
-    zone => $private_domain,
-    ptr => false,
-    hash_data => {
-      "${hostname}" => { owner => $private_ip, },
-    }
-  }
-
-  bind::a { "${hostname}-ipmi":
-      ensure  => present,
-      zone    => $ipmi_domain,
-      ptr     => false,
-      hash_data => {
-        "${hostname}-ipmi" => { owner => $ipmi_ip, },
-      }
   }
   
   vcl_computer { $hostname :

@@ -17,14 +17,6 @@
 			"version_requirement": ">=3.0.0"
 	    },
 	    {
-			"name": "camptocamp-bind",
-			"version_requirement": ">=0.2.2"
-	    },
-	    {
-			"name": "camptocamp-dhcp",
-			"version_requirement": ">=0.3.0"
-	    },
-	    {
 			"name": "puppetlabs-mysql",
 			"version_requirement": ">=2.2.3"
 	    },

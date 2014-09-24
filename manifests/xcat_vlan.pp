@@ -18,8 +18,6 @@
 #   - Network address
 # [*netmask*]
 #   - Network netmask
-# [*broadcast*]
-#   - Broadcast address for this network
 # [*vlanid*] 
 #   - Vlan ID, if you have multiple networks through this interface
 #     Defaults to undef
@@ -31,7 +29,6 @@ define vclmgmt::xcat_vlan(
   $domain, 
   $network, 
   $netmask, 
-  $broadcast,
   $vlanid         = undef
 ) {
   
@@ -43,14 +40,6 @@ define vclmgmt::xcat_vlan(
     domain      => $domain,
     net         => $network,
     mask        => $netmask,
-  }
-
-  $subdef = {
-    broadcast   => $broadcast,
-    netmask     => $netmask,
-    domain_name => $domain,
-    other_opts  => ['filename "pxelinux.0"', "next-server ${master_ip}"],
-    require     => Class['::dhcp::server'],
   }
 
   $xcatmask = split($netmask, '\.')
@@ -65,12 +54,6 @@ define vclmgmt::xcat_vlan(
         ensure => absent,
       }
     }
-
-    $subnet = { 
-      "${network}" => {
-        routers => [ $master_ip, ],
-      }
-    }
   }
   else {
     $xcatnet = split($vlan_alias_ip, '\.')
@@ -81,12 +64,6 @@ define vclmgmt::xcat_vlan(
       macaddress  => $master_mac,
       vlan        => true,
       domain      => $domain,
-    }
-    
-    $subnet = { 
-      "${network}" => {
-        routers => [ $vlan_alias_ip, ],
-      }
     }
 
     $nethash = {
@@ -101,15 +78,4 @@ define vclmgmt::xcat_vlan(
   }
 
   create_resources(xcat_network, $nethash, $default)
-  create_resources(dhcp::subnet, $subnet, $subdef)
-
-  Xcat_network <| ensure == absent |> -> Xcat_network <| ensure != absent |>
-
-  bind::zone { $domain :
-    zone_contact => 'netlabs@help.ncsu.edu',
-    zone_ns      => $master_ip,
-    zone_serial  => '2012112901',
-    zone_ttl     => '604800',
-    zone_origin  => $domain,
-  }
 }
