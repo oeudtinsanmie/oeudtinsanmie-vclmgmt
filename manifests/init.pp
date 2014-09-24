@@ -95,6 +95,12 @@ include stdlib
 #        require => Class['ncsufirewall::pre'],
 #        before  => Class['ncsufirewall::post'],
 #      }
+# [*vclversion*]
+#   - The release of vcl to pull from the repo, or "latest" if you want to work with the trunk
+#     Defaults to release-2.3.2-RC2
+# [*vclrevision*]
+#   - If defined, pulls a specific revision of the vcl subversion repo
+#     Defaults to undefined
 # 
 class vclmgmt(
   $public_mac, 
