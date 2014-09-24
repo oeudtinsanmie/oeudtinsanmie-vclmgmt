@@ -139,12 +139,12 @@ class vclmgmt(
 ) inherits vclmgmt::params {
 
   class { "xcat": }
-  if ! defined(Class['apache']) {
-    class { "apache": }
-  }
-  Package <| title == 'apache' |> {
-    tag => "vclinstall",
-  }
+#  if ! defined(Class['apache']) {
+#    class { "apache": }
+#  }
+#  Package <| title == 'apache' |> {
+#    tag => "vclinstall",
+#  }
 
   $htinc = "${vclweb}/.ht-inc"
   $vclimgs = "${vcldir}/images"  
@@ -327,6 +327,18 @@ class vclmgmt(
   }
   else {
     Package <| title == 'openssl-devel' |> {
+      tag => "vclinstall",
+    }
+  }
+  if ! defined(Package["httpd"]) {
+    package {"httpd":
+      ensure => "latest", 
+      provider => "yum", 
+      tag  => "vclinstall",
+    }
+  }
+  else {
+    Package <| title == 'httpd' |> {
       tag => "vclinstall",
     }
   }

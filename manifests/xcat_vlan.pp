@@ -43,7 +43,6 @@ define vclmgmt::xcat_vlan(
     domain      => $domain,
     net         => $network,
     mask        => $netmask,
-    gateway     => "xcatmaster",
   }
 
   $subdef = {
@@ -59,7 +58,9 @@ define vclmgmt::xcat_vlan(
   if $vlan_alias_ip == undef {
     $xcatnet = split($master_ip, '\.')
     $nethash = {
-      "${domain}" => {},
+      "${domain}" => {
+        gateway     => $master_ip,
+      },
       "${xcatnet[0]}_${xcatnet[1]}_${xcatnet[2]}_0-${xcatmask[0]}_${xcatmask[1]}_${xcatmask[2]}_${xcatmask[3]}" => {
         ensure => absent,
       }
@@ -91,6 +92,7 @@ define vclmgmt::xcat_vlan(
     $nethash = {
       "${domain}" => {
         vlanid => $vlanid,
+        gateway     => $vlan_alias_ip,
       },
       "${xcatnet[0]}_${xcatnet[1]}_${xcatnet[2]}_0-${xcatmask[0]}_${xcatmask[1]}_${xcatmask[2]}_${xcatmask[3]}" => {
         ensure => absent,
