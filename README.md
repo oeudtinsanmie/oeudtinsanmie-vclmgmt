@@ -5,15 +5,15 @@ This module installs and configures xCAT and VCL, and profides puppet classes to
 Classes
 --------
   * [Vclmgmt](#vclmgmt-)
-  * [Vclmgmt::Xcat_pod](#xcat-pod)
-  * [Vclmgmt::Xcat_vlan](#xcat-vlan)
-  * [Vclmgmt::Compute_node](#compute-node)
-  * [Vclmgmt::Baseimage](#image)
+  * [Vclmgmt::Xcat_pod](#xcat-pod-)
+  * [Vclmgmt::Xcat_vlan](#xcat-vlan-)
+  * [Vclmgmt::Compute_node](#compute-node-)
+  * [Vclmgmt::Baseimage](#image-)
   
 Hiera Usage & Custom Functions
 ------------------------------
-  * [Hiera Yaml Example](#yaml-example)
-  * [Using the set_defaults Function](#set-defaults)
+  * [Hiera Yaml Example](#yaml-example-)
+  * [Using the set_defaults Function](#set-defaults-)
 
 Class Definitions
 =================
