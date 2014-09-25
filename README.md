@@ -8,7 +8,7 @@ Classes
   * [Vclmgmt::Xcat_pod](#vclmgmtxcat_pod-)
   * [Vclmgmt::Xcat_vlan](#vclmgmtxcat_vlan-)
   * [Vclmgmt::Compute_node](#vclmgmtcompute_node-)
-  * [Vclmgmt::Baseimage](#vclmgmtbasimage-)
+  * [Vclmgmt::Baseimage](#vclmgmtbaseimage-)
   
 Hiera Usage & Custom Functions
 ------------------------------
@@ -17,8 +17,8 @@ Hiera Usage & Custom Functions
 
 Class Definitions
 =================
-vclmgmt <a id="vclmgmt"></a>
-----------------------------
+vclmgmt 
+--------
 Installs xCAT and VCL from source, then configures the management node.  You can also include an array of hashes describing the vclmgmt::xcat_pod configurations for client subnets.  Pod configurations will inherit the private and impi mac addreses and interface names, by default.  Explicit definitions within the pods hash will override those defaults.
 
     class { "vclmgmt" :
@@ -79,8 +79,8 @@ Installs xCAT and VCL from source, then configures the management node.  You can
   
     }
 
-vclmgmt::xcat_pod <a id="cat-pod"></a>
----------------------------------------
+vclmgmt::xcat_pod 
+------------------
 Describes the private and ipmi subnets for a given collection of compute nodes.  It accepts hashes defining the xcat_vlan objects for its private and ipmi subnets, as well as a defaults hash, which may be used to contain any values shared by both definitions.  In addition, you may include a hash describing the compute_node objects of this pod.  Compute nodes within this list will be passed definitions from the pod within their defaults hash, describing the private and ipmi interfaces, networks and domains.  These will be overridden by any explicit definition in the compute_node hashes.
 
     vclmgmt::xcat_pod { "pod7a" : 
@@ -114,8 +114,8 @@ Describes the private and ipmi subnets for a given collection of compute nodes. 
         },
       }
 
-vclmgmt::xcat_vlan <a id="xcat-vlan"></a>
---------------------------------------------
+vclmgmt::xcat_vlan 
+-------------------
 Creates an xcat network object in xcat describing the network.  If vlan_alias_ip is not undefined, it will also create a network interface for the vlan.
 
     vclmgmt::xcat_vlan { "some_network" :
@@ -129,8 +129,8 @@ Creates an xcat network object in xcat describing the network.  If vlan_alias_ip
         vlanid        => undef,                 # vlan id, if defining a subnet isolated by a vlan on this interface.  Ignored if no vlan_alias_ip provided
     }
 
-vclmgmt::compute_node <a id="compute-node"></a>
------------------------------------------------
+vclmgmt::compute_node 
+----------------------
 Defines related vcl_computer and xcat_node objects for a provision controlled computer.  Vcl_computer is a defined type within the vclmgmt module and manages [VCL Database Tables](https://vcl.apache.org/dev/database-schema.html#computer-table) related to computers, whereas xcat_node is a defined type within the related [xCAT module](https://github.ncsu.edu/engr-csc-netlabs/puppetmodules/tree/master/xcat#xcat_node-).  Where the computer table uses foreign keys to store properties of the computer, Vcl_computer abstracts this out.  For example, if I made an image called 'centos65' that I wish to load on this computer, I would simply put its name in the image field.
 
     vclmgmt::compute_node { "my-node" :
@@ -183,8 +183,8 @@ Defines related vcl_computer and xcat_node objects for a provision controlled co
         vmtype        => undef,                         # VM Type of this computer
     }
       
-vclmgmt::baseimage <a id="image"></a>
--------------------------------------
+vclmgmt::baseimage 
+-------------------
 Creates the database rows for a vcl base image, and creates an image within xcat, using the [xcat::image](https://github.ncsu.edu/engr-csc-netlabs/puppetmodules/tree/master/xcat#xcat_image-) class.  Some of these parameters are enumerations from the Apache VCL project.  With the exception of the os code, everything else should work using only the default values.  If your configuration needs non-default values, refer to [VCL documentation](https://vcl.apache.org/dev/database-schema.html#image-table) for more details.
 
     vclmgmt::baseimage { "base-img" :
@@ -262,8 +262,8 @@ Hiera Usage
 ===========
 vclmgmt::xcat_pod and vclmgmt::compute_node are set up as a hierarcy.  This makes it easy to define values in hiera once and let those definitions cascade through.  Variables are passed down the hierarchy as default values for lower member classes, but may be overridden by explicit definitions.  The simplest way to do this is to define all your networks and nodes in a hash within the vclmgmt class definition.  You can use Puppet's automatic variable importing or define a hash and then declare a class resource with that hash.  Alternatively, you might want to define a hash-generating function that defines network addresses according to some scheme (eg. by lab room, rack number, etc).  In that case, you may use the set_defaults function discussed below to recreate the hierarchy inheritance of the main class for your generated hashes.
 
-Example Yaml <a id="yaml-example"></a>
---------------------------------------
+Example Yaml 
+-------------
 The nested hash structure and default-passing behavior of these puppet classes simplify defining a VCL installation in hiera, and then using the hiera_include, ensure_resource and create_resources functions. 
 
     ---
@@ -314,8 +314,8 @@ The nested hash structure and default-passing behavior of these puppet classes s
                         private_mac: XX:XX:XX:XX:XX:XX
                         ipmi_mac: XX:XX:XX:XX:XX:XX
 
-set_defaults Usage <a id="set-defaults"></a>
---------------------------------------------
+set_defaults Usage 
+-------------------
 The set_defaults function allows you to use the hierarchical default_passing behavior of the vclmgmt main class within your generated hash definitions.  It takes three arguments: a pod definitons hash, a defaults hash and a management node hash.  So, for example you could define your own pod definitions hash function of properties that describe your lab environment, and then use set_defaults to populate this generated hash with default values as if it were included within the vclmgmt class definition.
 
     ---
