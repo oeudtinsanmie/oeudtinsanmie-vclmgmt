@@ -11,7 +11,7 @@ Puppet::Type.newtype(:vcl_computer) do
   # This is a way of managing array properties stored as strings and whose order does not matter
   # And so users can specify a one-entry list or a string, with the same result
   newproperty(:groups, :array_matching => :all) do
-    desc 'resource groups this image belogs to. Valid groups are allImages, newimages, newvmimages, allVMimages'
+    desc 'resource groups this image belogs to. Valid groups are allComputers, All VM Computers'
     def insync?(is)
       # The current value may be nil and we don't
       # want to call sort on it so make sure we have arrays 
@@ -41,12 +41,12 @@ Puppet::Type.newtype(:vcl_computer) do
       if value.is_a?(Array)
         value.each { |val|
           if !validvals.include? val
-            raise ArgumentError, "#{val} is not a valid group for images.  Please use allImages, newimages, newvmimages and/or allVMimages"
+            raise ArgumentError, "#{val} is not a valid group for images.  Please use allComputers and/or All VM Computers"
           end
         }
       else
         if !validvals.include? value
-          raise ArgumentError, "#{value} is not a valid group for images.  Please use allImages, newimages, newvmimages and/or allVMimages"
+          raise ArgumentError, "#{value} is not a valid group for images.  Please use allComputers and/or All VM Computers"
         end
       end
     end
@@ -157,12 +157,13 @@ Puppet::Type.newtype(:vcl_computer) do
   newproperty(:hostpub) do
     desc ''
   end
-  
-  newproperty(:state) do
-    desc ''
-    newvalues(:available, :checkpoint, :classreserved, :cleaning, :complete, :deleted, :failed, :hpc, :image, :imageinuse, :imageprep, :inuse, :maintenance, :makeproduction, :new, :pending, :reboothard, :rebootsoft, :reinstall, :reload, :reloading, :reserved, :serverinuse, :servermodified, :timeout, :tohpc, :tomaintenance, :tovmhostinuse, :vmhostinuse)
-    defaultto :maintenance
-  end
+
+#  Doesn't make sense to manage this here.  I am looking into having it show up as a non-settable property for reference, though  
+#  newproperty(:state) do
+#    desc ''
+#    newvalues(:available, :checkpoint, :classreserved, :cleaning, :complete, :deleted, :failed, :hpc, :image, :imageinuse, :imageprep, :inuse, :maintenance, :makeproduction, :new, :pending, :reboothard, :rebootsoft, :reinstall, :reload, :reloading, :reserved, :serverinuse, :servermodified, :timeout, :tohpc, :tomaintenance, :tovmhostinuse, :vmhostinuse)
+#    defaultto :maintenance
+#  end
   
   newproperty(:vclschedule) do
     desc ''

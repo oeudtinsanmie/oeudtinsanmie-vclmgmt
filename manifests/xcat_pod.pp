@@ -13,7 +13,7 @@
 #   - Default values for node definitions within the nodes hash, if defined
 #     Defaults to undef
 # [*nodes*] 
-#   - Nodes to declare with this network pair's settings
+#   - Hash of vclmgmt::compute_nodes to declare with this network pair's settings
 #     Defaults to undef
 #
 define vclmgmt::xcat_pod(

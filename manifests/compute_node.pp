@@ -24,9 +24,9 @@
 # [*ipmi_mac*] 
 #   - MAC address for this computer on the ipmi network (connects to the DRAC ports of provisioned computers)
 # [*ipmi_user*] 
-#   - Username for DRACs
+#   - Username for ipmi on target node
 # [*ipmi_pw*] 
-#   - Password for DRACs
+#   - Password for ipmi on target node
 # [*master_ip*] 
 #   - IP Address of management node (For the private network interface, not its vlan alias)
 # [*xcat_groups*] 
@@ -95,9 +95,6 @@
 # [*hostpub*] 
 #   - Host's public signature
 #     Defaults to undef -> inherits defaults from vcl_computer
-# [*state*] 
-#   - State of this computer
-#     Defaults to undef -> inherits defaults from vcl_computer
 # [*platform*] 
 #   - Platform of this computer
 #     Defaults to undef -> inherits defaults from vcl_computer
@@ -156,7 +153,6 @@ define vclmgmt::compute_node(
   $rsa           = undef,
   $rsapub        = undef,
   $hostpub       = undef,
-  $state         = undef,
   $platform      = undef,
   $vclschedule   = undef,
   $image         = undef,
@@ -214,8 +210,7 @@ define vclmgmt::compute_node(
     dsapub        => $dsapub,         
     rsa           => $rsa,            
     rsapub        => $rsapub,         
-    hostpub       => $hostpub,        
-    state         => $state,             
+    hostpub       => $hostpub,           
     platform      => $platform,         
     vclschedule   => $vclschedule,         
     image         => $image,            

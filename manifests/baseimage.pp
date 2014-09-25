@@ -26,10 +26,10 @@
 #   - Min network speed requirement for this image
 #     Defaults to 100
 # [*maxconcurrent*] 
-#   - 
+#   - maximum concurrent reservations that can be made for image
 #     Defaults to undef
 # [*test*] 
-#   - 
+#   - flag to show if there is a test version of this image available (depricated?)
 #     Defaults to undef
 # [*forcheckout*] 
 #   - Assign this image for checkout
@@ -47,7 +47,7 @@
 #   - Description for this image
 #     Defaults to undef
 # [*usage*] 
-#   - 
+#   - notes on how to use image displayed on Connect page
 #     Defaults to undef
 # [*deleted*] 
 #   - Whether this image should be marked deleted
@@ -58,7 +58,7 @@
 # [*filepath*] 
 #   - File location of the iso for this image
 # [*distro*] 
-#   - Distribution of this image
+#   - OS distribution identifier of this image
 #
 define vclmgmt::baseimage(
   $ensure        = present,

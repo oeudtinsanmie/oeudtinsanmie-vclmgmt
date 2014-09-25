@@ -1,144 +1,221 @@
-vclmgmt
-========================================================================================
-Including the vclmgmt class installs XCAT and VCL, and creates these three types to allow you to configure your installation.
+VCL Managment Module
+====================
+This module installs and configures xCAT and VCL, and profides puppet classes to manipulate the related xCAT and database tables VCL uses.  The current version supports VCL up to release-2.3.2-RC2.  Development is in process to support the new database schema in the upcoming release of 2.4.  xCAT installation and resource management use the related [xCAT module](https://github.ncsu.edu/engr-csc-netlabs/puppetmodules/tree/master/xcat).
 
-      include vclmgmt
+Classes
+--------
+  * [Vclmgmt](#vclmgmt)
+  * [Vclmgmt::Xcat_pod](#xcat-pod)
+  * [Vclmgmt::Xcat_vlan](#xcat-vlan)
+  * [Vclmgmt::Compute_node](#compute-node)
+  * [Vclmgmt::Baseimage](#image)
+  
+Hiera Usage & Custom Functions
+------------------------------
+  * [Hiera Yaml Example](#yaml-example)
+  * [Using the set_defaults Function](#set-defaults)
 
-vclmgmt::mgmt_node type configures the management node.  You can also include an array of hashes describing the vclmgmt::xcat_pod configurations for client subnets.  Pod configurations will inherit the private and impi mac addreses and interface names, by default.  Explicit definitions within the pods hash will override those defaults.
+Class Definitions
+=================
+vclmgmt <a id="vclmgmt"></a>
+----------------------------
+Installs xCAT and VCL from source, then configures the management node.  You can also include an array of hashes describing the vclmgmt::xcat_pod configurations for client subnets.  Pod configurations will inherit the private and impi mac addreses and interface names, by default.  Explicit definitions within the pods hash will override those defaults.
 
-      vclmgmt::mgmt_node { "mgmt_node" :
-            vcldb          => 'vcl',                 # default value
-            vcluser        => 'vcluser@localhost',   # vcl mysql user
-            vcluser_pw     => 'PASSWORD',            # vcl mysql user password
-            root_pw        => 'ANOTHER_PASSWORD',    # root user password for mysql
+    class { "vclmgmt" :
+        # public network parameters
+        public_mac     => 'XX:XX:XX:XX:XX:XX',   # MAC address for public network interface                 (REQUIRED)
+        public_if      => 'em1',                 # Interface name of public-network facing interface.       (default value)
+        public_ip      => 'dhcp',                # IP address for public-network facing interface           (default value)
+                                                                                                            
+        # private network parameters (network for provisioning target computers)                            
+        private_mac    => 'XX:XX:XX:XX:XX:XX',   # MAC address for private-network facing interface         (REQUIRED)   
+        private_if     => 'em2',                 # Interface name of private-network facing interface       (default value)
+        private_ip     => '172.20.0.1',          # IP address for private-network facing interface          (REQUIRED)
+        private_domain => 'mydomain',            # Domain for private-network facing interface              (REQUIRED)
+        
+        # ipmi network parameters (connected to DRACs of target computers)
+        ipmi_mac       => 'XX:XX:XX:XX:XX:XX',   # MAC address for ipmi-network facing interface            (REQUIRED)
+        ipmi_if        => 'p4p1',                # Interface name of ipmi-network facing interface          (default value)
+        ipmi_ip        => '172.25.0.1',          # IP address for ipmi-network facing interface             (REQUIRED)
+        
+        # database setup
+        vcldb          => 'vcl',                 # Database used by vcl                                     (default value)
+        vcluser        => 'vcluser@localhost',   # Database user for vcl                                    (default value)
+        root_pw        => 'ANOTHER_PASSWORD',    # Database root password                                   (REQUIRED)
+        vcluser_pw     => 'PASSWORD',            # Database vcl user password                               (REQUIRED)
+
+        system_user    => 'root',                # Admin account used in provisioned computers              (default value)
+        system_pw,                               # Password for root accout in provisioned computers        (REQUIRED)
+        vclhost        => 'localhost',           # Address of vcl webface                                   (default value)
+        serverip       => 'localhost',           # Address of vcl database                                  (default value)
+        
+        # Required for block reservation processing
+        xmlrpc_user    => 'admin',               # must be the unityid field for a user in the user table   (default value)
+        xmlrpc_pw,                               # Password for xmlrpc_user.                                (default value)  
+                                                 # This parameter does not set the password.  It only fills out the vcld configuration file, so you can leave this default until you want to use block reservation processing and have set up a user for this purpose.
+        xml_url,                                 # URL used to call block reservations                      (default value)
+                                                 #
+                                                 # From VCL documentation: the URL will be the URL of your VCL website with a few things on the end
+                                                 # for example, if you install the VCL web code at https://vcl.example.org/vcl/
+                                                 # set xmlrpc_url to https://vcl.example.org/vcl/index.php?mode=xmlrpccall
+                                                 # Defaults to "https://$fqdn/vcl/index.php?mode=xmlrpccall" 
+        
+        poddefaults    => {},                    # Default values applied to pod hashes supplied in the class definition.  Pod values take precedence over poddefaults, which take precedence over defaults derived from the management node definition
+        pods           => undef,                 # Hashes defining public/private/ipmi tuples (pods) supported by this management node.  If not undef, these hashes will be populated with default values from the management node and declared as puppet resources
             
-            # public network parameters
-            public_if      => 'em1',                 # default value
-            public_mac     => 'XX:XX:XX:XX:XX:XX',   # MAC address for public network interface
-            public_ip      => 'dhcp',                # default value
-            
-            # private network parameters
-            private_if     => 'em2',                 # default value
-            private_mac    => 'XX:XX:XX:XX:XX:XX',   # MAC address for public network interface
-            private_ip     => '172.20.0.1',          # default value
-            private_domain => 'mydomain',            # the domain name for your private network
-            
-            # ipmi network parameters
-            ipmi_if        => 'p4p1',                # default value
-            ipmi_mac       => 'XX:XX:XX:XX:XX:XX',   # MAC address for public network interface
-            ipmi_ip        => '172.25.0.1',          # default value
-            
-            pods           => undef,                 # default value
+        vcldir         => '/vcl',                # Directory in which to place vcl svn repo                 (default value)
+        dojo           => '1.6.1',               # Dojo version                                             (default value)
+        dojo_checksum  => false,                 # Whether to look for an MD5 Checksum for dojo archive     (default value)
+        vclweb         => '/var/www/html/vcl',   # VCL web folder location                                  (default value)
+        vclnode        => '/usr/local/vcl',      # Alias within standard path for vcl directory             (default value)
+        
+        firewalldefaults  => {                   # Set pre and post class requirements for the firewall declarations  (default value)
+            require  =>> Class['ncsufirewall::pre'],
+            before   =>> Class['ncsufirewall::post'],
+        },
+        
+        vclversion  => "release-2.3.2-RC2",      # The release of vcl to pull from the repo, or "latest" if you want to work with the trunk  (default value)
+        vclrevision  => undef,                   # If defined, pulls a specific revision of the vcl subversion repo                          (default value)
+  
+    }
+
+vclmgmt::xcat_pod <a id="cat-pod"></a>
+---------------------------------------
+Describes the private and ipmi subnets for a given collection of compute nodes.  It accepts hashes defining the xcat_vlan objects for its private and ipmi subnets, as well as a defaults hash, which may be used to contain any values shared by both definitions.  In addition, you may include a hash describing the compute_node objects of this pod.  Compute nodes within this list will be passed definitions from the pod within their defaults hash, describing the private and ipmi interfaces, networks and domains.  These will be overridden by any explicit definition in the compute_node hashes.
+
+    vclmgmt::xcat_pod { "pod7a" : 
+        private_hash => {                         # An xcat_vlan hash for the private network
+            vlan_alias_ip => '192.168.37.1',
+            network       => '192.168.37.0',
+            netmask       => '255.255.255.192',
+            domain        => 'mydomain',
+            vlanid        => '307',
+        },
+        ipmi_hash => {                            # An xcat_vlan hash for the ipmi network
+            network       => '192.168.137.0',
+            netmask       => '255.255.255.192',
+            domain        => 'ipmidomain',
+            vlanid        => '1307',
+        },
+        defaults => {                             # Default values for node definitions within the nodes hash, if defined
+            tgt_if        => 'eth1',      
+            ipmi_user     => 'SOMEUSR',   
+            ipmi_pw       => 'SOMEPASS',  
+            admin_user    => 'adminuser', 
+            admin_pw      => 'adminpass', 
+        },
+        nodes => {                                # Hash of vclmgmt::compute_nodes to declare with this network pair's settings
+            "my-node" => {
+                tgt_ip => "192.168.37.8",
+                ipmi_ip => "192.168.137.8",
+                tgt_mac => "XX:XX:XX:XX:XX:XX",
+                ipmi_mac => "XX:XX:XX:XX:XX:XX",
+            },
+        },
       }
 
-vclmgmt::xcat_pod describes the private and ipmi subnets for a given collection of compute nodes.  It accepts hashes defining the xcat_vlan objects for its private and ipmi subnets, as well as a defaults hash, which may be used to contain any values shared by both definitions.  In addition, you may include a hash describing the compute_node objects of this pod.  Compute nodes within this list will be passed definitions from the pod within their defaults hash, describing the private and ipmi interfaces, networks and domains.  These will be overridden by any explicit definition in the compute_node hashes.
+vclmgmt::xcat_vlan <a id="xcat-vlan"></a>
+--------------------------------------------
+Creates an xcat network object in xcat describing the network.  If vlan_alias_ip is not undefined, it will also create a network interface for the vlan.
 
-      vclmgmt::xcat_pod { "pod7a" : 
-            private_hash => { 
-                vlan_alias_ip => '192.168.37.1',
-                network       => '192.168.37.0',
-                netmask       => '255.255.255.192',
-                broadcast     => '192.168.37.63',
-                domain        => 'mydomain',
-                ip_range      => '192.168.37.4-192.168.37.63',
-                vlanid        => '307',
-            },
-            ipmi_hash => {
-                network       => '192.168.137.0',
-                netmask       => '255.255.255.192',
-                broadcast     => '192.168.137.63',
-                domain        => 'ipmidomain',
-                ip_range      => '192.168.137.4-192.168.137.63',
-                vlanid        => '1307',
-            },
-            defaults => {
-                tgt_if        => 'eth1',      # the interface of the target node, which is connected to the private network
-                ipmi_user     => 'SOMEUSR',   # username of ipmi on target node
-                ipmi_pw       => 'SOMEPASS',  # password for ipmi on target node
-                admin_user    => 'adminuser', # username to create as administrator on target node
-                admin_pw      => 'adminpass', # password for user on target node
-            },
-            nodes => {
-                "my-node" => {
-                    tgt_ip => "192.168.37.8",
-                    ipmi_ip => "192.168.137.8",
-                    tgt_mac => "XX:XX:XX:XX:XX:XX",
-                    ipmi_mac => "XX:XX:XX:XX:XX:XX",
-                    slotid => 1,
-                },
-            },
-      }
+    vclmgmt::xcat_vlan { "some_network" :
+        master_if     => 'eth0', 
+        master_mac    => 'XX:XX:XX:XX:XX:XX',   # MAC address for network interface
+        master_ip     => '192.168.37.1',        # IP address for xcat management node on master_if
+        vlan_alias_ip => undef,                 # IP address for xcat management node on the subnet routed through this vlan, or undef if no vlan is used                 
+        domain        => 'mydomain',            # the domain name for this network
+        network       => '192.168.37.0'         # network root address  
+        netmask       => '255.255.255.192',     # netmask for network
+        vlanid        => undef,                 # vlan id, if defining a subnet isolated by a vlan on this interface.  Ignored if no vlan_alias_ip provided
+    }
 
-vclmgmt::xcat_vlan configures dhcpd.conf and bind, and creates an xcat network object in xcat describing the network.  If vlan_alias_ip is not undefined, it will also create a network interface for the vlan.
+vclmgmt::compute_node <a id="compute-node"></a>
+-----------------------------------------------
+Defines related vcl_computer and xcat_node objects for a provision controlled computer.  Vcl_computer is a defined type within the vclmgmt module and manages [VCL Database Tables](https://vcl.apache.org/dev/database-schema.html#computer-table) related to computers, whereas xcat_node is a defined type within the related [xCAT module](https://github.ncsu.edu/engr-csc-netlabs/puppetmodules/tree/master/xcat#xcat_node).  Where the computer table uses foreign keys to store properties of the computer, Vcl_computer abstracts this out.  For example, if I made an image called 'centos65' that I wish to load on this computer, I would simply put its name in the image field.
 
-      vclmgmt::xcat_vlan { "some_network" :
-      	master_if     => 'eth0', 
-            master_mac    => 'XX:XX:XX:XX:XX:XX',   # MAC address for network interface
-      	master_ip     => '192.168.37.1',        # IP address for xcat management node on master_if
-      	vlan_alias_ip => undef,                 # IP address for xcat management node on the subnet routed through this vlan, or undef if no vlan is used                 
-      	domain        => 'mydomain',            # the domain name for this network
-      	network       => '192.168.37.0'         # network root address  
-      	broadcast     => '192.168.37.63',       # broadcast address for network
-      	netmask       => '255.255.255.192',     # netmask for network
-      	ip_range      => '192.168.37.4-192.168.37.63',   # ip range for dynamically allocated ip addresses in dhcpd.conf
-      	vlanid        => undef,                 # vlan id, if defining a subnet isolated by a vlan on this interface.  Ignored if no vlan_alias_ip provided
-      }
-
-vclmgmt::compute_node adds an xcat node object describing the target node and configures the dhcp and dns settings for its private and ipmi network interfaces.
-
-      vclmgmt::compute_node { "my-node" :
-      	tgt_ip     => '192.168.37.8',        # IP address for target node on private network 
-      	tgt_mac    => 'XX:XX:XX:XX:XX:XX',   # MAC address for private network interface 
-      	tgt_if     => 'eth1',                # interface of target node connected to its private network 
-      	tgt_net     => '192.168.37.0',       # private network for target node
-      	tgt_domain  => 'mydomain',           # domain of private network for target node
-      	tgt_os      => 'Linux',                # Operating system family for target node 
-      	tgt_arch    => 'x86_64',               # Architecture of target node. 
-      	slotid      => 1,                      # identifier for target node within its subnet.  Pick a unique integer. 
-      	ipmi_ip     => '192.168.137.8',        # IP address for target node on ipmi network 
-      	ipmi_mac    => 'XX:XX:XX:XX:XX:XX',    # MAC address for ipmi network interface 
-      	ipmi_net     => '192.168.37.0',        # ipmi network for target node
-      	ipmi_domain  => 'ipmidomain',          # domain of private network for target node
-      	ipmi_user    => 'SOMEUSR',   # username of ipmi on target node 
-      	ipmi_pw      => 'SOMEPASS',  # password for ipmi on target node 
-      	master_if         => 'em2',                 # management node interface connected to this target node's private network 
-      	master_ipmi_if    => 'p4p1',                # management node interface connected to this target node's ipmi network
-      	admin_user   => 'adminuser', # username to create as administrator on target node 
-      	admin_pw     => 'adminpass', # password for user on target node
-      }
+    vclmgmt::compute_node { "my-node" :
+        ensure        => present,                       # Passthrough for ensurable objects in this class
+        hostname      => $title,                        # Allows names of objects to be different from title of this resource
+        public_ip,                                      # IP address for this computer on the public network
+        public_mac,                                     # MAC address of this computer's interface on the public network 
+        private_ip    => '192.168.37.8',                # IP address for target node on private network 
+        private_mac   => 'XX:XX:XX:XX:XX:XX',           # MAC address for private network interface 
+        private_if    => 'eth1',                        # interface of target node connected to its private network arget node
+        ipmi_ip       => '192.168.137.8',               # IP address for target node on ipmi network 
+        ipmi_mac      => 'XX:XX:XX:XX:XX:XX',           # MAC address for ipmi network interface 
+        ipmi_user     => 'SOMEUSR',                     # username for ipmi on target node 
+        ipmi_pw       => 'SOMEPASS',                    # password for ipmi on target node 
+        master_ip,                                      # IP Address of management node (For the private network interface, not its vlan alias)
+        xcat_groups   => [ 'ipmi', 'compute', 'all' ],  # Groups to add this computer to within xCAT
+        vcl_groups    => [ 'allComputers' ],            # Groups to add this computer to within VCL. Valid groups are 'allComputers', 'All VM Computers'
+        tgt_os        => 'centos',                      # OS to provision this computer with 
+        tgt_arch      => 'x86_64',                      # Architecture of target node. 
+        profile,                                        # Profile to apply when provisioning this computer
+        username      => 'adminuser',                   # username to create as administrator on target node 
+        password      => 'adminpass',                   # password for administrator account on target node
+        netboot       => 'pxe',                         # Netboot method for provisioning
+        provmethod    => 'install',                     # Provisioning method
+        
+        # vcl_computer parameters default to undef -> inherits defaults from vcl_computer
+        ram           => undef,                         # Amount of RAM in this computer 
+        procnumber    => undef,                         # Number of processors on this computer
+        procspeed     => undef,                         # Processor speed of this computer
+        network       => undef,                         # Network speed of this computer
+        type          => undef,                         # Type of this computer. Valid values are blade, lab, or virtualmachine
+        drivetype     => undef,                         # Type of hard drives within this computer. drivetype must be 4 or fewer chars. Default is hda
+        deleted       => undef,                         # Whether this computer record should be marked deleted within the database
+        notes         => undef,                         # Notes for this computer
+        location      => undef,                         # Physical location of this computer
+        
+        # Not currently being used by VCL, according to documentation.  Was supposed to be for ssh
+        dsa           => undef,                         
+        dsapub        => undef,                         
+        rsa           => undef,                          
+        rsapub        => undef,                          
+        hostpub       => undef,                          
+        
+        platform      => undef,                         # VCL platform designation of this computer. Valid values are i386, i386_lab, or ultrasparc
+        vclschedule   => undef,                         # Schedule to assign this computer within VCL
+        image         => undef,                         # Name of image to assign this computer
+        imagerevision => undef,                         # Image revision number to assign this computer
+        provisioning  => undef,                         # Provisioning method for this computer
+        vmhost        => undef,                         # VM Host of this computer
+        vmtype        => undef,                         # VM Type of this computer
+    }
       
-Creates the database rows for a vcl base image, and creates an image within xcat, using the [xcat::image](https://github.ncsu.edu/engr-csc-netlabs/puppetmodules/tree/master/xcat) class.  Some of these parameters are enumerations from the Apache VCL project.  With the exception of the os code, everything else should work using only the default values.  If your configuration needs non-default values, refer to VCL documentation for more details.
+vclmgmt::baseimage <a id="image"></a>
+-------------------------------------
+Creates the database rows for a vcl base image, and creates an image within xcat, using the [xcat::image](https://github.ncsu.edu/engr-csc-netlabs/puppetmodules/tree/master/xcat#xcat-image) class.  Some of these parameters are enumerations from the Apache VCL project.  With the exception of the os code, everything else should work using only the default values.  If your configuration needs non-default values, refer to [VCL documentation](https://vcl.apache.org/dev/database-schema.html#image-table) for more details.
 
-      vclmgmt::baseimage { "base-img" :
-            ensure		=> present,
-            prettyname        => "Base Image Name", 
-            platform	      => 'i386',              # vcl platform designation
-            os                => 'centos5', 
-            minram		=> 512,
-            minprocnumber	=> 1,
-            minprocspeed	=> 1024,
-            minnetwork	      => 100,
-            maxconcurrent	=> undef,
-            test		      => false,
-            lastupdate	      => undef,
-            forcheckout	      => true,
-            project	      => 'vcl',
-            size		      => 1500,
-            architecture	=> 'x86_64',
-            description	      => undef,
-            usage		      => undef,
-            deleted	      => false,
-            
-            # Parameters for the xcat::image class.  The architecture parameter, above, is used for xcat::image -> arch.
-            url		      => undef,
-            filepath          => '/images/baseimg.iso',
-            distro            => "centos6.5",
-      }
+    vclmgmt::baseimage { "base-img" :
+        ensure        => present,                   # Passthrough for ensurable objects in this class
+        prettyname    => "Base Image Name",         # Long display name for this image in VCL
+        platform      => 'i386',                    # VCL platform attribution for this image (may be i386, i386_lab, or ultrasparc)
+        os            => 'centos5',                 # OS of this image 
+        minram        => 512,                       # Min RAM requirement for this image
+        minprocnumber => 1,                         # Min number of processors requirement for this image
+        minprocspeed  => 1024,                      # Min processor speed requirement for this image
+        minnetwork    => 100,                       # Min network speed requirement for this image
+        maxconcurrent => undef,                     # maximum concurrent reservations that can be made for image
+        test          => false,                     # flag to show if there is a test version of this image available (depricated?)        
+        forcheckout   => true,                      # Assign this image for checkout
+        project       => 'vcl',                     # Project within which this image is available. Valid values are vcl, hpc, or vclhpc
+        size          => 1500,                      # Size of this image
+        architecture  => 'x86_64',                  # Architecture this image targets. Valid values are x86 or x86_64
+        description   => undef,                     # Description for this image 
+        usage         => undef,                     # notes on how to use image displayed on Connect page
+        deleted       => false,                     # Whether this image should be marked deleted
+        
+        # Parameters for the xcat::image class.  The architecture parameter, above, is used for xcat::image -> arch.
+        url           => undef,                     # URL from which to download the iso for this image
+        filepath      => '/images/baseimg.iso',     # File location of the iso for this image
+        distro        => "centos6.5",               # OS distribution identifier of this image
+    }
 
 Here are the os codes currently available:
 
-name           | prettyname                              | type    | installtype
----------------|-----------------------------------------|---------|-------------
+    name           | prettyname                              | type    | installtype
+    ---------------|-----------------------------------------|---------|-------------
     sun4x_58       | Solaris 5.8 (Lab)                       | unix    | none       
     win2k          | Windows 2000 (Bare Metal)               | windows | partimage  
     rhel3          | Red Hat Enterprise Linux 3 (Kickstart)  | linux   | kickstart  
@@ -181,50 +258,124 @@ name           | prettyname                              | type    | installtype
     fedoraimage    | Fedora 16 (Bare Metal)                  | linux   | partimage  
     vmwareubuntu   | Ubuntu (VMware)                         | linux   | vmware
 
+Hiera Usage
+===========
+vclmgmt::xcat_pod and vclmgmt::compute_node are set up as a hierarcy.  This makes it easy to define values in hiera once and let those definitions cascade through.  Variables are passed down the hierarchy as default values for lower member classes, but may be overridden by explicit definitions.  The simplest way to do this is to define all your networks and nodes in a hash within the vclmgmt class definition.  You can use Puppet's automatic variable importing or define a hash and then declare a class resource with that hash.  Alternatively, you might want to define a hash-generating function that defines network addresses according to some scheme (eg. by lab room, rack number, etc).  In that case, you may use the set_defaults function discussed below to recreate the hierarchy inheritance of the main class for your generated hashes.
+
+Example Yaml <a id="yaml-example"></a>
+--------------------------------------
 The nested hash structure and default-passing behavior of these puppet classes simplify defining a VCL installation in hiera, and then using the hiera_include, ensure_resource and create_resources functions. 
 
-      ---
-      classes:
-          - vclmgmt
-      
-      mgmt_node:
-          vcluser_pw: "vcl_sql_password"
-          root_pw: "root_sql_password"
-          ipmi_mac: "XX:XX:XX:XX:XX:XX"
-          private_mac: "XX:XX:XX:XX:XX:XX"
-          public_mac: "XX:XX:XX:XX:XX:XX"
-          private_if: "em2"
-          private_ip: "192.168.0.5"
-          private_domain: "mydomain"
-          ipmi_if: "p4p1"
-          ipmi_ip: "192.168.100.5"
-          pods:
-              "my-pod":
-                  private_hash:
-                      vlan_alias_ip: "192.168.37.1"
-                      network: "192.168.37.0"
-                      netmask: "255.255.255.192"
-                      broadcast: "192.168.37.63"
-                      domain: "mypod.mydomain"
-                      ip_range: "192.168.37.4-192.168.37.63"
-                      vlanid: "307"
-                  ipmi_hash:
-                      network: "192.168.137.0"
-                      netmask: "255.255.255.192"
-                      broadcast: "192.168.137.63"
-                      domain: "mypod-ipmi.mydomain"
-                      ip_range: "192.168.137.4-192.168.137.63"
-                      vlanid: "1307"
-                  defaults:
-                      tgt_if: "eth1"
-                      ipmi_user: "SOMEUSER"
-                      ipmi_pw: "SOMEPASS"
-                      admin_user: "AdminUser"
-                      admin_pw: "AdminPassword"
-                  nodes:
-                      "my-node":
-                          tgt_ip: "192.168.37.8"
-                          ipmi_ip: "192.168.137.8"
-                          tgt_mac: "XX:XX:XX:XX:XX:XX"
-                          ipmi_mac: "XX:XX:XX:XX:XX:XX"
-                          slotid: 1
+    ---
+    mgmt_node:
+        vcluser_pw: "vcl_sql_password"
+        root_pw: "root_sql_password"
+        ipmi_mac: "XX:XX:XX:XX:XX:XX"
+        private_mac: "XX:XX:XX:XX:XX:XX"
+        public_mac: "XX:XX:XX:XX:XX:XX"
+        private_if: "em2"
+        private_ip: "192.168.0.5"
+        private_domain: "mydomain"
+        ipmi_if: "p4p1"
+        ipmi_ip: "192.168.100.5"
+        pods:
+            "my-pod":
+                private_hash:
+                    vlan_alias_ip: "192.168.37.1"
+                    network: "192.168.37.0"
+                    netmask: "255.255.255.192"
+                    domain: "mypod.mydomain"
+                    vlanid: "XXX"
+                ipmi_hash:
+                    network: "192.168.137.0"
+                    netmask: "255.255.255.192"
+                    domain: "ipmi.mypod.mydomain"
+                    vlanid: "YYY"
+                defaults:
+                    tgt_if: "eth1"
+                    ipmi_user: "SOMEUSER"
+                    ipmi_pw: "SOMEPASS"
+                    admin_user: "AdminUser"
+                    admin_pw: "AdminPassword"
+                nodes:
+                    "my-node1":
+                        public_ip: xxx.xxx.xxx.xxx
+                        private_ip: 192.168.37.8
+                        ipmi_ip: 192.168.137.8
+                        public_mac: XX:XX:XX:XX:XX:XX
+                        private_mac: XX:XX:XX:XX:XX:XX
+                        ipmi_mac: XX:XX:XX:XX:XX:XX
+                        notes: "My notes about this computer"
+                    "my-node2":
+                        public_ip: xxx.xxx.xxx.xxx
+                        private_ip: 192.168.37.72
+                        ipmi_ip: 192.168.137.72
+                        public_mac: XX:XX:XX:XX:XX:XX
+                        private_mac: XX:XX:XX:XX:XX:XX
+                        ipmi_mac: XX:XX:XX:XX:XX:XX
+
+set_defaults Usage <a id="set-defaults"></a>
+--------------------------------------------
+The set_defaults function allows you to use the hierarchical default_passing behavior of the vclmgmt main class within your generated hash definitions.  It takes three arguments: a pod definitons hash, a defaults hash and a management node hash.  So, for example you could define your own pod definitions hash function of properties that describe your lab environment, and then use set_defaults to populate this generated hash with default values as if it were included within the vclmgmt class definition.
+
+    ---
+    classes:
+        - class where I defined my_generation_function
+    
+    mgmt_node:
+        vcluser_pw: "vcl_sql_password"
+        root_pw: "root_sql_password"
+        ipmi_mac: "XX:XX:XX:XX:XX:XX"
+        private_mac: "XX:XX:XX:XX:XX:XX"
+        public_mac: "XX:XX:XX:XX:XX:XX"
+        private_if: "em2"
+        private_ip: "192.168.0.5"
+        private_domain: "mydomain"
+        ipmi_if: "p4p1"
+        ipmi_ip: "192.168.100.5"
+    
+    my_nodes:
+        lab1:
+            pod1a:
+                rack: 1
+                sub: a
+            nodes:
+                node1a1:
+                    shelf: 1
+                    type: onetypewehave
+                node1a2:
+                    shelf: 2
+                    type: anothertypewehave
+                node1a3:
+                    shelf: 3
+                    type: onetypewehave
+            pod2c:
+                rack: 1
+                sub: c
+            nodes:
+                node2c1:
+                    shelf: 1
+                    type: someothertype
+                node2c2:
+                    shelf: 2
+                    type: onetypewehave
+                    
+    my_defaults:
+        private_if: em2
+        tgt_os: centos6.5
+        profile: centos65-test
+        ipmi_user: root
+        ipmi_pw: MY_PASSWORD
+
+And then in puppet:
+
+    hiera_include('classes')
+    
+    $mgmt_node = hiera_hash('mgmt_node')
+    ensure_resource('class', 'vclmgmt', $mgmt_node)
+    
+    $mypods = hiera_hash('my_nodes', {})
+    $mydefaults = hiera_hash('my_defaults', {})
+    create_resources(vclmgmt::xcat_pod, set_defaults(my_generation_function($mypods), $mydefaults, $mgmt_node) )
+    
+    

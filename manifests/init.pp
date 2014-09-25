@@ -27,11 +27,11 @@ include stdlib
 #   - Domain for private-network facing interface (network for provisioning target computers) 
 # [*ipmi_mac*] 
 #   - MAC address for ipmi-network facing interface (connected to DRACs of target computers)
-# [*ipmi_ip*] 
-#   - IP address for ipmi-network facing interface (connected to DRACs of target computers)
 # [*ipmi_if*] 
 #   - Interface name of ipmi-network facing interface (connected to DRACs of target computers)
 #     Defaults to 'p4p1'
+# [*ipmi_ip*] 
+#   - IP address for ipmi-network facing interface (connected to DRACs of target computers)
 # [*vcldb*] 
 #   - Database used by vcl
 #     Defaults to 'vcl' 
@@ -110,9 +110,9 @@ class vclmgmt(
   $private_if    = 'em2', 
   $private_ip,  
   $private_domain, 
-  $ipmi_mac, 
+  $ipmi_mac,
+  $ipmi_if       = 'p4p1',  
   $ipmi_ip, 
-  $ipmi_if       = 'p4p1', 
   $vcldb         = 'vcl', 
   $vcluser       = 'vcluser', 
   $root_pw, 
@@ -122,7 +122,7 @@ class vclmgmt(
   $vclhost       = 'localhost', 
   $serverip      = 'localhost', 
   $xmlrpc_pw     = 'just_another_password', 
-  $xml_url       = 'localhost',
+  $xml_url       = "https://$fqdn/vcl/index.php?mode=xmlrpccall",
   $poddefaults   = {},
   $pods          = undef,
   $vcldir        = $vclmgmt::params::vcldir,
