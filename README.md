@@ -4,7 +4,7 @@ This module installs and configures xCAT and VCL, and profides puppet classes to
 
 Classes
 --------
-  * [Vclmgmt](#vclmgmt)
+  * [Vclmgmt](#vclmgmt-)
   * [Vclmgmt::Xcat_pod](#xcat-pod)
   * [Vclmgmt::Xcat_vlan](#xcat-vlan)
   * [Vclmgmt::Compute_node](#compute-node)
