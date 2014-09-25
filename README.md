@@ -19,7 +19,7 @@ Class Definitions
 =================
 vclmgmt 
 --------
-Installs xCAT and VCL from source, then configures the management node.  You can also include an array of hashes describing the vclmgmt::xcat_pod configurations for client subnets.  Pod configurations will inherit the private and impi mac addreses and interface names, by default.  Explicit definitions within the pods hash will override those defaults.
+Installs xCAT and VCL from source, then configures the management node.  You can also include an array of hashes describing the vclmgmt::xcat_pod configurations for client subnets.  Pod configurations will inherit the private and impi mac addreses and interface names, by default.  Explicit definitions within the pods hash will override those defaults.  Chaining rules for vclmgmt classes with relation to the installation and xcat are also defined.
 
     class { "vclmgmt" :
         # public network parameters
@@ -131,7 +131,7 @@ Creates an xcat network object in xcat describing the network.  If vlan_alias_ip
 
 vclmgmt::compute_node 
 ----------------------
-Defines related vcl_computer and xcat_node objects for a provision controlled computer.  Vcl_computer is a defined type within the vclmgmt module and manages [VCL Database Tables](https://vcl.apache.org/dev/database-schema.html#computer-table) related to computers, whereas xcat_node is a defined type within the related [xCAT module](https://github.ncsu.edu/engr-csc-netlabs/puppetmodules/tree/master/xcat#xcat_node-).  Where the computer table uses foreign keys to store properties of the computer, Vcl_computer abstracts this out.  For example, if I made an image called 'centos65' that I wish to load on this computer, I would simply put its name in the image field.
+Defines related vcl_computer and xcat_node objects for a provision controlled computer.  Vcl_computer is a defined type within the vclmgmt module and manages [VCL Database Tables](https://vcl.apache.org/dev/database-schema.html#computer-table) related to computers, whereas xcat_node is a defined type within the related [xCAT module](https://github.ncsu.edu/engr-csc-netlabs/puppetmodules/tree/master/xcat#xcat-objects-).  Where the computer table uses foreign keys to store properties of the computer, Vcl_computer abstracts this out.  For example, if I made an image called 'centos65' that I wish to load on this computer, I would simply put its name in the image field.
 
     vclmgmt::compute_node { "my-node" :
         ensure        => present,                       # Passthrough for ensurable objects in this class
@@ -185,7 +185,7 @@ Defines related vcl_computer and xcat_node objects for a provision controlled co
       
 vclmgmt::baseimage 
 -------------------
-Creates the database rows for a vcl base image, and creates an image within xcat, using the [xcat::image](https://github.ncsu.edu/engr-csc-netlabs/puppetmodules/tree/master/xcat#xcat_image-) class.  Some of these parameters are enumerations from the Apache VCL project.  With the exception of the os code, everything else should work using only the default values.  If your configuration needs non-default values, refer to [VCL documentation](https://vcl.apache.org/dev/database-schema.html#image-table) for more details.
+Creates the database rows for a vcl base image, and creates an image within xcat, using the [xcat::image](https://github.ncsu.edu/engr-csc-netlabs/puppetmodules/tree/master/xcat#xcat-objects-) class.  Some of these parameters are enumerations from the Apache VCL project.  With the exception of the os code, everything else should work using only the default values.  If your configuration needs non-default values, refer to [VCL documentation](https://vcl.apache.org/dev/database-schema.html#image-table) for more details.
 
     vclmgmt::baseimage { "base-img" :
         ensure        => present,                   # Passthrough for ensurable objects in this class
@@ -323,16 +323,16 @@ The set_defaults function allows you to use the hierarchical default_passing beh
         - class where I defined my_generation_function
     
     mgmt_node:
-        vcluser_pw: "vcl_sql_password"
-        root_pw: "root_sql_password"
-        ipmi_mac: "XX:XX:XX:XX:XX:XX"
-        private_mac: "XX:XX:XX:XX:XX:XX"
-        public_mac: "XX:XX:XX:XX:XX:XX"
-        private_if: "em2"
-        private_ip: "192.168.0.5"
-        private_domain: "mydomain"
-        ipmi_if: "p4p1"
-        ipmi_ip: "192.168.100.5"
+        vcluser_pw: vcl_sql_password
+        root_pw: root_sql_password
+        ipmi_mac: XX:XX:XX:XX:XX:XX
+        private_mac: XX:XX:XX:XX:XX:XX
+        public_mac: XX:XX:XX:XX:XX:XX
+        private_if: em2
+        private_ip: 192.168.0.5
+        private_domain: mydomain
+        ipmi_if: p4p1
+        ipmi_ip: 192.168.100.5
     
     my_nodes:
         lab1:

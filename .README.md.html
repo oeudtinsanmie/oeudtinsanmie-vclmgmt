@@ -462,20 +462,20 @@ function setDocumentScrollTop(ypos)
 <p>This module installs and configures xCAT and VCL, and profides puppet classes to manipulate the related xCAT and database tables VCL uses. The current version supports VCL up to release-2.3.2-RC2. Development is in process to support the new database schema in the upcoming release of 2.4. xCAT installation and resource management use the related <a href="https://github.ncsu.edu/engr-csc-netlabs/puppetmodules/tree/master/xcat">xCAT module</a>.</p> 
 <h2> <a name="classes" class="anchor" href="#classes" aria-hidden="true"><span class="octicon octicon-link"></span></a>Classes</h2> 
 <ul> 
- <li><a href="#vclmgmt">Vclmgmt</a></li> 
- <li><a href="#xcat-pod">Vclmgmt::Xcat_pod</a></li> 
- <li><a href="#xcat-vlan">Vclmgmt::Xcat_vlan</a></li> 
- <li><a href="#compute-node">Vclmgmt::Compute_node</a></li> 
- <li><a href="#image">Vclmgmt::Baseimage</a></li> 
+ <li><a href="#vclmgmt-">Vclmgmt</a></li> 
+ <li><a href="#vclmgmtxcat_pod-">Vclmgmt::Xcat_pod</a></li> 
+ <li><a href="#vclmgmtxcat_vlan-">Vclmgmt::Xcat_vlan</a></li> 
+ <li><a href="#vclmgmtcompute_node-">Vclmgmt::Compute_node</a></li> 
+ <li><a href="#vclmgmtbaseimage-">Vclmgmt::Baseimage</a></li> 
 </ul>
 <h2> <a name="hiera-usage--custom-functions" class="anchor" href="#hiera-usage--custom-functions" aria-hidden="true"><span class="octicon octicon-link"></span></a>Hiera Usage &amp; Custom Functions</h2> 
 <ul> 
- <li><a href="#yaml-example">Hiera Yaml Example</a></li> 
- <li><a href="#set-defaults">Using the set_defaults Function</a></li> 
+ <li><a href="#example-yaml-">Hiera Yaml Example</a></li> 
+ <li><a href="#set_defaults-usage-">Using the set_defaults Function</a></li> 
 </ul>
 <h1> <a name="class-definitions" class="anchor" href="#class-definitions" aria-hidden="true"><span class="octicon octicon-link"></span></a>Class Definitions</h1> 
 <h2> <a name="vclmgmt-" class="anchor" href="#vclmgmt-" aria-hidden="true"><span class="octicon octicon-link"></span></a>vclmgmt </h2> 
-<p>Installs xCAT and VCL from source, then configures the management node. You can also include an array of hashes describing the vclmgmt::xcat_pod configurations for client subnets. Pod configurations will inherit the private and impi mac addreses and interface names, by default. Explicit definitions within the pods hash will override those defaults.</p> 
+<p>Installs xCAT and VCL from source, then configures the management node. You can also include an array of hashes describing the vclmgmt::xcat_pod configurations for client subnets. Pod configurations will inherit the private and impi mac addreses and interface names, by default. Explicit definitions within the pods hash will override those defaults. Chaining rules for vclmgmt classes with relation to the installation and xcat are also defined.</p> 
 <pre><code>class { &quot;vclmgmt&quot; :
     # public network parameters
     public_mac     =&gt; 'XX:XX:XX:XX:XX:XX',   # MAC address for public network interface                 (REQUIRED)
@@ -581,7 +581,7 @@ function setDocumentScrollTop(ypos)
 }
 </code></pre> 
 <h2> <a name="vclmgmtcompute_node-" class="anchor" href="#vclmgmtcompute_node-" aria-hidden="true"><span class="octicon octicon-link"></span></a>vclmgmt::compute_node </h2> 
-<p>Defines related vcl_computer and xcat_node objects for a provision controlled computer. Vcl_computer is a defined type within the vclmgmt module and manages <a href="https://vcl.apache.org/dev/database-schema.html#computer-table">VCL Database Tables</a> related to computers, whereas xcat_node is a defined type within the related <a href="https://github.ncsu.edu/engr-csc-netlabs/puppetmodules/tree/master/xcat#xcat_node">xCAT module</a>. Where the computer table uses foreign keys to store properties of the computer, Vcl_computer abstracts this out. For example, if I made an image called 'centos65' that I wish to load on this computer, I would simply put its name in the image field.</p> 
+<p>Defines related vcl_computer and xcat_node objects for a provision controlled computer. Vcl_computer is a defined type within the vclmgmt module and manages <a href="https://vcl.apache.org/dev/database-schema.html#computer-table">VCL Database Tables</a> related to computers, whereas xcat_node is a defined type within the related <a href="https://github.ncsu.edu/engr-csc-netlabs/puppetmodules/tree/master/xcat#xcat-objects-">xCAT module</a>. Where the computer table uses foreign keys to store properties of the computer, Vcl_computer abstracts this out. For example, if I made an image called 'centos65' that I wish to load on this computer, I would simply put its name in the image field.</p> 
 <pre><code>vclmgmt::compute_node { &quot;my-node&quot; :
     ensure        =&gt; present,                       # Passthrough for ensurable objects in this class
     hostname      =&gt; $title,                        # Allows names of objects to be different from title of this resource
@@ -633,7 +633,7 @@ function setDocumentScrollTop(ypos)
 }
 </code></pre> 
 <h2> <a name="vclmgmtbaseimage-" class="anchor" href="#vclmgmtbaseimage-" aria-hidden="true"><span class="octicon octicon-link"></span></a>vclmgmt::baseimage </h2> 
-<p>Creates the database rows for a vcl base image, and creates an image within xcat, using the <a href="https://github.ncsu.edu/engr-csc-netlabs/puppetmodules/tree/master/xcat#xcat-image">xcat::image</a> class. Some of these parameters are enumerations from the Apache VCL project. With the exception of the os code, everything else should work using only the default values. If your configuration needs non-default values, refer to <a href="https://vcl.apache.org/dev/database-schema.html#image-table">VCL documentation</a> for more details.</p> 
+<p>Creates the database rows for a vcl base image, and creates an image within xcat, using the <a href="https://github.ncsu.edu/engr-csc-netlabs/puppetmodules/tree/master/xcat#xcat-objects-">xcat::image</a> class. Some of these parameters are enumerations from the Apache VCL project. With the exception of the os code, everything else should work using only the default values. If your configuration needs non-default values, refer to <a href="https://vcl.apache.org/dev/database-schema.html#image-table">VCL documentation</a> for more details.</p> 
 <pre><code>vclmgmt::baseimage { &quot;base-img&quot; :
     ensure        =&gt; present,                   # Passthrough for ensurable objects in this class
     prettyname    =&gt; &quot;Base Image Name&quot;,         # Long display name for this image in VCL
@@ -977,16 +977,16 @@ classes:
     - class where I defined my_generation_function
 
 mgmt_node:
-    vcluser_pw: &quot;vcl_sql_password&quot;
-    root_pw: &quot;root_sql_password&quot;
-    ipmi_mac: &quot;XX:XX:XX:XX:XX:XX&quot;
-    private_mac: &quot;XX:XX:XX:XX:XX:XX&quot;
-    public_mac: &quot;XX:XX:XX:XX:XX:XX&quot;
-    private_if: &quot;em2&quot;
-    private_ip: &quot;192.168.0.5&quot;
-    private_domain: &quot;mydomain&quot;
-    ipmi_if: &quot;p4p1&quot;
-    ipmi_ip: &quot;192.168.100.5&quot;
+    vcluser_pw: vcl_sql_password
+    root_pw: root_sql_password
+    ipmi_mac: XX:XX:XX:XX:XX:XX
+    private_mac: XX:XX:XX:XX:XX:XX
+    public_mac: XX:XX:XX:XX:XX:XX
+    private_if: em2
+    private_ip: 192.168.0.5
+    private_domain: mydomain
+    ipmi_if: p4p1
+    ipmi_ip: 192.168.100.5
 
 my_nodes:
     lab1:
