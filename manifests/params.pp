@@ -73,6 +73,8 @@ class vclmgmt::params {
         "perl-XML-Simple", 
         "perl-YAML", 
         "xmlsec1-openssl",
+        "subversion",
+        "git",
       ]
       $pkg_exclude = [ ]
       $service_list = {  

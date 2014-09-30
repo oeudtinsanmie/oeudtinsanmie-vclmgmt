@@ -127,7 +127,6 @@ class vclmgmt(
   $pods          = undef,
   $vcldir        = $vclmgmt::params::vcldir,
   $dojo          = $vclmgmt::params::dojo,
-  $dojo_checksum = $vclmgmt::params::dojo_checksum,
   $vclweb        = $vclmgmt::params::vclweb,
   $vclnode       = $vclmgmt::params::vclnode,
   $firewalldefaults = {
@@ -150,6 +149,17 @@ class vclmgmt(
   $vclimgs = "${vcldir}/images"  
   
   $postfiles = {
+    "/.vclweb" => {
+      ensure => present,
+      content => "${vclweb}",
+      replace => false,
+    },
+    "vclprofile"  => {
+      path => "${vclweb}/dojo/util/buildscripts/profiles/vcl.profile.js",
+      ensure => present,
+      content => "dependencies = { layers: [], prefixes: [] }",
+      replace => false,
+    },
     "${vclweb}"  => {
       ensure   => "link",
       path  => "${vclweb}",
@@ -160,11 +170,11 @@ class vclmgmt(
       path  => "${vclnode}",
       target  => "${vcldir}/managementnode",
     },
-    "${vclweb}/dojo" => {
-      ensure   => "link",
-      path  => "${vclweb}/dojo",
-      target   => "${vclweb}/dojo-release-${dojo}",
-    },
+#    "${vclweb}/dojo" => {
+#      ensure   => "link",
+#      path  => "${vclweb}/dojo",
+#      target   => "${vclweb}/dojo-release-${dojo}",
+#    },
     "${vclweb}/dojo/vcldojo" => {
       ensure   => "link",
       path  => "${vclweb}/dojo/vcldojo",
@@ -273,6 +283,30 @@ class vclmgmt(
     }
   }
   
+  define vclmgmt::dojoimport ($utils) {
+    create_resources(vcldojo_prefix, read_vcldojo($utils))
+  }
+  
+  vclmgmt::dojoimport { "dojo-layers" :
+    utils => "${htinc}/utils.php",
+  }
+
+  $vclprefixes = {
+    "dojo" => {
+      path => "../../dojo",
+    },
+    "dojox" => {
+      path => "../dojox",
+    },
+    "dijit" => {
+      path => "../dijit",
+    },
+    "vcldojo" => {
+      path => "../vcldojo",
+    },
+  }
+  create_resources(vcldojo_prefix, $vclprefixes)
+  
   # TODO: More complete cpan provider to allow optional updates
   define vclmgmt::cpan() {
     exec { "/usr/bin/cpanp -i --skiptest ${name}" :
@@ -376,13 +410,42 @@ class vclmgmt(
     path  => $vcldir,
     provider => svn,
     source   => "http://svn.apache.org/repos/asf/vcl/${repodir}",
-  } ->
-  archive { "dojo-release-${dojo}" :
-    url  => "http://download.dojotoolkit.org/release-${vclmgmt::params::dojo}/dojo-release-${dojo}.tar.gz",
-    target  => "${vcldir}/web/",
-    ensure   => present,
-    timeout => 0,
-    checksum=> $dojo_checksum,
+  }
+  
+  file { "${vclweb}/dojo":
+    ensure => "directory",
+  } 
+  vcsrepo { "dojo" :
+    ensure => present,
+    path  => "${vclweb}/dojo/dojo",
+    provider => git,
+    source   => "https://github.com/dojo/dojo.git",
+    revision => $dojo,
+    tag => 'dojo',
+  } 
+  vcsrepo { "dojox" :
+    ensure => present,
+    path  => "${vclweb}/dojo/dojox",
+    provider => git,
+    source   => "https://github.com/dojo/dojox.git",
+    revision => $dojo,
+    tag => 'dojo',
+  } 
+  vcsrepo { "dijit" :
+    ensure => present,
+    path  => "${vclweb}/dojo/dijit",
+    provider => git,
+    source   => "https://github.com/dojo/dijit.git",
+    revision => $dojo,
+    tag => 'dojo',
+  } 
+  vcsrepo { "dojo-util" :
+    ensure => present,
+    path  => "${vclweb}/dojo/util",
+    provider => git,
+    source   => "https://github.com/dojo/util.git",
+    revision => $dojo,
+    tag => 'dojo',
   } 
   
   if $vclrevision != undef {
@@ -391,15 +454,15 @@ class vclmgmt(
     }
   }
 
-  vclmgmt::regexfile { $vcldojo : 
-    root => "${$vcldir}/web/dojo-release-${dojo}",
-    tgt  => "dojo",
-  }
-
-  vclmgmt::regexfile { $vcldojonls : 
-    root => "${$vcldir}/web/dojo-release-${dojo}",
-    tgt  => "dojo/nls",
-  }
+#  vclmgmt::regexfile { $vcldojo : 
+#    root => "${$vcldir}/web/dojo-release-${dojo}",
+#    tgt  => "dojo",
+#  }
+#
+#  vclmgmt::regexfile { $vcldojonls : 
+#    root => "${$vcldir}/web/dojo-release-${dojo}",
+#    tgt  => "dojo/nls",
+#  }
   
   create_resources(file, $postfiles, { tag => "vclpostfiles", })
   
@@ -565,7 +628,11 @@ class vclmgmt(
   Exec["makedns"] ~> Service["xcatd"] ~> Service["vcld"]
   Yumrepo <| tag == "vclrepo" or tag == "xcatrepo" |> -> Package <| tag == "vclinstall" |> -> Vcsrepo[ 'vcl'] ~> Vclmgmt::Cpan <| |>
   Archive ["dojo-release-${dojo}"] -> File <| tag == "vclpostfiles" and tag != "postcopy" |> -> Vclmgmt::Vclcopy <| |> -> File <| tag == "postcopy" |> -> Mysql::Db[$vcldb] -> Exec['genkeys']
-
+  
+  File <| tag == "postcopy" |> -> File["${vclweb}/dojo"] -> Vcsrepo <| tag == 'dojo' |> -> Vclmgmt::Dojoimport <| |>
+  File ["vclprofile"] -> Vcldojo_prefix <| |>
+  File ["vclprofile"] -> Vcldojo_layer  <| |>
+  
   File['vcldconf'] ~> Service['vcld']
   Vcsrepo['vcl'] ~> Vclmgmt::Vclcopy <| |>
 
