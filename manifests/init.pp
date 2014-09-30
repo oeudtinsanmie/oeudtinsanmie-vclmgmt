@@ -621,6 +621,12 @@ class vclmgmt(
     command => "/opt/xcat/sbin/makedns -n",
     refreshonly => "true",
   }
+  
+  exec { "dojobuild":
+    command => "./build.sh profile=vcl action=release version=1.6.2.vcl localeList=en-us,en-gb,es-es,es-mx,ja-jp,zh-cn",
+    cwd => "${vclweb}/dojo/util/buildscripts",
+    refreshonly => "true",
+  }
 
   # Chain declarations for vclmgmt resources
   Exec["makehosts"] <~ Vclmgmt::Compute_node <| |>
@@ -630,8 +636,9 @@ class vclmgmt(
   Archive ["dojo-release-${dojo}"] -> File <| tag == "vclpostfiles" and tag != "postcopy" |> -> Vclmgmt::Vclcopy <| |> -> File <| tag == "postcopy" |> -> Mysql::Db[$vcldb] -> Exec['genkeys']
   
   File <| tag == "postcopy" |> -> File["${vclweb}/dojo"] -> Vcsrepo <| tag == 'dojo' |> -> Vclmgmt::Dojoimport <| |>
-  File ["vclprofile"] -> Vcldojo_prefix <| |>
-  File ["vclprofile"] -> Vcldojo_layer  <| |>
+  File ["vclprofile"] -> Vcldojo_prefix <| |> ~> Exec["dojobuild"]
+  File ["vclprofile"] -> Vcldojo_layer  <| |> ~> Exec["dojobuild"]
+  Vcsrepo <| tag == 'dojo' |> ~> Exec["dojobuild"]
   
   File['vcldconf'] ~> Service['vcld']
   Vcsrepo['vcl'] ~> Vclmgmt::Vclcopy <| |>
