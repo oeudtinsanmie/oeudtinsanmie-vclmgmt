@@ -7,7 +7,8 @@ class Puppet::Provider::Vcldojo < Puppet::Provider
       File.open('/.vclweb', 'r') { | file | 
         @@vclprofile = "#{file.gets.delete('\n')}/dojo/util/buildscripts/profiles/vcl.profile.js"
       }
-    rescue Puppet::ExecutionFailure => e
+    rescue Exception => e
+      Puppet.debug e
       Puppet.debug "vclweb not yet set or is corrupt.  Assuming no dojo setup."
       @@vclprofile = nil
       @@dojo_hash = nil
@@ -16,15 +17,14 @@ class Puppet::Provider::Vcldojo < Puppet::Provider
       File.open(@@vclprofile, 'r') { | file |
         @@dojo_hash = JSON.parse(file.read().split('=')[1])
       }
-    rescue Puppet::ExecutionFailure => e
+    rescue Exception => e
+      Puppet.debug e
       Puppet.debug "vcl.profile.js (#{@@vclprofile}) does not exist or is corrupt.  Assuming no dojo setup."
       @@vclprofile = nil
       @@dojo_hash = nil
     end
   end
-  
-  initprofile
-  
+    
   def initialize(value={})
     super(value)
     @property_flush = {}
@@ -43,6 +43,8 @@ class Puppet::Provider::Vcldojo < Puppet::Provider
   end
   
   def self.instances
+    initprofile
+
     @@dojo_hash[dojotype].collect { |obj|
       begin
         new(make_hash(obj))
@@ -53,6 +55,7 @@ class Puppet::Provider::Vcldojo < Puppet::Provider
   end
   
   def self.make_hash (obj)
+    obj[:ensure] = :present
     Puppet::Util::symbolizehash(obj)
   end
 

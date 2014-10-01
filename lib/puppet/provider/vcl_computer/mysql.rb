@@ -33,7 +33,6 @@ Puppet::Type.type(:vcl_computer).provide(:mysql, :parent => Puppet::Provider::Vc
         "rsapub"            => [ :rsapub,       :string   ],
         "hostpub"           => [ :hostpub,      :string   ],
       },
-      "state"         => { "name"     => [ :state, 		      :string   ], },
       "platform"      => { "name"     => [ :platform,       :string   ], },
       "schedule"      => { "name"     => [ :vclschedule,       :string   ], },
       "image"         => { "name"     => [ :image,          :string   ], },

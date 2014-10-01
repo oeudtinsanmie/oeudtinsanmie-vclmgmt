@@ -158,8 +158,9 @@ class vclmgmt(
     "vclprofile"  => {
       path => "${vclweb}/dojo/util/buildscripts/profiles/vcl.profile.js",
       ensure => present,
-      content => "dependencies = { layers: [], prefixes: [] }",
+      content => "dependencies = { \"layers\": [], \"prefixes\": [] }",
       replace => false,
+      tag  => "postcopy",      
     },
     "${vclweb}"  => {
       ensure   => "link",
@@ -180,6 +181,7 @@ class vclmgmt(
       ensure   => "link",
       path  => "${vclweb}/dojo/vcldojo",
       target  => "${vclweb}/js/vcldojo",
+      tag  => "postcopy",      
     },
     "maintenance" => {
       path  => "${htinc}/maintenance",
@@ -285,7 +287,8 @@ class vclmgmt(
   }
   
   define vclmgmt::dojoimport ($utils) {
-    create_resources(vcldojo_prefix, read_vcldojo($utils))
+    notice ("Importing dojo layers from ${utils}")
+    create_resources(vcldojo_layer, read_vcldojo($utils))
   }
   
   vclmgmt::dojoimport { "dojo-layers" :
@@ -390,12 +393,12 @@ class vclmgmt(
 
   # These files really should be served somewhere from the VCL project
   # Temporary workarounds:
-  define vclmgmt::regexfile ($root, $tgt) {
-    file { $name :
-      source   => "puppet:///modules/vclmgmt/${tgt}/${name}",
-      path  => "${root}/${tgt}/${name}",
-    }     
-  }
+#  define vclmgmt::regexfile ($root, $tgt) {
+#    file { $name :
+#      source   => "puppet:///modules/vclmgmt/${tgt}/${name}",
+#      path  => "${root}/${tgt}/${name}",
+#    }     
+#  }
   
   if $vclversion == latest {
     $repodir = "trunk"
@@ -624,7 +627,7 @@ class vclmgmt(
   }
   
   exec { "dojobuild":
-    command => "./build.sh profile=vcl action=release version=1.6.2.vcl localeList=en-us,en-gb,es-es,es-mx,ja-jp,zh-cn",
+    command => "/bin/sh ${vclweb}/dojo/util/buildscripts/build.sh profile=vcl action=release version=1.6.2.vcl localeList=en-us,en-gb,es-es,es-mx,ja-jp,zh-cn",
     cwd => "${vclweb}/dojo/util/buildscripts",
     refreshonly => "true",
   }
@@ -633,10 +636,12 @@ class vclmgmt(
   Exec["makehosts"] <~ Vclmgmt::Compute_node <| |>
   Exec["makehosts"] <~ Vclmgmt::Xcat_pod <| |>
   Exec["makedns"] ~> Service["xcatd"] ~> Service["vcld"]
-  Yumrepo <| tag == "vclrepo" or tag == "xcatrepo" |> -> Package <| tag == "vclinstall" |> -> Vcsrepo[ 'vcl'] ~> Vclmgmt::Cpan <| |>
-  Archive ["dojo-release-${dojo}"] -> File <| tag == "vclpostfiles" and tag != "postcopy" |> -> Vclmgmt::Vclcopy <| |> -> File <| tag == "postcopy" |> -> Mysql::Db[$vcldb] -> Exec['genkeys']
+
+  Yumrepo <| tag == "vclrepo" or tag == "xcatrepo" |> -> Package <| tag == "vclinstall" |> -> Vcsrepo['vcl']
+  File <| tag == "vclpostfiles" and tag != "postcopy" |> -> Vclmgmt::Vclcopy <| |> -> File <| tag == "postcopy" |> -> Mysql::Db[$vcldb] -> Exec['genkeys']
   
-  File <| tag == "postcopy" |> -> File["${vclweb}/dojo"] -> Vcsrepo <| tag == 'dojo' |> -> Vclmgmt::Dojoimport <| |>
+  File <| tag == "vclpostfiles" and tag != "postcopy" |>  -> Vcsrepo <| tag == 'dojo' |> -> File <| tag == "postcopy" |> -> Vclmgmt::Dojoimport <| |>
+
   File ["vclweb"] -> File ["vclprofile"]
   File ["vclprofile"] -> Vcldojo_prefix <| |> ~> Exec["dojobuild"]
   File ["vclprofile"] -> Vcldojo_layer  <| |> ~> Exec["dojobuild"]
@@ -644,12 +649,11 @@ class vclmgmt(
   
   File['vcldconf'] ~> Service['vcld']
   Vcsrepo['vcl'] ~> Vclmgmt::Vclcopy <| |>
+  Vcsrepo['vcl'] ~> Vclmgmt::Cpan <| |>
 
   Class['mysql::server']-> Mysql::Db[$vcldb]
   Mysql::Db[$vcldb] -> Vcl_computer <| |>
   Mysql::Db[$vcldb] -> Vcl_image <| |>
-  
-  Archive[ "dojo-release-${dojo}" ] ~> Vclmgmt::Regexfile <| |>
   
   Class['vclmgmt'] -> Vclmgmt::Baseimage <| |>
   Class['vclmgmt'] -> Service <| name == $vclmgmt::params::service_list |>

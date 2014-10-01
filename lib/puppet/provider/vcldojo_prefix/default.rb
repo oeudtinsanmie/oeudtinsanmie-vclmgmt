@@ -4,10 +4,10 @@ Puppet::Type.type(:vcldojo_prefix).provide(:default, :parent => Puppet::Provider
   mk_resource_methods
   
   def self.make_hash (obj)
-    { 
+    super ({ 
       :name => obj[0],
       :path => obj[1],
-    }
+    })
   end
 
   def isme? (entry)
