@@ -160,34 +160,37 @@ define vclmgmt::compute_node(
   $provisioning  = undef,
   $vmhost        = undef,
   $vmtype        = undef,
+  $usexcat       = false,
 ) {
-  xcat_node { $hostname :
-    ensure              => $ensure,
-    groups              => $xcat_groups,
-    ip                  => $private_ip,
-    mac                 => $private_mac,
-    bmc                 => "${hostname}-ipmi",
-    bmcusername         => $ipmi_user,
-    bmcpassword         => $ipmi_pw,
-    mgt                 => "ipmi",
-    installnic          => 'bootif',
-    primarynic          => $private_if,
-    netboot             => $netboot,
-    os                  => $tgt_os,
-    arch                => $tgt_arch,
-    profile             => $profile,
-    provmethod          => $provmethod,
-    xcatmaster          => $master_ip,
-    nfsserver           => $master_ip,
-    domainadminuser     => $username,
-    domainadminpassword => $password,
-  }
-  
-  xcat_node {  "${hostname}-ipmi" :
-    ensure  => $ensure,
-    groups  => [ "all" ],
-    ip      => $ipmi_ip,
-    mac     => $ipmi_mac,
+  if $usexcat == true {
+	  xcat_node { $hostname :
+	    ensure              => $ensure,
+	    groups              => $xcat_groups,
+	    ip                  => $private_ip,
+	    mac                 => $private_mac,
+	    bmc                 => "${hostname}-ipmi",
+	    bmcusername         => $ipmi_user,
+	    bmcpassword         => $ipmi_pw,
+	    mgt                 => "ipmi",
+	    installnic          => 'bootif',
+	    primarynic          => $private_if,
+	    netboot             => $netboot,
+	    os                  => $tgt_os,
+	    arch                => $tgt_arch,
+	    profile             => $profile,
+	    provmethod          => $provmethod,
+	    xcatmaster          => $master_ip,
+	    nfsserver           => $master_ip,
+	    domainadminuser     => $username,
+	    domainadminpassword => $password,
+	  }
+	  
+	  xcat_node {  "${hostname}-ipmi" :
+	    ensure  => $ensure,
+	    groups  => [ "all" ],
+	    ip      => $ipmi_ip,
+	    mac     => $ipmi_mac,
+	  }  
   }
   
   vcl_computer { $hostname :

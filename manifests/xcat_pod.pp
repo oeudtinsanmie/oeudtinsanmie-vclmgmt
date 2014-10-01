@@ -21,9 +21,10 @@ define vclmgmt::xcat_pod(
   $ipmi_hash, 
   $defaults = undef, 
   $nodes = undef,
+  $usexcat = false,
 ) {
-  ensure_resource(vclmgmt::xcat_vlan, $name, $private_hash)
-  ensure_resource(vclmgmt::xcat_vlan, "${name}-ipmi", $ipmi_hash)
+  ensure_resource(vclmgmt::xcat_vlan, $name, merge($private_hash, { usexcat => $usexcat}) )
+  ensure_resource(vclmgmt::xcat_vlan, "${name}-ipmi", merge($ipmi_hash, { usexcat => $usexcat}) )
 
   if $private_hash[vlanid] == undef {
     $private_if = $private_hash[master_if]
@@ -41,6 +42,7 @@ define vclmgmt::xcat_pod(
 
   $tmphash = {
     master_ip => $private_hash[master_ip],
+    usexcat => $usexcat,
   }
 
   if $defaults == undef {

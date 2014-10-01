@@ -29,7 +29,8 @@ define vclmgmt::xcat_vlan(
   $domain, 
   $network, 
   $netmask, 
-  $vlanid         = undef
+  $vlanid         = undef,
+  $usexcat        = false,
 ) {
   
   $default = {
@@ -77,5 +78,7 @@ define vclmgmt::xcat_vlan(
     }
   }
 
-  create_resources(xcat_network, $nethash, $default)
+  if usexcat == true {
+    create_resources(xcat_network, $nethash, $default)
+  }
 }

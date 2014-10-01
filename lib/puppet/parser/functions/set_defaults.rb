@@ -4,6 +4,9 @@ module Puppet::Parser::Functions
     poddefaults     = args[1]
     masterdefaults  = args[2]
 
+    if (masterdefaults["usexcat"] != nil) then
+      poddefaults["usexcat"] = masterdefaults["usexcat"]
+    end
     private_default = { 
       "master_if"   => masterdefaults["private_if"], 
       "master_ip"   => masterdefaults["private_ip"], 

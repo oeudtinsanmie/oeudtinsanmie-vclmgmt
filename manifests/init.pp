@@ -135,16 +135,10 @@ class vclmgmt(
   },
   $vclversion = "release-2.3.2-RC2",
   $vclrevision = undef,
+  $usexcat = false,
 ) inherits vclmgmt::params {
-
-  class { "xcat": }
-#  if ! defined(Class['apache']) {
-#    class { "apache": }
-#  }
-#  Package <| title == 'apache' |> {
-#    tag => "vclinstall",
-#  }
-
+  
+  ############## Definitions
   $htinc = "${vclweb}/.ht-inc"
   $vclimgs = "${vcldir}/images"  
   
@@ -255,6 +249,9 @@ class vclmgmt(
       action => 'accept',
       source => $private_ip,
     },
+  }
+  
+  $xcatfirewalls = {
     "117 accept xcat calls 3001" => {
       chain => 'INPUT',
       proto => 'tcp',
@@ -273,6 +270,7 @@ class vclmgmt(
 
   $firewalls = merge($vclmgmt::params::firewalls, $myfirewalls) 
   
+  ############# Internal Class Definitions
   define vclmgmt::vclcopy(
     $path,
     $tgtdir,
@@ -286,31 +284,6 @@ class vclmgmt(
     }
   }
   
-  define vclmgmt::dojoimport ($utils) {
-    notice ("Importing dojo layers from ${utils}")
-    create_resources(vcldojo_layer, read_vcldojo($utils))
-  }
-  
-  vclmgmt::dojoimport { "dojo-layers" :
-    utils => "${htinc}/utils.php",
-  }
-
-  $vclprefixes = {
-    "dojo" => {
-      path => "../../dojo",
-    },
-    "dojox" => {
-      path => "../dojox",
-    },
-    "dijit" => {
-      path => "../dijit",
-    },
-    "vcldojo" => {
-      path => "../vcldojo",
-    },
-  }
-  create_resources(vcldojo_prefix, $vclprefixes)
-  
   # TODO: More complete cpan provider to allow optional updates
   define vclmgmt::cpan() {
     exec { "/usr/bin/cpanp -i --skiptest ${name}" :
@@ -318,6 +291,12 @@ class vclmgmt(
     }
   }
   
+  define vclmgmt::dojoimport ($utils) {
+    notice ("Importing dojo layers from ${utils}")
+    create_resources(vcldojo_layer, read_vcldojo($utils))
+  }
+  
+  ############# Package Repositories
   case $::osfamily {
     'RedHat': {
       create_resources(yumrepo, $vclmgmt::params::repos, $vclmgmt::params::defaultrepo)
@@ -328,6 +307,7 @@ class vclmgmt(
     }
   }
 
+  ############### Packages
 # todo: convert to future parser each method check, once wider support
 #  each($vclmgmt::params::pkg_list) |$pkg| {
 #    if ! defined(Package[$pkg]) {
@@ -380,26 +360,22 @@ class vclmgmt(
       tag => "vclinstall",
     }
   }
+  
   package { $vclmgmt::params::pkg_list:
     ensure => "latest", 
     provider => "yum", 
     tag   => "vclinstall",
   }
+  
   package { $vclmgmt::params::pkg_exclude: 
     ensure => "absent", 
   }
   
+  # use cpan to install needed modules
   vclmgmt::cpan { $vclmgmt::params::cpan_list: }
-
-  # These files really should be served somewhere from the VCL project
-  # Temporary workarounds:
-#  define vclmgmt::regexfile ($root, $tgt) {
-#    file { $name :
-#      source   => "puppet:///modules/vclmgmt/${tgt}/${name}",
-#      path  => "${root}/${tgt}/${name}",
-#    }     
-#  }
   
+  ############## VCL Code
+  # get requested version / revision of vcl from svn repo
   if $vclversion == latest {
     $repodir = "trunk"
   }
@@ -415,6 +391,118 @@ class vclmgmt(
     provider => svn,
     source   => "http://svn.apache.org/repos/asf/vcl/${repodir}",
   }
+  
+  if $vclrevision != undef {
+    Vcsrepo <| title == 'vcl' |> {
+      revision => $vclrevision,
+    }
+  }
+  
+  # create / link files to set up vcl as needed
+  create_resources(file, $postfiles, { tag => "vclpostfiles", })
+  
+  # create config files
+  create_resources(file, $configs, $vclmgmt::params::configfile)
+  
+  # copy files 
+  create_resources(vclmgmt::vclcopy, $vclcopyfiles)
+    
+  # generate keys with genkeys script
+  exec { 'genkeys' :
+    command => '/bin/sh genkeys.sh',
+    cwd  => $htinc,
+    creates  => "${htinc}/keys.pem",
+  }
+  
+  ########### Security
+  # set up firewalls
+  create_resources(firewall, $firewalls, $firewalldefaults)
+    
+  # if selinux is enabled, set selbooleans correctly
+  if str2bool("$selinux") {
+    create_resources(selboolean, $vclmgmt::params::sebools)
+  }
+
+  # declare services
+  create_resources(service, $vclmgmt::params::service_list, $vclmgmt::params::servicedefault)
+  
+  ######## network setup  
+  if $pods == undef {
+    $dhcpinterfaces = [ $private_if, $ipmi_if ]
+  }
+  else {
+    $dhcpinterfaces = list_vlans($poddefaults, $pods, $private_if, $ipmi_if)
+  }  
+
+  network::if::static { $private_if :
+    ensure => 'up',
+    ipaddress => $private_ip,
+    netmask   => '255.255.255.0',
+    macaddress => $private_mac,
+    require => Class['vclmgmt::params'],
+  }
+  network::if::static { $ipmi_if :
+    ensure => 'up',
+    ipaddress => $ipmi_ip,
+    netmask   => '255.255.255.0',
+    macaddress => $ipmi_mac,
+    require => Class['vclmgmt::params'],
+  }
+
+  if $public_ip == 'dhcp' {
+    network::if::dynamic { $public_if :
+      ensure => 'up',
+      macaddress => $public_mac,
+      bootproto => 'dhcp',
+      require => Class['vclmgmt::params'],
+    }
+  }
+  else {
+    network::if::static { $public_if :
+      ensure => 'up',
+      ipaddress => $public_ip,
+      netmask   => '255.255.255.0',
+      macaddress => $public_mac,
+      require => Class['vclmgmt::params'],
+    }
+  }
+  
+  ############# Database
+  if ! defined(Class['::mysql::server']) {
+    class {'::mysql::server':
+      root_password => $root_pw,
+      require => Class['vclmgmt::params'],
+    }
+  }
+  
+  mysql::db { $vcldb :
+    user => $vcluser,
+    password => $vcluser_pw,
+    host => 'localhost',
+    grant => ['GRANT', 'SELECT', 'INSERT', 'UPDATE', 'DELETE', 'CREATE TEMPORARY TABLES'],
+    sql => "${vclmgmt::params::vcldir}/mysql/vcl.sql",
+  }
+
+  ############## Dojo
+  vclmgmt::dojoimport { "dojo-layers" :
+    utils => "${htinc}/utils.php",
+  }
+
+  $vclprefixes = {
+    "dojo" => {
+      path => "../../dojo",
+    },
+    "dojox" => {
+      path => "../dojox",
+    },
+    "dijit" => {
+      path => "../dijit",
+    },
+    "vcldojo" => {
+      path => "../vcldojo",
+    },
+  }
+  create_resources(vcldojo_prefix, $vclprefixes)
   
   file { "${vclweb}/dojo":
     ensure => "directory",
@@ -452,144 +540,98 @@ class vclmgmt(
     tag => 'dojo',
   } 
   
-  if $vclrevision != undef {
-    Vcsrepo <| title == 'vcl' |> {
-      revision => $vclrevision,
-    }
+  exec { "dojobuild":
+    command => "/bin/sh build.sh profile=vcl action=release version=1.6.2.vcl localeList=en-us,en-gb,es-es,es-mx,ja-jp,zh-cn",
+    cwd => "${vclweb}/dojo/util/buildscripts",
+    refreshonly => "true",
   }
-
-#  vclmgmt::regexfile { $vcldojo : 
-#    root => "${$vcldir}/web/dojo-release-${dojo}",
-#    tgt  => "dojo",
-#  }
-#
-#  vclmgmt::regexfile { $vcldojonls : 
-#    root => "${$vcldir}/web/dojo-release-${dojo}",
-#    tgt  => "dojo/nls",
-#  }
   
-  create_resources(file, $postfiles, { tag => "vclpostfiles", })
-  
-  create_resources(file, $configs, $vclmgmt::params::configfile)
-  
-  create_resources(vclmgmt::vclcopy, $vclcopyfiles)
+  ############### xCAT
+  # setup xcat, if it's being used
+  if $usexcat == true {
+    class { "xcat": }
     
-  exec { 'genkeys' :
-    command => '/bin/sh genkeys.sh',
-    cwd  => $htinc,
-    creates  => "${htinc}/keys.pem",
-  }
+    create_resources(firewall, $xcatfirewalls, $firewalldefaults)
     
-  create_resources(firewall, $firewalls, $firewalldefaults)
+    $privatenet = split($private_ip, '\.')
+    xcat_network { "${privatenet[0]}_${privatenet[1]}_${privatenet[2]}_0-255_255_255_0":
+      ensure => absent,
+    }
+    $ipminet = split($ipmi_ip, '\.')
+    xcat_network { "${ipminet[0]}_${ipminet[1]}_${ipminet[2]}_0-255_255_255_0":
+      ensure => absent,
+    }
     
-  if str2bool("$selinux") {
-    create_resources(selboolean, $vclmgmt::params::sebools)
-  }
-
-  create_resources(service, $vclmgmt::params::service_list, $vclmgmt::params::servicedefault)
+    xcat_site_attribute { "master" :
+      sitename => 'clustersite',
+      value => $fqdn,
+    }
     
-  if $pods == undef {
-    $dhcpinterfaces = [ $private_if, $ipmi_if ]
-  }
-  else {
-    $dhcpinterfaces = list_vlans($poddefaults, $pods, $private_if, $ipmi_if)
-  }  
-
-  network::if::static { $private_if :
-    ensure => 'up',
-    ipaddress => $private_ip,
-    netmask   => '255.255.255.0',
-    macaddress => $private_mac,
-    require => Class['vclmgmt::params'],
-  }
-  $privatenet = split($private_ip, '\.')
-  xcat_network { "${privatenet[0]}_${privatenet[1]}_${privatenet[2]}_0-255_255_255_0":
-    ensure => absent,
-  }
-  network::if::static { $ipmi_if :
-    ensure => 'up',
-    ipaddress => $ipmi_ip,
-    netmask   => '255.255.255.0',
-    macaddress => $ipmi_mac,
-    require => Class['vclmgmt::params'],
-  }
-  $ipminet = split($ipmi_ip, '\.')
-  xcat_network { "${ipminet[0]}_${ipminet[1]}_${ipminet[2]}_0-255_255_255_0":
-    ensure => absent,
-  }
-
-  if $public_ip == 'dhcp' {
-    network::if::dynamic { $public_if :
-      ensure => 'up',
-      macaddress => $public_mac,
-      bootproto => 'dhcp',
-      require => Class['vclmgmt::params'],
+    xcat_site_attribute { "nameservers" :
+      sitename => 'clustersite',
+      value => $private_ip,
     }
-  }
-  else {
-    network::if::static { $public_if :
-      ensure => 'up',
-      ipaddress => $public_ip,
-      netmask   => '255.255.255.0',
-      macaddress => $public_mac,
-      require => Class['vclmgmt::params'],
+    
+    xcat_site_attribute { "dhcpinterfaces" :
+      sitename => 'clustersite',
+      value => $dhcpinterfaces,
     }
-  }
-  if ! defined(Class['::mysql::server']) {
-    class {'::mysql::server':
-      root_password => $root_pw,
-      require => Class['vclmgmt::params'],
+    
+    xcat_site_attribute { "domain" :
+      sitename => 'clustersite',
+      value => $private_domain,
     }
+    
+    xcat_site_attribute { "ntpservers" :
+      sitename => 'clustersite',
+      value => 'time.ncsu.edu',
+    }
+    
+    xcat_site_attribute { "xcatroot" :
+      sitename => 'clustersite',
+      value => "/opt/xcat",
+    }
+    
+    xcat_passwd_tbl { "system" :
+      username => $system_user,
+      password => $system_pw,
+    }
+    
+    xcat_site_attribute  { "xcatprefix" :
+      sitename => 'clustersite',
+      value => "/opt/xcat",
+    }  
+    
+    exec { "makehosts" :
+      command => "/opt/xcat/sbin/makehosts",
+      refreshonly => "true",
+    }~>
+    exec { "rmleases":
+      command => "rm -rf /var/lib/dhcpd/dhcpd.leases",
+      refreshonly => "true",
+    }~>   
+    exec { "makedhcpn" :
+      command => "/opt/xcat/sbin/makedhcp -n",
+      refreshonly => "true",
+    }~>
+    exec { "makedhcpa" :
+      command => "/opt/xcat/sbin/makedhcp -a",
+      refreshonly => "true",
+    }~>
+    exec { "makedns"  :
+      command => "/opt/xcat/sbin/makedns -n",
+      refreshonly => "true",
+    }
+  
+    # Chain declarations for xcat resources
+    Exec["makehosts"] <~ Vclmgmt::Compute_node <| |>
+    Exec["makehosts"] <~ Vclmgmt::Xcat_pod <| |>
+    Exec["makedns"] ~> Service["xcatd"] ~> Service["vcld"]
+      
   }
   
-  mysql::db { $vcldb :
-    user => $vcluser,
-    password => $vcluser_pw,
-    host => 'localhost',
-    grant => ['GRANT', 'SELECT', 'INSERT', 'UPDATE', 'DELETE', 'CREATE TEMPORARY TABLES'],
-    sql => "${vclmgmt::params::vcldir}/mysql/vcl.sql",
-  }
-
-  xcat_site_attribute { "master" :
-    sitename => 'clustersite',
-    value => $fqdn,
-  }
-  
-  xcat_site_attribute { "nameservers" :
-    sitename => 'clustersite',
-    value => $private_ip,
-  }
-  
-  xcat_site_attribute { "dhcpinterfaces" :
-    sitename => 'clustersite',
-    value => $dhcpinterfaces,
-  }
-  
-  xcat_site_attribute { "domain" :
-    sitename => 'clustersite',
-    value => $private_domain,
-  }
-  
-  xcat_site_attribute { "ntpservers" :
-   sitename => 'clustersite',
-   value => 'time.ncsu.edu',
-  }
-  
-  xcat_site_attribute { "xcatroot" :
-    sitename => 'clustersite',
-    value => "/opt/xcat",
-  }
-  
-  xcat_passwd_tbl { "system" :
-    username => $system_user,
-    password => $system_pw,
-  }
-  
-  xcat_site_attribute  { "xcatprefix" :
-    sitename => 'clustersite',
-           value => "/opt/xcat",
-  }
-
+  ################ Pods
+  # declare any pods included in class declaration
   if $pods != undef {
     $masterdefault = {
       private_if => $private_if,
@@ -600,47 +642,17 @@ class vclmgmt(
       ipmi_mac => $ipmi_mac,
       system_user => $system_user,
       system_pw => $system_pw,
+      usexcat => $usexcat,
     }
     $newpods = set_defaults($pods, $poddefaults, $masterdefault)
     create_resources(vclmgmt::xcat_pod, $newpods)
   }
 
-  exec { "makehosts" :
-    command => "/opt/xcat/sbin/makehosts",
-    refreshonly => "true",
-  }~>
-  exec { "rmleases":
-    command => "rm -rf /var/lib/dhcpd/dhcpd.leases",
-    refreshonly => "true",
-  }~>   
-  exec { "makedhcpn" :
-    command => "/opt/xcat/sbin/makedhcp -n",
-    refreshonly => "true",
-  }~>
-  exec { "makedhcpa" :
-    command => "/opt/xcat/sbin/makedhcp -a",
-    refreshonly => "true",
-  }~>
-  exec { "makedns"  :
-    command => "/opt/xcat/sbin/makedns -n",
-    refreshonly => "true",
-  }
-  
-  exec { "dojobuild":
-    command => "/bin/sh ${vclweb}/dojo/util/buildscripts/build.sh profile=vcl action=release version=1.6.2.vcl localeList=en-us,en-gb,es-es,es-mx,ja-jp,zh-cn",
-    cwd => "${vclweb}/dojo/util/buildscripts",
-    refreshonly => "true",
-  }
-
+  ############# Resource Chains
   # Chain declarations for vclmgmt resources
-  Exec["makehosts"] <~ Vclmgmt::Compute_node <| |>
-  Exec["makehosts"] <~ Vclmgmt::Xcat_pod <| |>
-  Exec["makedns"] ~> Service["xcatd"] ~> Service["vcld"]
-
   Yumrepo <| tag == "vclrepo" or tag == "xcatrepo" |> -> Package <| tag == "vclinstall" |> -> Vcsrepo['vcl']
-  File <| tag == "vclpostfiles" and tag != "postcopy" |> -> Vclmgmt::Vclcopy <| |> -> File <| tag == "postcopy" |> -> Mysql::Db[$vcldb] -> Exec['genkeys']
-  
-  File <| tag == "vclpostfiles" and tag != "postcopy" |>  -> Vcsrepo <| tag == 'dojo' |> -> File <| tag == "postcopy" |> -> Vclmgmt::Dojoimport <| |>
+  File <| tag == "vclpostfiles" and tag != "postcopy" |> -> Vclmgmt::Vclcopy <| |>      -> File <| tag == "postcopy" |> -> Mysql::Db[$vcldb] -> Exec['genkeys']  
+  File <| tag == "vclpostfiles" and tag != "postcopy" |> -> Vcsrepo <| tag == 'dojo' |> -> File <| tag == "postcopy" |> -> Vclmgmt::Dojoimport <| |>
 
   File ["vclweb"] -> File ["vclprofile"]
   File ["vclprofile"] -> Vcldojo_prefix <| |> ~> Exec["dojobuild"]
