@@ -149,7 +149,8 @@ class vclmgmt(
   $vclimgs = "${vcldir}/images"  
   
   $postfiles = {
-    "/.vclweb" => {
+    "vclweb" => {
+      path => "/.vclweb",
       ensure => present,
       content => "${vclweb}",
       replace => false,
@@ -636,6 +637,7 @@ class vclmgmt(
   Archive ["dojo-release-${dojo}"] -> File <| tag == "vclpostfiles" and tag != "postcopy" |> -> Vclmgmt::Vclcopy <| |> -> File <| tag == "postcopy" |> -> Mysql::Db[$vcldb] -> Exec['genkeys']
   
   File <| tag == "postcopy" |> -> File["${vclweb}/dojo"] -> Vcsrepo <| tag == 'dojo' |> -> Vclmgmt::Dojoimport <| |>
+  File ["vclweb"] -> File ["vclprofile"]
   File ["vclprofile"] -> Vcldojo_prefix <| |> ~> Exec["dojobuild"]
   File ["vclprofile"] -> Vcldojo_layer  <| |> ~> Exec["dojobuild"]
   Vcsrepo <| tag == 'dojo' |> ~> Exec["dojobuild"]

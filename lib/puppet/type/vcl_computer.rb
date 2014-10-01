@@ -1,6 +1,6 @@
 # This has to be a separate type to enable collecting
 Puppet::Type.newtype(:vcl_computer) do
-  @doc = 'manages the mysql tables for a base image in vcl.'
+  @doc = 'manages the mysql tables for a computer in vcl.'
 
   ensurable
   

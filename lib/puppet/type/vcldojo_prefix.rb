@@ -1,6 +1,6 @@
 # This has to be a separate type to enable collecting
-Puppet::Type.newtype(:vcl_computer) do
-  @doc = 'manages the mysql tables for a base image in vcl.'
+Puppet::Type.newtype(:vcldojo_prefix) do
+  @doc = 'dojo prefix definitions for dojo profile of vcl.'
 
   ensurable
   

@@ -2,13 +2,28 @@ require 'json'
 require 'pp'
 class Puppet::Provider::Vcldojo < Puppet::Provider
   
-  File.open('/.vclweb', 'r') { | file | 
-    @@vclprofile = "#{file.gets.delete('\n')}/dojo/util/buildscripts/profiles/vcl.profile.js"
-  }
+  def self.initprofile
+    begin
+      File.open('/.vclweb', 'r') { | file | 
+        @@vclprofile = "#{file.gets.delete('\n')}/dojo/util/buildscripts/profiles/vcl.profile.js"
+      }
+    rescue Puppet::ExecutionFailure => e
+      Puppet.debug "vclweb not yet set or is corrupt.  Assuming no dojo setup."
+      @@vclprofile = nil
+      @@dojo_hash = nil
+    end
+    begin
+      File.open(@@vclprofile, 'r') { | file |
+        @@dojo_hash = JSON.parse(file.read().split('=')[1])
+      }
+    rescue Puppet::ExecutionFailure => e
+      Puppet.debug "vcl.profile.js (#{@@vclprofile}) does not exist or is corrupt.  Assuming no dojo setup."
+      @@vclprofile = nil
+      @@dojo_hash = nil
+    end
+  end
   
-  File.open(@@vclprofile, 'r') { | file |
-    @@dojo_hash = JSON.parse(file.read().split('=')[1])
-  }
+  initprofile
   
   def initialize(value={})
     super(value)
@@ -54,6 +69,12 @@ class Puppet::Provider::Vcldojo < Puppet::Provider
   end
   
   def flush
+    if (@@vclprofile == nil) then
+      self.class.initprofile
+      if (@@vclprofile == nil) then
+        raise Puppet::DevError, "Unrecoverable error.  Cannot initialize dojo profile"
+      end
+    end
     if (@property_flush[:ensure] != :present) then
       @@dojo_hash[self.class.dojotype].delete!(@@dojo_hash['dependencies'][self.class.dojotype].select { | entry |
         isme? entry
