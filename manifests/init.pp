@@ -558,6 +558,16 @@ class vclmgmt(
       ensure => "link",
       target => "${vcldir}/web/dojosrc/release/dojo/dijit/themes/${dojotheme}/${dojotheme}.css",
     },
+    "dijit-css" => {
+      path => "${vcldir}/web/themes/default/css/dijit.css",
+      ensure => "link",
+      target => "${vcldir}/web/dojosrc/release/dojo/dijit/themes/dijit.css",
+    },
+    "dijit-icons" => {
+      path => "${vcldir}/web/themes/default/icons",
+      ensure => "link",
+      target => "${vcldir}/web/dojosrc/release/dojo/dijit/icons",
+    },
   }
   
   create_resources(file, $dojo_files, { tag => "dojo", })
