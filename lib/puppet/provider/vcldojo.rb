@@ -5,7 +5,7 @@ class Puppet::Provider::Vcldojo < Puppet::Provider
   def self.initprofile
     begin
       File.open('/.vclweb', 'r') { | file | 
-        @@vclprofile = "#{file.gets.delete('\n')}/dojo/util/buildscripts/profiles/vcl.profile.js"
+        @@vclprofile = "#{file.gets.delete('\n')}/dojosrc/util/buildscripts/profiles/vcl.profile.js"
       }
     rescue Exception => e
       Puppet.debug e

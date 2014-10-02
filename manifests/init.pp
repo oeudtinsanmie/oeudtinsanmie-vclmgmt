@@ -146,11 +146,11 @@ class vclmgmt(
     "vclweb" => {
       path => "/.vclweb",
       ensure => present,
-      content => "${vclweb}",
+      content => "${vcldir}/web",
       replace => false,
     },
     "vclprofile"  => {
-      path => "${vclweb}/dojo/util/buildscripts/profiles/vcl.profile.js",
+      path => "${vcldir}/web/dojosrc/util/buildscripts/profiles/vcl.profile.js",
       ensure => present,
       content => "dependencies = { \"layers\": [], \"prefixes\": [] }",
       replace => false,
@@ -166,14 +166,9 @@ class vclmgmt(
       path  => "${vclnode}",
       target  => "${vcldir}/managementnode",
     },
-#    "${vclweb}/dojo" => {
-#      ensure   => "link",
-#      path  => "${vclweb}/dojo",
-#      target   => "${vclweb}/dojo-release-${dojo}",
-#    },
-    "${vclweb}/dojo/vcldojo" => {
+    "vcldojo" => {
       ensure   => "link",
-      path  => "${vclweb}/dojo/vcldojo",
+      path  => "${vclweb}/dojosrc/vcldojo",
       target  => "${vclweb}/js/vcldojo",
       tag  => "postcopy",      
     },
@@ -292,7 +287,6 @@ class vclmgmt(
   }
   
   define vclmgmt::dojoimport ($utils) {
-    notice ("Importing dojo layers from ${utils}")
     create_resources(vcldojo_layer, read_vcldojo($utils))
   }
   
@@ -505,12 +499,12 @@ class vclmgmt(
   create_resources(vcldojo_prefix, $vclprefixes)
   
   file { "dojosrc":
-    path => "${vclweb}/dojosrc",
+    path => "${vcldir}/web/dojosrc",
     ensure => "directory",
   } 
   vcsrepo { "dojo" :
     ensure => present,
-    path  => "${vclweb}/dojosrc/dojo",
+    path  => "${vcldir}/web/dojosrc/dojo",
     provider => git,
     source   => "https://github.com/dojo/dojo.git",
     revision => $dojo,
@@ -518,7 +512,7 @@ class vclmgmt(
   } 
   vcsrepo { "dojox" :
     ensure => present,
-    path  => "${vclweb}/dojosrc/dojox",
+    path  => "${vcldir}/web/dojosrc/dojox",
     provider => git,
     source   => "https://github.com/dojo/dojox.git",
     revision => $dojo,
@@ -526,7 +520,7 @@ class vclmgmt(
   } 
   vcsrepo { "dijit" :
     ensure => present,
-    path  => "${vclweb}/dojosrc/dijit",
+    path  => "${vcldir}/web/dojosrc/dijit",
     provider => git,
     source   => "https://github.com/dojo/dijit.git",
     revision => $dojo,
@@ -534,7 +528,7 @@ class vclmgmt(
   } 
   vcsrepo { "dojo-util" :
     ensure => present,
-    path  => "${vclweb}/dojosrc/util",
+    path  => "${vcldir}/web/dojosrc/util",
     provider => git,
     source   => "https://github.com/dojo/util.git",
     revision => $dojo,
@@ -543,13 +537,13 @@ class vclmgmt(
   
   exec { "dojobuild":
     command => "/bin/sh build.sh profile=vcl action=release version=1.6.2.vcl localeList=en-us,en-gb,es-es,es-mx,ja-jp,zh-cn",
-    cwd => "${vclweb}/dojosrc/util/buildscripts",
+    cwd => "${vcldir}/web/dojosrc/util/buildscripts",
     refreshonly => "true",
   }->
   file { "dojo-release":
     ensure => "link",
-    path => "${vclweb}/dojo",
-    target => "${vclweb}/dojosrc/release/dojo/",
+    path => "${vcldir}/web/dojo",
+    target => "${vcldir}/web/dojosrc/release/dojo/",
   }
   
   ############### xCAT

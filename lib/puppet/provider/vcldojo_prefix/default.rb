@@ -4,7 +4,7 @@ Puppet::Type.type(:vcldojo_prefix).provide(:default, :parent => Puppet::Provider
   mk_resource_methods
   
   def self.make_hash (obj)
-    super ({ 
+    super({ 
       :name => obj[0],
       :path => obj[1],
     })
