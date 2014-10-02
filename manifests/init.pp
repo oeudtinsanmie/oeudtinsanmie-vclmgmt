@@ -504,12 +504,12 @@ class vclmgmt(
   }
   create_resources(vcldojo_prefix, $vclprefixes)
   
-  file { "${vclweb}/dojo":
+  file { "${vclweb}/dojosrc":
     ensure => "directory",
   } 
   vcsrepo { "dojo" :
     ensure => present,
-    path  => "${vclweb}/dojo/dojo",
+    path  => "${vclweb}/dojosrc/dojo",
     provider => git,
     source   => "https://github.com/dojo/dojo.git",
     revision => $dojo,
@@ -517,7 +517,7 @@ class vclmgmt(
   } 
   vcsrepo { "dojox" :
     ensure => present,
-    path  => "${vclweb}/dojo/dojox",
+    path  => "${vclweb}/dojosrc/dojox",
     provider => git,
     source   => "https://github.com/dojo/dojox.git",
     revision => $dojo,
@@ -525,7 +525,7 @@ class vclmgmt(
   } 
   vcsrepo { "dijit" :
     ensure => present,
-    path  => "${vclweb}/dojo/dijit",
+    path  => "${vclweb}/dojosrc/dijit",
     provider => git,
     source   => "https://github.com/dojo/dijit.git",
     revision => $dojo,
@@ -533,7 +533,7 @@ class vclmgmt(
   } 
   vcsrepo { "dojo-util" :
     ensure => present,
-    path  => "${vclweb}/dojo/util",
+    path  => "${vclweb}/dojosrc/util",
     provider => git,
     source   => "https://github.com/dojo/util.git",
     revision => $dojo,
@@ -542,8 +542,13 @@ class vclmgmt(
   
   exec { "dojobuild":
     command => "/bin/sh build.sh profile=vcl action=release version=1.6.2.vcl localeList=en-us,en-gb,es-es,es-mx,ja-jp,zh-cn",
-    cwd => "${vclweb}/dojo/util/buildscripts",
+    cwd => "${vclweb}/dojosrc/util/buildscripts",
     refreshonly => "true",
+  }->
+  file { "dojo-release":
+    ensure => "link",
+    path => "${vclweb}/dojo",
+    target => "${vclweb}/dojosrc/release/dojo/",
   }
   
   ############### xCAT
