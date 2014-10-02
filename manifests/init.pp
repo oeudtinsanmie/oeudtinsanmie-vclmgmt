@@ -504,7 +504,8 @@ class vclmgmt(
   }
   create_resources(vcldojo_prefix, $vclprefixes)
   
-  file { "${vclweb}/dojosrc":
+  file { "dojosrc":
+    path => "${vclweb}/dojosrc",
     ensure => "directory",
   } 
   vcsrepo { "dojo" :
@@ -660,9 +661,9 @@ class vclmgmt(
   File <| tag == "vclpostfiles" and tag != "postcopy" |> -> Vcsrepo <| tag == 'dojo' |> -> File <| tag == "postcopy" |> -> Vclmgmt::Dojoimport <| |>
 
   File ["vclweb"] -> File ["vclprofile"]
-  File ["vclprofile"] -> Vcldojo_prefix <| |> ~> Exec["dojobuild"]
-  File ["vclprofile"] -> Vcldojo_layer  <| |> ~> Exec["dojobuild"]
-  Vcsrepo <| tag == 'dojo' |> ~> Exec["dojobuild"]
+  File ["vclprofile"] -> Vcldojo_prefix <| |>        ~> Exec["dojobuild"]
+  File ["vclprofile"] -> Vcldojo_layer  <| |>        ~> Exec["dojobuild"]
+  File ["dojosrc"]    -> Vcsrepo <| tag == 'dojo' |> ~> Exec["dojobuild"]
   
   File['vcldconf'] ~> Service['vcld']
   Vcsrepo['vcl'] ~> Vclmgmt::Vclcopy <| |>
