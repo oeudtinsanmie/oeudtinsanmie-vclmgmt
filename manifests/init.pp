@@ -127,6 +127,7 @@ class vclmgmt(
   $pods          = undef,
   $vcldir        = $vclmgmt::params::vcldir,
   $dojo          = $vclmgmt::params::dojo,
+  $dojotheme     = "tundra",
   $vclweb        = $vclmgmt::params::vclweb,
   $vclnode       = $vclmgmt::params::vclnode,
   $firewalldefaults = {
@@ -539,12 +540,27 @@ class vclmgmt(
     command => "/bin/sh build.sh profile=vcl action=release version=1.6.2.vcl localeList=en-us,en-gb,es-es,es-mx,ja-jp,zh-cn",
     cwd => "${vcldir}/web/dojosrc/util/buildscripts",
     refreshonly => "true",
-  }->
-  file { "dojo-release":
-    ensure => "link",
-    path => "${vcldir}/web/dojo",
-    target => "${vcldir}/web/dojosrc/release/dojo/",
   }
+  
+  $dojo_files = {
+    "dojo-release" => {
+	    ensure => "link",
+	    path => "${vcldir}/web/dojo",
+	    target => "${vcldir}/web/dojosrc/release/dojo/",
+	  },
+    "dojo-theme" => {
+      path => "${vcldir}/web/themes/default/css/dojo",
+      ensure => "link",
+      target => "${vcldir}/web/dojosrc/release/dojo/dijit/themes/${dojotheme}",
+    },
+    "dojo-theme-css" => {
+      path => "${vcldir}/web/dojosrc/release/dojo/dijit/themes/${dojotheme}/default.css",
+      ensure => "link",
+      target => "${vcldir}/web/dojosrc/release/dojo/dijit/themes/${dojotheme}/${dojotheme}.css",
+    },
+  }
+  
+  create_resources(file, $dojo_files, { tag => "dojo", })
   
   ############### xCAT
   # setup xcat, if it's being used
@@ -658,6 +674,7 @@ class vclmgmt(
   File ["vclprofile"] -> Vcldojo_prefix <| |>        ~> Exec["dojobuild"]
   File ["vclprofile"] -> Vcldojo_layer  <| |>        ~> Exec["dojobuild"]
   File ["dojosrc"]    -> Vcsrepo <| tag == 'dojo' |> ~> Exec["dojobuild"]
+  Exec["dojobuild"] -> File <| tag == "dojo" |>
   
   File['vcldconf'] ~> Service['vcld']
   Vcsrepo['vcl'] ~> Vclmgmt::Vclcopy <| |>
