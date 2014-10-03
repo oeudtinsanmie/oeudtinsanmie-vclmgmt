@@ -311,7 +311,7 @@ class Puppet::Provider::Vclresource < Puppet::Provider
       self.class.runQuery(qry)
       
       Puppet.debug "Refreshing VCL Resource groups for #{resource[:name]}"
-      qry =  "DELETE FROM resourcegroupmembers WHERE resourceid IN (SELECT resource.id FROM resource, #{self.class.maintbl} WHERE #{self.class.maintbl}.#{self.class.namevar}='#{resource[:name]}' AND #{self.class.maintbl}.id=resource.subid); "
+      qry =  "DELETE FROM resourcegroupmembers WHERE resourceid IN (SELECT resource.id FROM resource, resourcetype, #{self.class.maintbl} WHERE #{self.class.maintbl}.#{self.class.namevar}='#{resource[:name]}' AND #{self.class.maintbl}.id=resource.subid AND resource.resourcetypeid=resourcetype.id AND resourcetype.name='#{self.class.resourcetype})'; "
       qry << insertGroupMembersQry
       self.class.runQuery(qry)
       Puppet.debug "Done"
