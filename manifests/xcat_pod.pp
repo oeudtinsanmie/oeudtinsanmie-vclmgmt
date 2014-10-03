@@ -15,6 +15,9 @@
 # [*nodes*] 
 #   - Hash of vclmgmt::compute_nodes to declare with this network pair's settings
 #     Defaults to undef
+# [*usexcat*]
+#   - Whether to install xCAT and configure parallel xCAT objects along with VCL database definitions for images and computers
+#     Defaults to false
 #
 define vclmgmt::xcat_pod(
   $private_hash, 

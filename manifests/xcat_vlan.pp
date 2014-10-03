@@ -21,6 +21,10 @@
 # [*vlanid*] 
 #   - Vlan ID, if you have multiple networks through this interface
 #     Defaults to undef
+# [*usexcat*]
+#   - Whether to install xCAT and configure parallel xCAT objects along with VCL database definitions for images and computers
+#     Defaults to false
+#
 define vclmgmt::xcat_vlan(
   $master_if, 
   $master_mac, 

@@ -116,6 +116,9 @@
 # [*vmtype*] 
 #   - VM Type of this computer
 #     Defaults to undef -> inherits defaults from vcl_computer
+# [*usexcat*]
+#   - Whether to install xCAT and configure parallel xCAT objects along with VCL database definitions for images and computers
+#     Defaults to false
 #
 define vclmgmt::compute_node(
   $ensure       = present, 

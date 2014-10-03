@@ -65,18 +65,18 @@ Installs xCAT and VCL from source, then configures the management node.  You can
             
         vcldir         => '/vcl',                # Directory in which to place vcl svn repo                 (default value)
         dojo           => '1.6.1',               # Dojo version                                             (default value)
-        dojo_checksum  => false,                 # Whether to look for an MD5 Checksum for dojo archive     (default value)
+        dojotheme      => "tundra",              # dijit theme to apply to VCL webpages                     (default value)
         vclweb         => '/var/www/html/vcl',   # VCL web folder location                                  (default value)
         vclnode        => '/usr/local/vcl',      # Alias within standard path for vcl directory             (default value)
         
         firewalldefaults  => {                   # Set pre and post class requirements for the firewall declarations  (default value)
-            require  =>> Class['ncsufirewall::pre'],
-            before   =>> Class['ncsufirewall::post'],
+            require  => Class['ncsufirewall::pre'],
+            before   => Class['ncsufirewall::post'],
         },
         
-        vclversion  => "release-2.3.2-RC2",      # The release of vcl to pull from the repo, or "latest" if you want to work with the trunk  (default value)
-        vclrevision  => undef,                   # If defined, pulls a specific revision of the vcl subversion repo                          (default value)
-  
+        vclversion     => "release-2.3.2-RC2",   # The release of vcl to pull from the repo, or "latest" if you want to work with the trunk  (default value)
+        vclrevision    => undef,                 # If defined, pulls a specific revision of the vcl subversion repo                          (default value)
+        usexcat        => false,                 # Whether to install xCAT and configure parallel xCAT objects along with VCL database definitions for images and computers  (default value)
     }
 
 vclmgmt::xcat_pod 
@@ -106,12 +106,13 @@ Describes the private and ipmi subnets for a given collection of compute nodes. 
         },
         nodes => {                                # Hash of vclmgmt::compute_nodes to declare with this network pair's settings
             "my-node" => {
-                tgt_ip => "192.168.37.8",
-                ipmi_ip => "192.168.137.8",
-                tgt_mac => "XX:XX:XX:XX:XX:XX",
-                ipmi_mac => "XX:XX:XX:XX:XX:XX",
+                tgt_ip    => "192.168.37.8",
+                ipmi_ip   => "192.168.137.8",
+                tgt_mac   => "XX:XX:XX:XX:XX:XX",
+                ipmi_mac  => "XX:XX:XX:XX:XX:XX",
             },
         },
+        usexcat           => false,               # Whether to install xCAT and configure parallel xCAT objects along with VCL database definitions for images and computers  (default value)
       }
 
 vclmgmt::xcat_vlan 
@@ -127,6 +128,7 @@ Creates an xcat network object in xcat describing the network.  If vlan_alias_ip
         network       => '192.168.37.0'         # network root address  
         netmask       => '255.255.255.192',     # netmask for network
         vlanid        => undef,                 # vlan id, if defining a subnet isolated by a vlan on this interface.  Ignored if no vlan_alias_ip provided
+        usexcat       => false,                 # Whether to install xCAT and configure parallel xCAT objects along with VCL database definitions for images and computers  (default value)
     }
 
 vclmgmt::compute_node 
@@ -181,6 +183,7 @@ Defines related vcl_computer and xcat_node objects for a provision controlled co
         provisioning  => undef,                         # Provisioning method for this computer
         vmhost        => undef,                         # VM Host of this computer
         vmtype        => undef,                         # VM Type of this computer
+        usexcat       => false,                         # Whether to install xCAT and configure parallel xCAT objects along with VCL database definitions for images and computers  (default value)
     }
       
 vclmgmt::baseimage 
@@ -268,37 +271,38 @@ The nested hash structure and default-passing behavior of these puppet classes s
 
     ---
     mgmt_node:
-        vcluser_pw: "vcl_sql_password"
-        root_pw: "root_sql_password"
-        ipmi_mac: "XX:XX:XX:XX:XX:XX"
-        private_mac: "XX:XX:XX:XX:XX:XX"
-        public_mac: "XX:XX:XX:XX:XX:XX"
-        private_if: "em2"
-        private_ip: "192.168.0.5"
-        private_domain: "mydomain"
-        ipmi_if: "p4p1"
-        ipmi_ip: "192.168.100.5"
+        usexcat: true
+        vcluser_pw: vcl_sql_password
+        root_pw: root_sql_password
+        ipmi_mac: XX:XX:XX:XX:XX:XX
+        private_mac: XX:XX:XX:XX:XX:XX
+        public_mac: XX:XX:XX:XX:XX:XX
+        private_if: em2
+        private_ip: 192.168.0.5
+        private_domain: mydomain
+        ipmi_if: p4p1
+        ipmi_ip: 192.168.100.5
         pods:
-            "my-pod":
+            my-pod:
                 private_hash:
-                    vlan_alias_ip: "192.168.37.1"
-                    network: "192.168.37.0"
-                    netmask: "255.255.255.192"
-                    domain: "mypod.mydomain"
-                    vlanid: "XXX"
+                    vlan_alias_ip: 192.168.37.1
+                    network: 192.168.37.0
+                    netmask: 255.255.255.192
+                    domain: mypod.mydomain
+                    vlanid: XXX
                 ipmi_hash:
-                    network: "192.168.137.0"
-                    netmask: "255.255.255.192"
-                    domain: "ipmi.mypod.mydomain"
-                    vlanid: "YYY"
+                    network: 192.168.137.0
+                    netmask: 255.255.255.192
+                    domain: ipmi.mypod.mydomain
+                    vlanid: YYY
                 defaults:
-                    tgt_if: "eth1"
-                    ipmi_user: "SOMEUSER"
-                    ipmi_pw: "SOMEPASS"
-                    admin_user: "AdminUser"
-                    admin_pw: "AdminPassword"
+                    tgt_if: eth1
+                    ipmi_user: SOMEUSER
+                    ipmi_pw: SOMEPASS
+                    admin_user: AdminUser
+                    admin_pw: AdminPassword
                 nodes:
-                    "my-node1":
+                    my-node1:
                         public_ip: xxx.xxx.xxx.xxx
                         private_ip: 192.168.37.8
                         ipmi_ip: 192.168.137.8
@@ -306,7 +310,7 @@ The nested hash structure and default-passing behavior of these puppet classes s
                         private_mac: XX:XX:XX:XX:XX:XX
                         ipmi_mac: XX:XX:XX:XX:XX:XX
                         notes: "My notes about this computer"
-                    "my-node2":
+                    my-node2:
                         public_ip: xxx.xxx.xxx.xxx
                         private_ip: 192.168.37.72
                         ipmi_ip: 192.168.137.72
@@ -333,6 +337,7 @@ The set_defaults function allows you to use the hierarchical default_passing beh
         private_domain: mydomain
         ipmi_if: p4p1
         ipmi_ip: 192.168.100.5
+        usexcat: true
     
     my_nodes:
         lab1:

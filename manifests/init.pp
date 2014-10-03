@@ -79,9 +79,9 @@ include stdlib
 # [*dojo*] 
 #   - Dojo version
 #     Defaults to vclmgmt::params::dojo
-# [*dojo_checksum*]
-#   - Whether to look for an MD5 Checksum for dojo archive
-#     Defaults to vclmgmt::params::dojo_checksum
+# [*dojotheme*]
+#   - dijit theme used for vcl
+#     Defaults to tundra
 # [*vclweb*]
 #   - VCL web folder location
 #     Defaults to vclmgmt::params::vclweb
@@ -101,7 +101,10 @@ include stdlib
 # [*vclrevision*]
 #   - If defined, pulls a specific revision of the vcl subversion repo
 #     Defaults to undefined
-# 
+# [*usexcat*]
+#   - Whether to install xCAT and configure parallel xCAT objects along with VCL database definitions for images and computers
+#     Defaults to false
+#     
 class vclmgmt(
   $public_mac, 
   $public_if     = 'em1', 
