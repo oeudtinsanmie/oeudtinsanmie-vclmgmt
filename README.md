@@ -9,11 +9,15 @@ Classes
   * [Vclmgmt::Xcat_vlan](#vclmgmtxcat_vlan-)
   * [Vclmgmt::Compute_node](#vclmgmtcompute_node-)
   * [Vclmgmt::Baseimage](#vclmgmtbaseimage-)
-  
+    
 Hiera Usage & Custom Functions
 ------------------------------
   * [Hiera Yaml Example](#example-yaml-)
   * [Using the set_defaults Function](#set_defaults-usage-)
+  
+A Note on Puppet Resource Chaining
+----------------------------------
+Resource chains are declared in init.pp to make sure everything is processed in the correct order, and to protect your own resource declarations that depend on the vclmgmt class.  However, adding support for importing Dojo layers from the VCL utils.php file, as is currently common practice, breaks the Puppet Resource declaration / resolution model and cannot be sufficiently protected by resource chain declarations.  Since the layers cannot be declared until after the VCL svn repo is resolved, a second application of the Puppet manifest is required to fully install Dojo, as it is currently supported.  There are probably ways to plan around this limitation in future versions of the Vclmgmt Module and VCL code. 
 
 Class Definitions
 =================
