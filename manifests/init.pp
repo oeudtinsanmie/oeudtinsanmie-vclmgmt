@@ -352,10 +352,22 @@ class vclmgmt(
       provider => "yum", 
       tag  => "vclinstall",
     }
+    service { "httpd" :
+      ensure => running,
+      hasstatus => true,
+      hasrestart => true,
+      enable => true,
+    }
   }
   else {
     Package <| title == 'httpd' |> {
       tag => "vclinstall",
+    }
+    Service <| title == 'httpd' |> {
+      ensure => running,
+      hasstatus => true,
+      hasrestart => true,
+      enable => true,
     }
   }
   
@@ -482,6 +494,7 @@ class vclmgmt(
   }
 
   ############## Dojo
+
   vclmgmt::dojoimport { "dojo-layers" :
     utils => "${htinc}/utils.php",
   }
@@ -574,7 +587,7 @@ class vclmgmt(
   }
   
   create_resources(file, $dojo_files, { tag => "dojo", })
-  
+
   ############### xCAT
   # setup xcat, if it's being used
   if $usexcat == true {
@@ -679,9 +692,13 @@ class vclmgmt(
 
   ############# Resource Chains
   # Chain declarations for vclmgmt resources
-  Yumrepo <| tag == "vclrepo" or tag == "xcatrepo" |> -> Package <| tag == "vclinstall" |> -> Vcsrepo['vcl']
+  Yumrepo <| tag == "vclrepo" or tag == "xcatrepo" |> -> Package <| tag == "vclinstall" |> -> Vcsrepo['vcl'] -> File <| tag == "vclpostfiles" |>
   File <| tag == "vclpostfiles" and tag != "postcopy" |> -> Vclmgmt::Vclcopy <| |>      -> File <| tag == "postcopy" |> -> Mysql::Db[$vcldb] -> Exec['genkeys']  
-  File <| tag == "vclpostfiles" and tag != "postcopy" |> -> Vcsrepo <| tag == 'dojo' |> -> File <| tag == "postcopy" |> -> Vclmgmt::Dojoimport <| |>
+  File <| tag == "vclpostfiles" and tag != "postcopy" |> -> File['dojosrc'] -> Vcsrepo <| tag == 'dojo' |> -> File <| tag == "postcopy" |>  -> Vclmgmt::Dojoimport <| |>
+
+  Exec["dojobuild"] ~> Service['httpd']
+  Vclmgmt::Cpan <| |> ~> Service['httpd']
+  Vcsrepo['vcl'] ~> Service['httpd']
 
   File ["vclweb"] -> File ["vclprofile"]
   File ["vclprofile"] -> Vcldojo_prefix <| |>        ~> Exec["dojobuild"]
