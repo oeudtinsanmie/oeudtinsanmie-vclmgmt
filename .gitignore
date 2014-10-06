@@ -10,4 +10,5 @@ modules/
 .librarian
 .DS_Store
 .project
-
+blib
+Makefile*
