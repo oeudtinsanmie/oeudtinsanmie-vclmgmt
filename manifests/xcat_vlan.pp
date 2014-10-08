@@ -36,7 +36,6 @@ define vclmgmt::xcat_vlan(
   $vlanid         = undef,
   $usexcat        = false,
 ) {
-  
   $default = {
     mgtifname   => $master_if,
     nameservers => $master_ip,
@@ -82,7 +81,7 @@ define vclmgmt::xcat_vlan(
     }
   }
 
-  if usexcat == true {
+  if $usexcat == true {
     create_resources(xcat_network, $nethash, $default)
   }
 }
