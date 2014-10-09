@@ -2,13 +2,14 @@ class vclmgmt::params {
 
 	$vcldir          = '/vcl'
 	$dojo            = '1.6.2'
-	$vclweb          = '/var/www/html/vcl'
+#	$vclweb          = '/var/www/html/vcl'
 	$vclnode         = '/usr/local/vcl'
 	
 	# defaults
 	$configfile = {
 		ensure  => file,
 		mode    => '0644',
+		tag 	=> "vclpostfiles",
   }
     
   $servicedefault = {

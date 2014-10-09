@@ -131,7 +131,7 @@ class vclmgmt(
   $vcldir        = $vclmgmt::params::vcldir,
   $dojo          = $vclmgmt::params::dojo,
   $dojotheme     = "tundra",
-  $vclweb        = $vclmgmt::params::vclweb,
+  $vcl_web        = undef,
   $vclnode       = $vclmgmt::params::vclnode,
   $firewalldefaults = {
     require => Class['ncsufirewall::pre'],
@@ -140,13 +140,17 @@ class vclmgmt(
   $vclversion = "release-2.3.2-RC2",
   $vclrevision = undef,
   $usexcat = false,
-  $vcl_site = "${::fqdn}/vcl",
+  $vcl_site = "vcl.${::fqdn}",
   $vcl_port = 80,
-  $xcat_site = "${::fqdn}/install",
-  $xcat_port = 80,
 ) inherits vclmgmt::params {
   
   ############## Definitions
+  if $vcl_web == undef {
+    $vclweb = "${vcldir}/web"
+  }
+  else {
+    $vclweb = $vcl_web
+  }
   $htinc = "${vclweb}/.ht-inc"
   $vclimgs = "${vcldir}/images"  
   
@@ -375,25 +379,24 @@ class vclmgmt(
 #    }
 #  }
 
-  include apache
+  if ! defined(Class['apache']) {
+    class { 'apache': 
+      purge_configs => false,
+    }
+  }
+  else {
+    Class <| title == 'apache' |> {
+      purge_configs => false,
+    }
+  }
+
+  notice ("creating site ${vcl_site}:${vcl_port} -> ${vcldir}/web")
   
   apache::vhost { $vcl_site:
     port              => $vcl_port,
     priority          => '50',
     docroot           => "${vcldir}/web",
     servername        => $vcl_site,
-    options           => 'None',
-    override          => 'AuthConfig',
-    error_log         => true,
-    access_log        => true,
-    access_log_format => 'combined',
-  }
-  
-  apache::vhost { $xcat_site:
-    port              => $xcat_port,
-    priority          => '50',
-    docroot           => "/install",
-    servername        => $xcat_site,
     options           => 'None',
     override          => 'AuthConfig',
     error_log         => true,
@@ -722,7 +725,7 @@ class vclmgmt(
 
   ############# Resource Chains
   # Chain declarations for vclmgmt resources
-  Yumrepo <| tag == "vclrepo" or tag == "xcatrepo" |> -> Package <| tag == "vclinstall" |> -> Vcsrepo['vcl'] -> File <| tag == "vclpostfiles" |>
+  Yumrepo <| tag == "vclrepo" or tag == "xcatrepo" |> -> Package <| tag == "vclinstall" |> -> Vcsrepo['vcl'] -> Apache::Vhost <| |> -> File <| tag == "vclpostfiles" |> 
   File <| tag == "vclpostfiles" and tag != "postcopy" |> -> Vclmgmt::Vclcopy <| |>      -> File <| tag == "postcopy" |> -> Mysql::Db[$vcldb] -> Exec['genkeys']  
   File <| tag == "vclpostfiles" and tag != "postcopy" |> -> File['dojosrc'] -> Vcsrepo <| tag == 'dojo' |> -> File <| tag == "postcopy" |>  -> Vclmgmt::Dojoimport <| |>
 
@@ -744,6 +747,6 @@ class vclmgmt(
   Mysql::Db[$vcldb] -> Vcl_computer <| |>
   Mysql::Db[$vcldb] -> Vcl_image <| |>
   
-  Class['vclmgmt'] -> Vclmgmt::Baseimage <| |>
-  Class['vclmgmt'] -> Service <| name == $vclmgmt::params::service_list |>
+  Mysql::Db[$vcldb] -> Vclmgmt::Baseimage <| |>
+  File <| tag == "postcopy" |> -> Service <| name == $vclmgmt::params::service_list |>
 }
