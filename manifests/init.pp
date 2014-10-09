@@ -140,6 +140,10 @@ class vclmgmt(
   $vclversion = "release-2.3.2-RC2",
   $vclrevision = undef,
   $usexcat = false,
+  $vcl_site = "${::fqdn}/vcl",
+  $vcl_port = 80,
+  $xcat_site = "${::fqdn}/install",
+  $xcat_port = 80,
 ) inherits vclmgmt::params {
   
   ############## Definitions
@@ -160,11 +164,11 @@ class vclmgmt(
       replace => false,
       tag  => "postcopy",      
     },
-    "${vclweb}"  => {
-      ensure   => "link",
-      path  => "${vclweb}",
-      target   => "${vcldir}/web",
-    },
+#    "${vclweb}"  => {
+#      ensure   => "link",
+#      path  => "${vclweb}",
+#      target   => "${vcldir}/web",
+#    },
     "${vclnode}"  => {
       ensure   => "link",
       path  => "${vclnode}",
@@ -346,29 +350,55 @@ class vclmgmt(
       tag => "vclinstall",
     }
   }
-  if ! defined(Package["httpd"]) {
-    package {"httpd":
-      ensure => "latest", 
-      provider => "yum", 
-      tag  => "vclinstall",
-    }
-    service { "httpd" :
-      ensure => running,
-      hasstatus => true,
-      hasrestart => true,
-      enable => true,
-    }
+#  if ! defined(Package["httpd"]) {
+#    package {"httpd":
+#      ensure => "latest", 
+#      provider => "yum", 
+#      tag  => "vclinstall",
+#    }
+#    service { "httpd" :
+#      ensure => running,
+#      hasstatus => true,
+#      hasrestart => true,
+#      enable => true,
+#    }
+#  }
+#  else {
+#    Package <| title == 'httpd' |> {
+#      tag => "vclinstall",
+#    }
+#    Service <| title == 'httpd' |> {
+#      ensure => running,
+#      hasstatus => true,
+#      hasrestart => true,
+#      enable => true,
+#    }
+#  }
+
+  include apache
+  
+  apache::vhost { $vcl_site:
+    port              => $vcl_port,
+    priority          => '50',
+    docroot           => "${vcldir}/web",
+    servername        => $vcl_site,
+    options           => 'None',
+    override          => 'AuthConfig',
+    error_log         => true,
+    access_log        => true,
+    access_log_format => 'combined',
   }
-  else {
-    Package <| title == 'httpd' |> {
-      tag => "vclinstall",
-    }
-    Service <| title == 'httpd' |> {
-      ensure => running,
-      hasstatus => true,
-      hasrestart => true,
-      enable => true,
-    }
+  
+  apache::vhost { $xcat_site:
+    port              => $xcat_port,
+    priority          => '50',
+    docroot           => "/install",
+    servername        => $xcat_site,
+    options           => 'None',
+    override          => 'AuthConfig',
+    error_log         => true,
+    access_log        => true,
+    access_log_format => 'combined',
   }
   
   package { $vclmgmt::params::pkg_list:

@@ -2,7 +2,6 @@ class vclmgmt::params {
 
 	$vcldir          = '/vcl'
 	$dojo            = '1.6.2'
-	$dojo_checksum   = false
 	$vclweb          = '/var/www/html/vcl'
 	$vclnode         = '/usr/local/vcl'
 	
