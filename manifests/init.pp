@@ -131,7 +131,7 @@ class vclmgmt(
   $vcldir        = $vclmgmt::params::vcldir,
   $dojo          = $vclmgmt::params::dojo,
   $dojotheme     = "tundra",
-  $vcl_web        = undef,
+  $vcl_web       = undef,
   $vclnode       = $vclmgmt::params::vclnode,
   $firewalldefaults = {
     require => Class['ncsufirewall::pre'],
@@ -141,7 +141,7 @@ class vclmgmt(
   $vclrevision = undef,
   $usexcat = false,
   $vcl_site = $::fqdn,
-  $vcl_port = 80,
+  $vcl_port = 443,
   $vcl_site_path = "/vcl",
 ) inherits vclmgmt::params {
   
@@ -169,11 +169,6 @@ class vclmgmt(
       replace => false,
       tag  => "postcopy",      
     },
-#    "${vclweb}"  => {
-#      ensure   => "link",
-#      path  => "${vclweb}",
-#      target   => "${vcldir}/web",
-#    },
     "${vclnode}"  => {
       ensure   => "link",
       path  => "${vclnode}",
@@ -207,12 +202,6 @@ class vclmgmt(
   }
   
   $vclcopyfiles = {
-#   Will copy / edit this via Augeas in future versions
-#   'vcldconf' => {
-#     path   => "${vcldir}/managementnode/etc/vcl/vcld.conf",
-#     tgtdir  => '/etc/vcl',
-#     target  => 'vcld.conf',
-#    }, 
     'vcld' => {
       path  => "${vcldir}/managementnode/bin/S99vcld.linux",
       tgtdir  => '/etc/init.d',
@@ -386,54 +375,59 @@ class vclmgmt(
     }
   }
   else {
-    Class <| $title == 'apache' |> {
+    Class <| title == 'apache' |> {
       purge_configs => false,
     }
   }
   
   $vcldirectory = { 
     path              => $vclweb,
-    passenger_enabled => 'off',
+#    passenger_enabled => 'off',
     order             => 'allow,deny',
     allow_from        => ['all', ],
     allow_override    => ['None',],
     options           => ['Indexes', 'FollowSymLinks'],
+    custom_fragment   => 'SSLRequireSSL',
   }
   $vclalias = {
     alias => $vcl_site_path,
     path  => $vclweb,
   }
-  if defined_with_parameters(Apache::Vhost["${vcl_site}_${vcl_port}"], { servername => $vcl_site, port => $vcl_port }) {
-    Apache::Vhost <| $title == "${vcl_site}_${vcl_port}" |> {
-      directories +> $vcldirectory,
-      aliases     +> $vclalias,
+  if defined_with_params(Apache::Vhost["${vcl_site}_${vcl_port}"], { servername => $vcl_site, port => $vcl_port }) {
+    Apache::Vhost <| title == "${vcl_site}_${vcl_port}" |> {
+      directories +> [ $vcldirectory, ],
+      aliases     +> [ $vclalias, ],
+      tag => 'vcl',
     }
   }
   else {
-    if defined_with_parameters(Apache::Vhost[$vcl_site], { servername => $vcl_site, port => $vcl_port }) {
-      Apache::Vhost <| $title == $vcl_site |> {
-        directories +> $vcldirectory,
-        aliases     +> $vclalias,
+    if defined_with_params(Apache::Vhost[$vcl_site], { servername => $vcl_site, port => $vcl_port }) {
+      Apache::Vhost <| title == $vcl_site |> {
+        directories +> [ $vcldirectory, ],
+        aliases     +> [ $vclalias, ],
       }
     }
     else {
       if ! defined(Apache::Vhost["${vcl_site}_${vcl_port}"]) {
-			  apache::vhost { "${vcl_site}_${vcl_port}":
-			    port              => $vcl_port,
-			    servername        => $vcl_site,
-			    directories       => [ $vcldirectory, ],
-		      aliases           => [ $vclalias, ],
-			    priority          => '50',
-			    docroot           => "/var/www/html",
-			    options           => 'None',
-			    override          => 'AuthConfig',
-			    error_log         => true,
-			    access_log        => true,
-			    access_log_format => 'combined',
-			  }      
+        apache::vhost { "${vcl_site}_${vcl_port}":
+          port              => $vcl_port,
+          servername        => $vcl_site,
+          directories       => [ $vcldirectory, ],
+          aliases           => [ $vclalias, ],
+          priority          => '50',
+          docroot           => "/var/www/html",
+          options           => 'None',
+          override          => 'AuthConfig',
+          error_log         => true,
+          access_log        => true,
+          access_log_format => 'combined',
+          ssl               => true,
+          ssl_cert          =>  '/etc/pki/tls/certs/server.crt',
+          ssl_key           => '/etc/pki/tls/private/server.key',
+          tag => 'vcl',
+        }      
       }
       else {
-        ## ERROR !!
         fail ("Found Apache::Vhost[${vcl_site}_${vcl_port}] with port other than ${vcl_port} already defined.  Unsure how to reconcile.")
       }
     }
@@ -760,7 +754,7 @@ class vclmgmt(
 
   ############# Resource Chains
   # Chain declarations for vclmgmt resources
-  Yumrepo <| tag == "vclrepo" or tag == "xcatrepo" |> -> Package <| tag == "vclinstall" |> -> Vcsrepo['vcl'] -> Apache::Vhost <| |> -> File <| tag == "vclpostfiles" |>
+  Yumrepo <| tag == "vclrepo" or tag == "xcatrepo" |> -> Package <| tag == "vclinstall" |> -> Vcsrepo['vcl'] -> Apache::Vhost <| tag == 'vcl' |> -> File <| tag == "vclpostfiles" |>
   File <| tag == "vclpostfiles" and tag != "postcopy" |> -> Vclmgmt::Vclcopy <| |>      -> File <| tag == "postcopy" |> -> Mysql::Db[$vcldb] -> Exec['genkeys']  
   File <| tag == "vclpostfiles" and tag != "postcopy" |> -> File['dojosrc'] -> Vcsrepo <| tag == 'dojo' |> -> File <| tag == "postcopy" |>  -> Vclmgmt::Dojoimport <| |>
 
