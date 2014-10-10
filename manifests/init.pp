@@ -131,7 +131,7 @@ class vclmgmt(
   $vcldir        = $vclmgmt::params::vcldir,
   $dojo          = $vclmgmt::params::dojo,
   $dojotheme     = "tundra",
-  $vclweb        = $vclmgmt::params::vclweb,
+  $vcl_web        = undef,
   $vclnode       = $vclmgmt::params::vclnode,
   $firewalldefaults = {
     require => Class['ncsufirewall::pre'],
@@ -140,13 +140,18 @@ class vclmgmt(
   $vclversion = "release-2.3.2-RC2",
   $vclrevision = undef,
   $usexcat = false,
-  $vcl_site = "${::fqdn}/vcl",
+  $vcl_site = $::fqdn,
   $vcl_port = 80,
-  $xcat_site = "${::fqdn}/install",
-  $xcat_port = 80,
+  $vcl_site_path = "/vcl",
 ) inherits vclmgmt::params {
   
   ############## Definitions
+  if $vcl_web != undef {
+    $vclweb = $vcl_web
+  }
+  else {
+    $vclweb = "${vcldir}/web"
+  }
   $htinc = "${vclweb}/.ht-inc"
   $vclimgs = "${vcldir}/images"  
   
@@ -154,7 +159,7 @@ class vclmgmt(
     "vclweb" => {
       path => "/.vclweb",
       ensure => present,
-      content => "${vcldir}/web",
+      content => $vclweb,
       replace => false,
     },
     "vclprofile"  => {
@@ -375,32 +380,65 @@ class vclmgmt(
 #    }
 #  }
 
-  include apache
-  
-  apache::vhost { $vcl_site:
-    port              => $vcl_port,
-    priority          => '50',
-    docroot           => "${vcldir}/web",
-    servername        => $vcl_site,
-    options           => 'None',
-    override          => 'AuthConfig',
-    error_log         => true,
-    access_log        => true,
-    access_log_format => 'combined',
+  if ! defined(Class['apache']) {
+    class { 'apache':
+      purge_configs => false,
+    }
+  }
+  else {
+    Class <| $title == 'apache' |> {
+      purge_configs => false,
+    }
   }
   
-  apache::vhost { $xcat_site:
-    port              => $xcat_port,
-    priority          => '50',
-    docroot           => "/install",
-    servername        => $xcat_site,
-    options           => 'None',
-    override          => 'AuthConfig',
-    error_log         => true,
-    access_log        => true,
-    access_log_format => 'combined',
+  $vcldirectory = { 
+    path              => $vclweb,
+    passenger_enabled => 'off',
+    order             => 'allow,deny',
+    allow_from        => ['all', ],
+    allow_override    => ['None',],
+    options           => ['Indexes', 'FollowSymLinks'],
   }
-  
+  $vclalias = {
+    alias => $vcl_site_path,
+    path  => $vclweb,
+  }
+  if defined_with_parameters(Apache::Vhost["${vcl_site}_${vcl_port}"], { servername => $vcl_site, port => $vcl_port }) {
+    Apache::Vhost <| $title == "${vcl_site}_${vcl_port}" |> {
+      directories +> $vcldirectory,
+      aliases     +> $vclalias,
+    }
+  }
+  else {
+    if defined_with_parameters(Apache::Vhost[$vcl_site], { servername => $vcl_site, port => $vcl_port }) {
+      Apache::Vhost <| $title == $vcl_site |> {
+        directories +> $vcldirectory,
+        aliases     +> $vclalias,
+      }
+    }
+    else {
+      if ! defined(Apache::Vhost["${vcl_site}_${vcl_port}"]) {
+			  apache::vhost { "${vcl_site}_${vcl_port}":
+			    port              => $vcl_port,
+			    servername        => $vcl_site,
+			    directories       => [ $vcldirectory, ],
+		      aliases           => [ $vclalias, ],
+			    priority          => '50',
+			    docroot           => "/var/www/html",
+			    options           => 'None',
+			    override          => 'AuthConfig',
+			    error_log         => true,
+			    access_log        => true,
+			    access_log_format => 'combined',
+			  }      
+      }
+      else {
+        ## ERROR !!
+        fail ("Found Apache::Vhost[${vcl_site}_${vcl_port}] with port other than ${vcl_port} already defined.  Unsure how to reconcile.")
+      }
+    }
+  }
+
   package { $vclmgmt::params::pkg_list:
     ensure => "latest", 
     provider => "yum", 
@@ -722,7 +760,7 @@ class vclmgmt(
 
   ############# Resource Chains
   # Chain declarations for vclmgmt resources
-  Yumrepo <| tag == "vclrepo" or tag == "xcatrepo" |> -> Package <| tag == "vclinstall" |> -> Vcsrepo['vcl'] -> File <| tag == "vclpostfiles" |>
+  Yumrepo <| tag == "vclrepo" or tag == "xcatrepo" |> -> Package <| tag == "vclinstall" |> -> Vcsrepo['vcl'] -> Apache::Vhost <| |> -> File <| tag == "vclpostfiles" |>
   File <| tag == "vclpostfiles" and tag != "postcopy" |> -> Vclmgmt::Vclcopy <| |>      -> File <| tag == "postcopy" |> -> Mysql::Db[$vcldb] -> Exec['genkeys']  
   File <| tag == "vclpostfiles" and tag != "postcopy" |> -> File['dojosrc'] -> Vcsrepo <| tag == 'dojo' |> -> File <| tag == "postcopy" |>  -> Vclmgmt::Dojoimport <| |>
 
