@@ -409,6 +409,13 @@ class vclmgmt(
     }
     else {
       if ! defined(Apache::Vhost["${vcl_site}_${vcl_port}"]) {
+        openssl::certificate::x509 { 'server':
+          country => 'US',
+          organization => 'NC State University',
+          commonname => $::fqdn,
+          state => 'North Carolina',
+          unit => 'Netlabs',
+        }
         apache::vhost { "${vcl_site}_${vcl_port}":
           port              => $vcl_port,
           servername        => $vcl_site,
@@ -422,8 +429,8 @@ class vclmgmt(
           access_log        => true,
           access_log_format => 'combined',
           ssl               => true,
-          ssl_cert          =>  '/etc/pki/tls/certs/server.crt',
-          ssl_key           => '/etc/pki/tls/private/server.key',
+          ssl_cert          =>  '/etc/ssl/certs/server.crt',
+          ssl_key           => '/etc/ssl/certs/server.key',
           tag => 'vcl',
         }      
       }
