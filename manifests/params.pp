@@ -8,6 +8,7 @@ class vclmgmt::params {
 	$configfile = {
 		ensure  => file,
 		mode    => '0644',
+		tag => 'vcl-config',
   }
     
   $servicedefault = {
@@ -15,24 +16,41 @@ class vclmgmt::params {
     hasstatus => true,
     hasrestart => true,
     enable => true,
+    tag => "vcl-service",
   }
     
   case $::osfamily {
 
     'RedHat': {
+      case $::operatingsystem {
+        'CentOS': {
+          $rmcmd = "/bin/rm"
+          $cpcmd = "/bin/cp"
+        }
+        default: {
+          $rmcmd = "rm"
+          $cpcmd = "cp"
+        }
+      }
+      if $::lsbmajdistrelease == undef {
+        $majrelease = $::operatingsystemmajrelease
+      }
+      else {
+        $majrelease = $::lsbmajdistrelease
+      }
         
-	    $fedora_base      = "http://dl.fedoraproject.org/pub/epel"
-	    $key      = '/repodata/repomd.xml.key'
-	    $defaultrepo = {
-	      enabled  => 1,
-	      gpgcheck => 1,
-        tag   => "vclrepo",
+      $fedora_base      = "http://dl.fedoraproject.org/pub/epel"
+      $key      = '/repodata/repomd.xml.key'
+      $defaultrepo = {
+	  enabled  => 1,
+	  gpgcheck => 1,
+          tag   => "vclrepo",
       }
       $repos = {
         'fedoraproject' => {
           descr  => 'dl.fedoraproject.org epel mirror',
-          baseurl => "${fedora_base}/${lsbmajdistrelease}/${architecture}",
-          gpgkey  => "${fedora_base}/RPM-GPG-KEY-EPEL-${lsbmajdistrelease}",
+          baseurl => "${fedora_base}/${majrelease}/${architecture}",
+          gpgkey  => "${fedora_base}/RPM-GPG-KEY-EPEL-${majrelease}",
         },
       }
         

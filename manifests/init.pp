@@ -276,7 +276,7 @@ class vclmgmt(
     file { $tgtdir :
       ensure  => "present",
     } ->
-    exec { "cp ${path} ${tgtdir}/${target}" :
+    exec { "${vclmgmt::params::cpcmd} ${path} ${tgtdir}/${target}" :
       refreshonly => true,
     }
   }
@@ -291,6 +291,21 @@ class vclmgmt(
   define vclmgmt::dojoimport ($utils) {
     create_resources(vcldojo_layer, read_vcldojo($utils))
   }
+
+  define vclmgmt::installdependency ($pkg = $title) {
+    if ! defined(Package[$pkg]) {
+      package { $pkg:
+        ensure => "latest", 
+        provider => "yum", 
+        tag  => "vclinstall",
+      }
+    }
+    else {
+      Package <| title == $pkg |> {
+        tag => "vclinstall",
+      }
+    }
+  }
   
   ############# Package Repositories
   case $::osfamily {
@@ -304,71 +319,6 @@ class vclmgmt(
   }
 
   ############### Packages
-# todo: convert to future parser each method check, once wider support
-#  each($vclmgmt::params::pkg_list) |$pkg| {
-#    if ! defined(Package[$pkg]) {
-#      package { $pkg:
-#        ensure => "latest", 
-#        provider => "yum", 
-#        tag  => "vclinstall",
-#      }
-#    }
-#    else {
-#      Package <| title == $pkg |> {
-#        tag => "vclinstall",
-#      }
-#    }
-#  }
-#  each($vclmgmt::params::pkg_exclude) |$pkg| {
-#    if ! defined(Package[$pkg]) {
-#      package { $pkg: 
-#        ensure => "absent", 
-#      }
-#    }
-#    else {
-#      Package <| title == $pkg |> {
-#        ensure => "absent",
-#      }
-#    }
-#  }
-# For now, pulling out individual known conflicts for checks here:
-  if ! defined(Package["openssl-devel"]) {
-    package {"openssl-devel":
-      ensure => "latest", 
-      provider => "yum", 
-      tag  => "vclinstall",
-    }
-  }
-  else {
-    Package <| title == 'openssl-devel' |> {
-      tag => "vclinstall",
-    }
-  }
-#  if ! defined(Package["httpd"]) {
-#    package {"httpd":
-#      ensure => "latest", 
-#      provider => "yum", 
-#      tag  => "vclinstall",
-#    }
-#    service { "httpd" :
-#      ensure => running,
-#      hasstatus => true,
-#      hasrestart => true,
-#      enable => true,
-#    }
-#  }
-#  else {
-#    Package <| title == 'httpd' |> {
-#      tag => "vclinstall",
-#    }
-#    Service <| title == 'httpd' |> {
-#      ensure => running,
-#      hasstatus => true,
-#      hasrestart => true,
-#      enable => true,
-#    }
-#  }
-
 #  if ! defined(Class['apache']) {
     class { 'apache':
       purge_configs => false,
@@ -440,11 +390,7 @@ class vclmgmt(
     }
   }
 
-  package { $vclmgmt::params::pkg_list:
-    ensure => "latest", 
-    provider => "yum", 
-    tag   => "vclinstall",
-  }
+  vclmgmt::installdependency { $vclmgmt::params::pkg_list: }
   
   package { $vclmgmt::params::pkg_exclude: 
     ensure => "absent", 
@@ -718,7 +664,7 @@ class vclmgmt(
       refreshonly => "true",
     }~>
     exec { "rmleases":
-      command => "rm -rf /var/lib/dhcpd/dhcpd.leases",
+      command => "${vclmgmt::params::rmcmd} -rf /var/lib/dhcpd/dhcpd.leases",
       refreshonly => "true",
     }~>   
     exec { "makedhcpn" :
@@ -761,7 +707,7 @@ class vclmgmt(
 
   ############# Resource Chains
   # Chain declarations for vclmgmt resources
-  Yumrepo <| tag == "vclrepo" or tag == "xcatrepo" |> -> Package <| tag == "vclinstall" |> -> Vcsrepo['vcl'] -> Apache::Vhost <| tag == 'vcl' |> -> File <| tag == "vclpostfiles" |>
+  Yumrepo <| tag == "vclrepo" or tag == "xcatrepo" |> -> Package <| tag == "vclinstall" |> -> Vcsrepo['vcl'] -> Apache::Vhost <| tag == 'vcl' |> -> File <| tag == "vclpostfiles" or tag == "vcl-config" |>
   File <| tag == "vclpostfiles" and tag != "postcopy" |> -> Vclmgmt::Vclcopy <| |>      -> File <| tag == "postcopy" |> -> Mysql::Db[$vcldb] -> Exec['genkeys']  
   File <| tag == "vclpostfiles" and tag != "postcopy" |> -> File['dojosrc'] -> Vcsrepo <| tag == 'dojo' |> -> File <| tag == "postcopy" |>  -> Vclmgmt::Dojoimport <| |>
 
@@ -784,5 +730,5 @@ class vclmgmt(
   Mysql::Db[$vcldb] -> Vcl_image <| |>
   
   Class['vclmgmt'] -> Vclmgmt::Baseimage <| |>
-  Class['vclmgmt'] -> Service <| name == $vclmgmt::params::service_list |>
+  Package <| tag == "vclinstall" |> -> Service <| tag == 'vcl-service' |>
 }
