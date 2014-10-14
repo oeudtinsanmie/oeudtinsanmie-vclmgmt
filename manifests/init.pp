@@ -369,16 +369,16 @@ class vclmgmt(
 #    }
 #  }
 
-  if ! defined(Class['apache']) {
+#  if ! defined(Class['apache']) {
     class { 'apache':
       purge_configs => false,
     }
-  }
-  else {
-    Class <| title == 'apache' |> {
-      purge_configs => false,
-    }
-  }
+#  }
+#  else {
+#    Class <| title == 'apache' |> {
+#      purge_configs => false,
+#    }
+#  }
   
   $vcldirectory = { 
     path              => $vclweb,
@@ -769,10 +769,10 @@ class vclmgmt(
   Vclmgmt::Cpan <| |> ~> Service['httpd']
   Vcsrepo['vcl'] ~> Service['httpd']
 
-  File ["vclweb"] -> File ["vclprofile"]
-  File ["vclprofile"] -> Vcldojo_prefix <| |>        ~> Exec["dojobuild"]
-  File ["vclprofile"] -> Vcldojo_layer  <| |>        ~> Exec["dojobuild"]
-  File ["dojosrc"]    -> Vcsrepo <| tag == 'dojo' |> ~> Exec["dojobuild"]
+  File["vclweb"] -> File["vclprofile"]
+  File["vclprofile"] -> Vcldojo_prefix <| |>        ~> Exec["dojobuild"]
+  File["vclprofile"] -> Vcldojo_layer  <| |>        ~> Exec["dojobuild"]
+  File["dojosrc"]    -> Vcsrepo <| tag == 'dojo' |> ~> Exec["dojobuild"]
   Exec["dojobuild"] -> File <| tag == "dojo" |>
   
   File['vcldconf'] ~> Service['vcld']
