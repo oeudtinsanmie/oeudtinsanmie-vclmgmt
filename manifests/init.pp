@@ -143,6 +143,7 @@ class vclmgmt(
   $vcl_site = $::fqdn,
   $vcl_port = 443,
   $vcl_site_path = "/vcl",
+  $srcdirs = undef,
 ) inherits vclmgmt::params {
   
   ############## Definitions
@@ -421,6 +422,12 @@ class vclmgmt(
     Vcsrepo <| title == 'vcl' |> {
       revision => $vclrevision,
     }
+  }
+
+  if $srcdir != undef {
+    # create srcs directories for base images
+    create_resources(file, $srcdirs, { tag => "srcdir" })
+    File <| tag=="srcdir" |> -> Vclmgmt::Baseimage <| |>
   }
   
   # create / link files to set up vcl as needed
