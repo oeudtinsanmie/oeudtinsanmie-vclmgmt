@@ -463,7 +463,7 @@ class vclmgmt(
     $dhcpinterfaces = [ $private_if, $ipmi_if ]
   }
   else {
-    $dhcpinterfaces = list_vlans($poddefaults, $pods, $private_if, $ipmi_if)
+    $dhcpinterfaces = []
   }  
 
   network::if::static { $private_if :

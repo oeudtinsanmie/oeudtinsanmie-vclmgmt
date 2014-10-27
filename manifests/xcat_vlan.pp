@@ -26,6 +26,7 @@
 #     Defaults to false
 #
 define vclmgmt::xcat_vlan(
+  $ensure = present,
   $master_if, 
   $master_mac, 
   $master_ip, 
@@ -37,6 +38,7 @@ define vclmgmt::xcat_vlan(
   $usexcat        = false,
 ) {
   $default = {
+    ensure      => $ensure,
     mgtifname   => $master_if,
     nameservers => $master_ip,
     dhcpserver  => $master_ip,
@@ -68,6 +70,9 @@ define vclmgmt::xcat_vlan(
       macaddress  => $master_mac,
       vlan        => true,
       domain      => $domain,
+    }
+    Xcat_site_attribute <| title == 'dhcpinterfaces' |> {
+      value +> "${master_if}.${vlanid}",
     }
 
     $nethash = {
