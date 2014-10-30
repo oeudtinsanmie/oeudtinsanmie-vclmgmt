@@ -2,6 +2,7 @@ class vclmgmt::params {
 
 	$vcldir          = '/vcl'
 	$dojo            = '1.6.2'
+	$spyc            = '0.5.1'
 	$vclnode         = '/usr/local/vcl'
 	
 	# defaults

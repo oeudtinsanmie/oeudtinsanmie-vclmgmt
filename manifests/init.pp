@@ -82,6 +82,9 @@ include stdlib
 # [*dojotheme*]
 #   - dijit theme used for vcl
 #     Defaults to tundra
+# [*spyc*] 
+#   - Spyc version
+#     Defaults to vclmgmt::params::spyc
 # [*vclweb*]
 #   - VCL web folder location
 #     Defaults to vclmgmt::params::vclweb
@@ -131,6 +134,7 @@ class vclmgmt(
   $vcldir        = $vclmgmt::params::vcldir,
   $dojo          = $vclmgmt::params::dojo,
   $dojotheme     = "tundra",
+  $spyc          = $vclmgmt::params::spyc,
   $vcl_web       = undef,
   $vclnode       = $vclmgmt::params::vclnode,
   $firewalldefaults = {
@@ -514,6 +518,17 @@ class vclmgmt(
     grant => ['GRANT', 'SELECT', 'INSERT', 'UPDATE', 'DELETE', 'CREATE TEMPORARY TABLES'],
     sql => "${vclmgmt::params::vcldir}/mysql/vcl.sql",
   }
+
+  ############## Spyc
+  vcsrepo { "spyc" :
+    ensure => present,
+    path  => "${htinc}/spyc-0.5.1",
+    provider => git,
+    source   => "https://github.com/mustangostang/spyc.git",
+    revision => $spyc,
+    tag => 'dojo',
+  } 
+  
 
   ############## Dojo
 
