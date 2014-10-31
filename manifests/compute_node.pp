@@ -128,10 +128,10 @@ define vclmgmt::compute_node(
   $private_ip, 
   $private_mac, 
   $private_if, 
-  $ipmi_ip, 
-  $ipmi_mac, 
-  $ipmi_user, 
-  $ipmi_pw, 
+  $ipmi_ip       = undef, 
+  $ipmi_mac      = undef, 
+  $ipmi_user     = undef, 
+  $ipmi_pw       = undef, 
   $master_ip,
   $xcat_groups   = [ 'ipmi', 'compute', 'all' ],
   $vcl_groups    = [ 'allComputers' ],
@@ -187,13 +187,17 @@ define vclmgmt::compute_node(
 	    domainadminuser     => $username,
 	    domainadminpassword => $password,
 	  }
-	  
-	  xcat_node {  "${hostname}-ipmi" :
-	    ensure  => $ensure,
-	    groups  => [ "all" ],
-	    ip      => $ipmi_ip,
-	    mac     => $ipmi_mac,
-	  }  
+	  if $ipmi_ip != undef {
+	    if $ipmi_mac == undef {
+	      fail "\$ipmi_ip IP Address ${ipmi_ip} needs a mac address defined in \$ipmi_mac"
+	    }
+	    xcat_node {  "${hostname}-ipmi" :
+	      ensure  => $ensure,
+	      groups  => [ "all" ],
+	      ip      => $ipmi_ip,
+	      mac     => $ipmi_mac,
+	    }  	    
+	  }
   }
   
   vcl_computer { $hostname :
