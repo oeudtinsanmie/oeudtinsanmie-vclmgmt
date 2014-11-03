@@ -149,8 +149,6 @@ class vclmgmt(
   $vcl_site_path = "/vcl",
   $srcdirs = undef,
 ) inherits vclmgmt::params {
-  notice("Testing custom facts: ${::vclweb}")
-  notice("Testing custom facts: ${::dojolayers}")
   
   ############## Definitions
   if $vcl_web != undef {
@@ -295,10 +293,6 @@ class vclmgmt(
     }
   }
   
-  define vclmgmt::dojoimport ($utils) {
-    create_resources(vcldojo_layer, read_vcldojo($utils))
-  }
-
   define vclmgmt::installdependency ($pkg = $title) {
     if ! defined(Package[$pkg]) {
       package { $pkg:
@@ -530,9 +524,7 @@ class vclmgmt(
 
   ############## Dojo
 
-  vclmgmt::dojoimport { "dojo-layers" :
-    utils => "${htinc}/utils.php",
-  }
+  create_resources(vcldojo_layer, $::dojolayers)
 
   $vclprefixes = {
     "dojo" => {
@@ -731,7 +723,7 @@ class vclmgmt(
   # Chain declarations for vclmgmt resources
   Yumrepo <| tag == "vclrepo" or tag == "xcatrepo" |> -> Package <| tag == "vclinstall" |> -> Vcsrepo['vcl'] -> Apache::Vhost <| tag == 'vcl' |> -> File <| tag == "vclpostfiles" or tag == "vcl-config" |>
   File <| tag == "vclpostfiles" and tag != "postcopy" |> -> Vclmgmt::Vclcopy <| |>      -> File <| tag == "postcopy" |> -> Mysql::Db[$vcldb] -> Exec['genkeys']  
-  File <| tag == "vclpostfiles" and tag != "postcopy" |> -> File['dojosrc'] -> Vcsrepo <| tag == 'dojo' |> -> File <| tag == "postcopy" |>  -> Vclmgmt::Dojoimport <| |>
+  File <| tag == "vclpostfiles" and tag != "postcopy" |> -> File['dojosrc'] -> Vcsrepo <| tag == 'dojo' |> -> File <| tag == "postcopy" |>  -> Vcldojo_layer <| |>
 
   Exec["dojobuild"] ~> Service['httpd']
   Vclmgmt::Cpan <| |> ~> Service['httpd']
