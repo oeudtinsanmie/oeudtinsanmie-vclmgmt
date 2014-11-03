@@ -110,15 +110,15 @@ include stdlib
 #     
 class vclmgmt(
   $public_mac, 
-  $public_if     = 'em1', 
+  $public_if, 
   $public_ip     = 'dhcp', 
   $private_mac,
-  $private_if    = 'em2', 
+  $private_if, 
   $private_ip,  
   $private_domain, 
-  $ipmi_mac,
-  $ipmi_if       = 'p4p1',  
-  $ipmi_ip, 
+  $ipmi_mac      = undef,
+  $ipmi_if       = undef,  
+  $ipmi_ip       = undef, 
   $vcldb         = 'vcl', 
   $vcluser       = 'vcluser', 
   $root_pw, 
@@ -465,12 +465,6 @@ class vclmgmt(
   create_resources(service, $vclmgmt::params::service_list, $vclmgmt::params::servicedefault)
   
   ######## network setup  
-  if $pods == undef {
-    $dhcpinterfaces = [ $private_if, $ipmi_if ]
-  }
-  else {
-    $dhcpinterfaces = []
-  }  
 
   network::if::static { $private_if :
     ensure => 'up',
@@ -479,12 +473,14 @@ class vclmgmt(
     macaddress => $private_mac,
     require => Class['vclmgmt::params'],
   }
-  network::if::static { $ipmi_if :
-    ensure => 'up',
-    ipaddress => $ipmi_ip,
-    netmask   => '255.255.255.0',
-    macaddress => $ipmi_mac,
-    require => Class['vclmgmt::params'],
+  if $ipmi_if != undef {
+	  network::if::static { $ipmi_if :
+	    ensure => 'up',
+	    ipaddress => $ipmi_ip,
+	    netmask   => '255.255.255.0',
+	    macaddress => $ipmi_mac,
+	    require => Class['vclmgmt::params'],
+	  }    
   }
 
   if $public_ip == 'dhcp' {
@@ -638,9 +634,11 @@ class vclmgmt(
     xcat_network { "${privatenet[0]}_${privatenet[1]}_${privatenet[2]}_0-255_255_255_0":
       ensure => absent,
     }
-    $ipminet = split($ipmi_ip, '\.')
-    xcat_network { "${ipminet[0]}_${ipminet[1]}_${ipminet[2]}_0-255_255_255_0":
-      ensure => absent,
+    if ipmi_ip != undef {
+	    $ipminet = split($ipmi_ip, '\.')
+	    xcat_network { "${ipminet[0]}_${ipminet[1]}_${ipminet[2]}_0-255_255_255_0":
+	      ensure => absent,
+	    }      
     }
     
     xcat_site_attribute { "master" :
@@ -655,7 +653,7 @@ class vclmgmt(
     
     xcat_site_attribute { "dhcpinterfaces" :
       sitename => 'clustersite',
-      value => $dhcpinterfaces,
+      value => [],
     }
     
     xcat_site_attribute { "domain" :

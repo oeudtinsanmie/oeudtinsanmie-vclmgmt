@@ -22,27 +22,30 @@
 define vclmgmt::xcat_pod(
   $ensure = present,
   $private_hash, 
-  $ipmi_hash, 
+  $ipmi_hash = undef, 
   $defaults = undef, 
   $nodes = undef,
   $usexcat = false,
 ) {
+  if $private_hash == undef or $private_hash['master_if'] == undef {
+    fail "vclmgmt::xcat_pod ${name} requires \$master_if to be defined in \$private_hash"
+  }
+  if $private_hash['master_ip'] == undef {
+    fail "vclmgmt::xcat_pod ${name} requires \$master_ip to be defined in \$private_hash"
+  }
+  if $private_hash['master_mac'] == undef {
+    fail "vclmgmt::xcat_pod ${name} requires \$master_mac to be defined in \$private_hash"
+  }
   ensure_resource(vclmgmt::xcat_vlan, $name, merge($private_hash, { usexcat => $usexcat, ensure => $ensure, }) )
-  ensure_resource(vclmgmt::xcat_vlan, "${name}-ipmi", merge($ipmi_hash, { usexcat => $usexcat, ensure => $ensure, }) )
-
-#  if $private_hash[vlanid] == undef {
-#    $private_if = $private_hash[master_if]
-#  }
-#  else {
-#    $private_if = "${private_hash[master_if]}.${private_hash[vlanid]}"
-#  }
-
-#  if $ipmi_hash[vlanid] == undef {
-#    $ipmi_if = $ipmi_hash[master_if]
-#  }
-#  else {
-#    $ipmi_if = "${ipmi_hash[master_if]}.${ipmi_hash[vlanid]}"
-#  }
+  if $ipmi_hash != undef and $ipmi_hash['master_if'] != undef {
+    if $ipmi_hash['master_ip'] == undef {
+      fail "vclmgmt::xcat_pod ${name} requires \$master_ip to be defined in \$ipmi_hash"
+    }
+    if $ipmi_hash['master_mac'] == undef {
+      fail "vclmgmt::xcat_pod ${name} requires \$master_mac to be defined in \$ipmi_hash"
+    }
+    ensure_resource(vclmgmt::xcat_vlan, "${name}-ipmi", merge($ipmi_hash, { usexcat => $usexcat, ensure => $ensure, }) )
+  }
 
   $tmphash = {
     master_ip => $private_hash[master_ip],

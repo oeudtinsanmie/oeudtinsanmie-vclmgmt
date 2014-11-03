@@ -76,7 +76,7 @@ class vclmgmt::params {
         "make", 
         "nmap", 
         "perl-Archive-Tar", 
-        "perl-CPAN", 
+        "perl-CPANPLUS", 
         "perl-Crypt-OpenSSL-RSA", 
         "perl-DBD-MySQL", 
         "perl-DBI", 
