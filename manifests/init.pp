@@ -149,6 +149,8 @@ class vclmgmt(
   $vcl_site_path = "/vcl",
   $srcdirs = undef,
 ) inherits vclmgmt::params {
+  notice("Testing custom facts: ${::vclweb}")
+  notice("Testing custom facts: ${::dojolayers}")
   
   ############## Definitions
   if $vcl_web != undef {
