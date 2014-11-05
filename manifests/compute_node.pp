@@ -1,3 +1,4 @@
+include stdlib
 # Class: vclmgmt::compute_node
 #
 # This class defines related vcl_computer and xcat_node objects for a provision controlled computer
@@ -142,6 +143,7 @@ define vclmgmt::compute_node(
   $password,
   $netboot       = 'pxe',
   $provmethod    = 'install',
+  $vcl_state     = undef,
   $ram           = undef,
   $procnumber    = undef,
   $procspeed     = undef,
@@ -164,6 +166,9 @@ define vclmgmt::compute_node(
   $vmhost        = undef,
   $vmtype        = undef,
   $usexcat       = false,
+  $pubvlan       = undef,
+  $privlan       = undef,
+  $virtpath      = undef,
 ) {
   if $usexcat == true {
 	  xcat_node { $hostname :
@@ -203,6 +208,7 @@ define vclmgmt::compute_node(
   vcl_computer { $hostname :
     ensure        => $ensure,
     hostname      => $hostname,
+    state         => $vcl_state,
     public_ip     => $public_ip,
     private_ip    => $private_ip,
     public_mac    => $public_mac,
@@ -228,5 +234,68 @@ define vclmgmt::compute_node(
     provisioning  => $provisioning,     
     vmhost        => $vmhost,
     vmtype        => $vmtype,
+  }
+  
+  if $ensure == present and $vmhost == 'localhost' {
+    include vswitch
+    include virt
+    
+    if !defined(Vcl_computer['localhost']) {
+      if $::memory == undef {
+	      $hostram = $::memorysize
+	    }
+	    else {
+	      $hostram = $::memory
+	    }
+	    if $::processorcount == undef {
+	      $hostprocnumber = count($::processors)
+	    }
+	    else {
+	      $hostprocnumber = $::processorcount
+	    }
+	    
+	    $proc = split($::processor0, '@')
+	    $hostprocspeed = strip($proc[1])
+	    
+      vcl_computer { 'localhost':
+        ensure        => present,
+		    public_ip     => '127.0.0.1',
+		    state         => 'vmhostinuse',
+        vmprofile     => 'KVM - local storage',
+		    ram           => $hostram,
+		    procnumber    => $hostprocnumber,
+		    procspeed     => $hostprocspeed,
+		    network       => 40000,   
+		    provisioning  => 'None', 
+      }
+    }
+    
+    Vcl_computer['localhost'] -> Vcl_computer[$hostname]
+    
+    vs_port { "${hostname}_pub" :
+      tag => $pubvlan,
+      bridge => $::vclmgmt::pubbridge,
+    }
+    
+    vs_port { "${hostname}_priv" :
+      tag => $privlan,
+      bridge => $::vclmgmt::privbridge,
+    }
+    
+    if $usexcat == true {
+      $pxe = true
+    }
+    else {
+      $pxe = undef
+    }
+    
+    virt { $hostname :
+      interfaces => [ "${hostname}_priv", "${hostname}_pub" ],
+      virt_path => $virtpath,
+      pxe => $pxe,
+    }
+    
+    Vs_port["${hostname}_pub"]  -> Virt[$hostname]
+    Vs_port["${hostname}_priv"] -> Virt[$hostname]
   }
 }

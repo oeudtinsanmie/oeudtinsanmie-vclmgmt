@@ -27,7 +27,7 @@ define vclmgmt::xcat_pod(
   $nodes = undef,
   $usexcat = false,
 ) {
-  if $private_hash == undef or $private_hash['master_if'] == undef {
+  if $private_hash == undef or ($private_hash["ovs_bridge"] == undef and $private_hash['master_if'] == undef) {
     fail "vclmgmt::xcat_pod ${name} requires \$master_if to be defined in \$private_hash"
   }
   if $private_hash['master_ip'] == undef {

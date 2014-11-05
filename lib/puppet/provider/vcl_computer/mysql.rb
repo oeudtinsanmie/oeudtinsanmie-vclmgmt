@@ -33,41 +33,55 @@ Puppet::Type.type(:vcl_computer).provide(:mysql, :parent => Puppet::Provider::Vc
         "rsapub"            => [ :rsapub,       :string   ],
         "hostpub"           => [ :hostpub,      :string   ],
       },
-      "platform"      => { "name"     => [ :platform,       :string   ], },
-      "schedule"      => { "name"     => [ :vclschedule,       :string   ], },
-      "image"         => { "name"     => [ :image,          :string   ], },
-      "imagerevision" => { "revision" => [ :imagerevision,  :numeric   ], },
-      "provisioning"  => { "prettyname"     => [ :provisioning,   :string   ], },
-#      "vmhost"        => { "name"     => [ :vmhost,         :string   ], },
-#      "vmtype"        => { "name"     => [ :vmtype,         :string   ], },
+      "platform"      => { "name"         => [ :platform,       :string   ], },
+      "schedule"      => { "name"         => [ :vclschedule,    :string   ], },
+      "image"         => { "name"         => [ :image,          :string   ], },
+      "imagerevision" => { "revision"     => [ :imagerevision,  :numeric  ], },
+      "provisioning"  => { "prettyname"   => [ :provisioning,   :string   ], },
+      "vmtype"        => { "name"         => [ :vmtype,         :string   ], },
+      "vmhost"        => { 
+        :recurse      => [ "computer", "vmprofile", ],
+        "computer"    => { "hostname"     => [ :vmhost,         :string   ], },
+        "vmprofile"   => { "profilename"  => [ :vmprofile,      :string   ], },
+        
+        "vmlimit"                         => [ :vmlimit,        :numeric  ],
+      },
     }
   end
   def self.foreign_keys 
     { 
       "state"         => {
-        "name" => [ "computer.stateid",          "state.id"          ],
+        "name"        => [ "computer.stateid",          "state.id"          ],
       },
       "platform"      => {
-        "name" => [ "computer.platformid",       "platform.id"       ],
+        "name"        => [ "computer.platformid",       "platform.id"       ],
       },
       "schedule"      => {
-        "name" => [ "computer.scheduleid",       "schedule.id"       ],
+        "name"        => [ "computer.scheduleid",       "schedule.id"       ],
       },
       "image"         => {
-        "name" => [ "computer.nextimageid",      "image.id"          ],
+        "name"        => [ "computer.nextimageid",      "image.id"          ],
       },
       "imagerevision" => {
-        "revision" => [ "computer.imagerevisionid",  "imagerevision.id"  ],
+        "revision"    => [ "computer.imagerevisionid",  "imagerevision.id"  ],
       },
       "provisioning"  => {
-        "prettyname" => [ "computer.provisioningid",   "provisioning.id"   ],
+        "prettyname"  => [ "computer.provisioningid",   "provisioning.id"   ],
       },
-#      "vmhost"        => {
-#        "name" => [ "computer.vmhostid",         "vmhost.id"         ],
-#      },
-#      "vmtype"        => {
-#        "name" => [ "computer.vmtypeid",         "vmtype.id"         ],
-#      },
+      "vmtype"        => {
+        "name"        => [ "computer.vmtypeid",         "vmtype.id"         ],
+      },
+      "vmhost"        => { 
+        :recurse      => [ "computer", "vmprofile", ],
+        "computer"    => {
+          :step => [ "computer.vmhostid",  "vmhost.id"     ],
+          "hostname"     => [ "vmhost.computerid", "computer.id" ], 
+        },
+        "vmprofile"   => { 
+          :step => [ "computer.id",    "vmhost.computerid" ],
+          "profilename"  => [ "vmhost.profileid", "vmprofile.id" ], 
+        },
+      },
     }
   end
     

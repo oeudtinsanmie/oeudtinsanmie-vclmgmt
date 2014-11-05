@@ -39,6 +39,14 @@
 	    {
 			"name": "camptocamp-openssl",
 			"version_requirement": ">=0.3.2"
+	    },
+	    {
+			"name": "carlasouza-virt",
+			"version_requirement": ">=1.1.0"
+	    },
+	    {
+			"name": "oeudtinsanmie-vswitch",
+			"version_requirement": ">=0.3.5"
 	    }
 	]
 }

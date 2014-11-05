@@ -17,6 +17,17 @@ module Puppet::Parser::Functions
       "master_ip"   => masterdefaults["ipmi_ip"], 
       "master_mac"  => masterdefaults["ipmi_mac"] 
     }
+    
+    if masterdefaults["usevswitch"] == true then
+      private_default["ovs_bridge"] = masterdefaults["privbridge"]
+      ipmi_default["ovs_bridge"]    = masterdefaults["ipmibridge"]
+      if masterdefaults["privategroup"] != nil then
+        private_default["master_ifgroup"] = masterdefaults["privategroup"] 
+      end
+      if masterdefaults["ipmigroup"] != nil then
+        ipmi_default["master_ifgroup"] = masterdefaults["ipmigroup"] 
+      end
+    end
 
     if (poddefaults != nil and poddefaults["private_hash"] != nil) then
       private_default.merge!(poddefaults["private_hash"])
