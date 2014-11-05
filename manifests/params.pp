@@ -5,6 +5,14 @@ class vclmgmt::params {
 	$spyc            = '0.5.1'
 	$vclnode         = '/usr/local/vcl'
 	
+  $pubbridge  = "public"
+  $privbridge = "private"
+  $ipmibridge = "ipmi"
+
+  $publicgroup  = "br_public"
+  $privategroup = "br_private"
+  $ipmigroup    = "br_ipmi"
+	
 	# defaults
 	$configfile = {
 		ensure  => file,

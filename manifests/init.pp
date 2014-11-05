@@ -113,7 +113,7 @@ class vclmgmt(
   $public_if, 
   $public_ip     = 'dhcp', 
   $private_mac,
-  $private_if, 
+  $private_if    = undef, 
   $private_ip,  
   $private_domain, 
   $ipmi_mac      = undef,
@@ -141,13 +141,17 @@ class vclmgmt(
     require => Class['ncsufirewall::pre'],
     before  => Class['ncsufirewall::post'],
   },
-  $vclversion = "release-2.3.2-RC2",
-  $vclrevision = undef,
-  $usexcat = false,
-  $vcl_site = $::fqdn,
-  $vcl_port = 443,
+  $vclversion    = "release-2.3.2-RC2",
+  $vclrevision   = undef,
+  $usexcat       = false,
+  $vcl_site      = $::fqdn,
+  $vcl_port      = 443,
   $vcl_site_path = "/vcl",
-  $srcdirs = undef,
+  $srcdirs       = undef,
+  $usevswitch    = false,
+  $pubbridge     = $vclmgmt::params::pubbridge,
+  $privbridge    = $vclmgmt::params::privbridge,
+  $ipmibridge    = $vclmgmt::params::ipmibridge,
 ) inherits vclmgmt::params {
   
   ############## Definitions
@@ -463,40 +467,97 @@ class vclmgmt(
   create_resources(service, $vclmgmt::params::service_list, $vclmgmt::params::servicedefault)
   
   ######## network setup  
+  if $usevswitch == true {
+    include vswitch
+    
+    vs_bridge { [ $pubbridge,     $privbridge ] : }
+    vs_port { [ "${pubbridge}if", "${privbridge}if" ] : }
+    
+    # port to public interface
+    if is_array($public_if) {  # port bond
+      $publicgroup = $vclmgmt::params::publicgroup
+      vs_port { $publicgroup :
+        interfaces => $public_if,
+      }
+    }
+    else { # port
+      vs_port { "br_${public_if}" :
+        interfaces => $public_if,
+      }
+    }
 
-  network::if::static { $private_if :
-    ensure => 'up',
-    ipaddress => $private_ip,
-    netmask   => '255.255.255.0',
-    macaddress => $private_mac,
-    require => Class['vclmgmt::params'],
-  }
-  if $ipmi_if != undef {
-	  network::if::static { $ipmi_if :
-	    ensure => 'up',
-	    ipaddress => $ipmi_ip,
-	    netmask   => '255.255.255.0',
-	    macaddress => $ipmi_mac,
-	    require => Class['vclmgmt::params'],
-	  }    
-  }
+    if $private_if != undef {
+    # port to private interface
+	    if is_array($private_if) { # port bond
+	      $privategroup = $vclmgmt::params::privategroup
+	      vs_port { $privategroup :
+	        interfaces => $private_if,
+	      }
+	    }
+	    else { # port
+	      vs_port { "br_${private_if}" :
+	        interfaces => $private_if,
+	      }
+	    }      
+    }
 
-  if $public_ip == 'dhcp' {
-    network::if::dynamic { $public_if :
-      ensure => 'up',
-      macaddress => $public_mac,
-      bootproto => 'dhcp',
-      require => Class['vclmgmt::params'],
+    if $ipmi_if != undef {
+      # these bridges only needed if ipmis in use (by definition, outside the management node)
+      vs_bridge { $ipmibridge: }
+      vs_port { "${ipmibridge}if": }
+      
+      # port to ipmi interface
+      if is_array($ipmi_if) { # port bond
+        $ipmigroup = $vclmgmt::params::ipmigroup
+        vs_port { $ipmigroup:
+          interfaces => $ipmi_if,
+        }
+      }
+      else { # port
+        vs_port { "br_${$ipmi_if}":
+	        interfaces => $ipmi_if,
+	      }        
+      }
     }
   }
   else {
-    network::if::static { $public_if :
-      ensure => 'up',
-      ipaddress => $public_ip,
-      netmask   => '255.255.255.0',
-      macaddress => $public_mac,
-      require => Class['vclmgmt::params'],
+    if $private_if == undef {
+      fail "Private interface is necessary unless private network is on a vswitch bridge"
     }
+	  network::if::static { $private_if :
+	    ensure => 'up',
+	    ipaddress => $private_ip,
+	    netmask   => '255.255.255.0',
+	    macaddress => $private_mac,
+	    require => Class['vclmgmt::params'],
+	  }
+	  if $ipmi_if != undef {
+	    network::if::static { $ipmi_if :
+	      ensure => 'up',
+	      ipaddress => $ipmi_ip,
+	      netmask   => '255.255.255.0',
+	      macaddress => $ipmi_mac,
+	      require => Class['vclmgmt::params'],
+	    }    
+	  }
+	
+	  if $public_ip == 'dhcp' {
+	    network::if::dynamic { $public_if :
+	      ensure => 'up',
+	      macaddress => $public_mac,
+	      bootproto => 'dhcp',
+	      require => Class['vclmgmt::params'],
+	    }
+	  }
+	  else {
+	    network::if::static { $public_if :
+	      ensure => 'up',
+	      ipaddress => $public_ip,
+	      netmask   => '255.255.255.0',
+	      macaddress => $public_mac,
+	      require => Class['vclmgmt::params'],
+	    }
+	  }
   }
   
   ############# Database
@@ -711,15 +772,21 @@ class vclmgmt(
   # declare any pods included in class declaration
   if $pods != undef {
     $masterdefault = {
-      private_if => $private_if,
-      private_ip => $private_ip,
-      private_mac => $private_mac,
-      ipmi_if => $ipmi_if,
-      ipmi_ip => $ipmi_ip,
-      ipmi_mac => $ipmi_mac,
-      system_user => $system_user,
-      system_pw => $system_pw,
-      usexcat => $usexcat,
+      private_if    => $private_if,
+      private_ip    => $private_ip,
+      private_mac   => $private_mac,
+      ipmi_if       => $ipmi_if,
+      ipmi_ip       => $ipmi_ip,
+      ipmi_mac      => $ipmi_mac,
+      system_user   => $system_user,
+      system_pw     => $system_pw,
+      usexcat       => $usexcat,
+      usevswitch    => $usevswitch,
+      pubbridge     => $pubbridge,
+      privbridge    => $privbridge,
+      ipmibridge    => $ipmibridge,
+      privategroup  => $privategroup,
+      ipmigroup     => $ipmigroup,
     }
     $newpods = set_defaults($pods, $poddefaults, $masterdefault)
     create_resources(vclmgmt::xcat_pod, $newpods)

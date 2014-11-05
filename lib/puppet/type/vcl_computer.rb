@@ -157,13 +157,11 @@ Puppet::Type.newtype(:vcl_computer) do
   newproperty(:hostpub) do
     desc ''
   end
-
-#  Doesn't make sense to manage this here.  I am looking into having it show up as a non-settable property for reference, though  
-#  newproperty(:state) do
-#    desc ''
-#    newvalues(:available, :checkpoint, :classreserved, :cleaning, :complete, :deleted, :failed, :hpc, :image, :imageinuse, :imageprep, :inuse, :maintenance, :makeproduction, :new, :pending, :reboothard, :rebootsoft, :reinstall, :reload, :reloading, :reserved, :serverinuse, :servermodified, :timeout, :tohpc, :tomaintenance, :tovmhostinuse, :vmhostinuse)
-#    defaultto :maintenance
-#  end
+  
+  newproperty(:state) do
+    desc ''
+    newvalues(:available, :checkpoint, :classreserved, :cleaning, :complete, :deleted, :failed, :hpc, :image, :imageinuse, :imageprep, :inuse, :maintenance, :makeproduction, :new, :pending, :reboothard, :rebootsoft, :reinstall, :reload, :reloading, :reserved, :serverinuse, :servermodified, :timeout, :tohpc, :tomaintenance, :tovmhostinuse, :vmhostinuse)
+  end
   
   newproperty(:vclschedule) do
     desc ''
@@ -185,13 +183,25 @@ Puppet::Type.newtype(:vcl_computer) do
      newvalues("xCAT 1.3", "Computing Lab", "xCAT 2.1", "xCAT 2.x", "VMware", "Virtual Box", "Libvirt Virtualization API", "None")
     defaultto "xCAT 2.x"
  end
-  
+
   newproperty(:vmhost) do
     desc ''
+    defaultto(:none)
   end
-  
+
   newproperty(:vmtype) do
     desc ''
+    defaultto(:none)
+  end
+  
+  newproperty(:vmprofile) do
+    desc ''
+    defaultto(:none)
+  end
+  
+  newproperty(:vmlimit) do
+    desc ''
+    defaultto(:none)
   end
 
 end
