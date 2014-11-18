@@ -55,7 +55,6 @@ class Puppet::Provider::Vclresource < Puppet::Provider
         qry << "#{tbl}.#{col}, "
       end
     }
-    puts "#{qry}\n\n"
     qry
   end
   
@@ -81,21 +80,15 @@ class Puppet::Provider::Vclresource < Puppet::Provider
       }
       qry <<  "vclrsc.groups FROM (SELECT #{maintbl}.*, GROUP_CONCAT(resourcegroup.name SEPARATOR ',') as groups FROM #{maintbl}, resource, resourcegroupmembers, resourcegroup, resourcetype WHERE resource.resourcetypeid=resourcetype.id AND resourcetype.name='#{resourcetype}' AND resource.subid=#{maintbl}.id AND resourcegroupmembers.resourceid=resource.id AND resourcegroup.id=resourcegroupmembers.resourcegroupid group by #{maintbl}.id) as vclrsc"
 
-      puts "Foreign Keys"
-      puts "#{qry}\n\n"
       foreign_keys.each { |tbl, lnks|
         qry = joinForeignKeys(qry, tbl, lnks)
       }
-      puts "#{qry}\n\n"
     end
     
-    puts "QUERY: "
-    puts "#{qry}\n\n"
     runQuery(qry).split("\n")
   end
   
   def self.joinLink(lnk, tbl, as)
-    pp [lnk, tbl, as]
     frmtbl, frmcol = lnk[0].split('.')
     if (frmtbl == maintbl) then
       from = "vclrsc.#{frmcol}"
@@ -116,7 +109,7 @@ class Puppet::Provider::Vclresource < Puppet::Provider
   end
   
   def self.joinForeignKeys(qry, tbl, lnks) 
-    if tbl == :recurse then
+    if protectedHashKeys.include? tbl then
       # do nothing
       return qry
     end
@@ -134,7 +127,6 @@ class Puppet::Provider::Vclresource < Puppet::Provider
         qry << " LEFT JOIN #{tbl}"
         qry << " AS #{lnks[:as][col]}" if lnks[:as][col]
         qry << " ON " 
-        puts "#{qry}\n\n"
         qry << joinLink(lnk, tbl, lnks[:as][col]) 
       end
     }
@@ -144,7 +136,6 @@ class Puppet::Provider::Vclresource < Puppet::Provider
       qry << " AS #{lnks[:as][newtbl]}" if lnks[:as][newtbl]
       qry << " ON "
       qry << joinLink(lnks[newtbl][:step], tbl, lnks[:as][newtbl])
-      puts "#{qry}\n\n"
       qry = joinForeignKeys(qry, newtbl, lnks[newtbl])
     }
     qry
@@ -168,7 +159,7 @@ class Puppet::Provider::Vclresource < Puppet::Provider
       i = i+1
     }
     othertbls.each { |tbl|
-      inst_hash, i = hashForeign(columns, tbl, inst_hash, i)
+      inst_hash, i = hashForeign(columns, tbl, inst_hash, hash_list, i)
     }
     if (hash_list[i].include? ",") then
       inst_hash[:groups] = hash_list[i].strip.split(",")
@@ -182,15 +173,16 @@ class Puppet::Provider::Vclresource < Puppet::Provider
     Puppet::Util::symbolizehash(inst_hash)
   end
   
-  def self.hashForeign(cols, tbl, inst_hash, i) 
+  def self.hashForeign(cols, tbl, inst_hash, hash_list, i) 
     if cols[tbl][:recurse] == nil then
       cols[tbl][:recurse] = []
     end
     cols[tbl].each { |col, param|
-      if col == :recurse then
+      if protectedHashKeys.include? col then
         # do nothing
       elsif cols[tbl][:recurse].include? col then
-        inst_hash, i = hashForeign(tbl, col, inst_hash, i)
+        puts "RECURSE: "
+        inst_hash, i = hashForeign(cols[tbl], col, inst_hash, hash_list, i)
       else
         inst_hash[param[0]] = hashitem(hash_list[i], param)
         i = i+1
