@@ -1,5 +1,5 @@
 require 'set'
-# require 'pp'
+require 'pp'
 class Puppet::Provider::Vclresource < Puppet::Provider
   
   initvars
@@ -50,11 +50,12 @@ class Puppet::Provider::Vclresource < Puppet::Provider
       if col == :recurse then
         # do nothing
       elsif cols[tbl][:recurse].include? col then
-        qry << appendForeign(cols[tbl], col, qry)
+        qry = appendForeign(cols[tbl], col, qry)
       else
         qry << "#{tbl}.#{col}, "
       end
     }
+    puts "#{qry}\n\n"
     qry
   end
   
@@ -76,25 +77,42 @@ class Puppet::Provider::Vclresource < Puppet::Provider
       othertbls = columns.keys
       othertbls.delete(maintbl)
       othertbls.each { |tbl|
-        qry << appendForeign(columns, tbl, qry)
+        qry = appendForeign(columns, tbl, qry)
       }
       qry <<  "vclrsc.groups FROM (SELECT #{maintbl}.*, GROUP_CONCAT(resourcegroup.name SEPARATOR ',') as groups FROM #{maintbl}, resource, resourcegroupmembers, resourcegroup, resourcetype WHERE resource.resourcetypeid=resourcetype.id AND resourcetype.name='#{resourcetype}' AND resource.subid=#{maintbl}.id AND resourcegroupmembers.resourceid=resource.id AND resourcegroup.id=resourcegroupmembers.resourcegroupid group by #{maintbl}.id) as vclrsc"
 
+      puts "Foreign Keys"
+      puts "#{qry}\n\n"
       foreign_keys.each { |tbl, lnks|
         qry = joinForeignKeys(qry, tbl, lnks)
       }
+      puts "#{qry}\n\n"
     end
     
+    puts "QUERY: "
+    puts "#{qry}\n\n"
     runQuery(qry).split("\n")
   end
   
-  def self.joinLink(lnk)
+  def self.joinLink(lnk, tbl, as)
+    pp [lnk, tbl, as]
     frmtbl, frmcol = lnk[0].split('.')
-    if (frmtbl == maintbl)
-      "vclrsc.#{frmcol}=#{lnk[1]} AND"
+    if (frmtbl == maintbl) then
+      from = "vclrsc.#{frmcol}"
     else
-      "#{lnk[0]}=#{lnk[1]} AND"
+      from = lnk[0]
     end
+    totbl, tocol = lnk[1].split('.')
+    if (as and totbl == tbl) then
+      to = "#{as}.#{tocol}"
+    else
+      to = lnk[1]
+    end
+    "#{from}=#{to}"
+  end
+  
+  def self.protectedHashKeys
+    [ :recurse, :step, :as ]
   end
   
   def self.joinForeignKeys(qry, tbl, lnks) 
@@ -108,22 +126,26 @@ class Puppet::Provider::Vclresource < Puppet::Provider
     if lnks[:recurse] == nil then
       lnks[:recurse] = []
     end
-    qry << " LEFT JOIN #{tbl} ON ("
+    if lnks[:as] == nil then
+      lnks[:as] = {}
+    end
     lnks.each { |col, lnk|
-      if col == :recurse or col == :step then
-        # do nothing
-      elsif lnks[:recurse].include? col then
-        qry << joinLink(col[:step])
-      else
-        qry << joinLink(lnk)
+      unless protectedHashKeys.include? col or lnks[:recurse].include? col
+        qry << " LEFT JOIN #{tbl}"
+        qry << " AS #{lnks[:as][col]}" if lnks[:as][col]
+        qry << " ON " 
+        puts "#{qry}\n\n"
+        qry << joinLink(lnk, tbl, lnks[:as][col]) 
       end
     }
-    qry.chomp!(" AND")
-    qry << ")"
-    lnks.each { |col, lnk|
-      lnk[:recurse].each { |newtbl|
-        qry = joinForeignKeys(qry, newtbl, lnk[newtbl])
-      }
+    
+    lnks[:recurse].each { |newtbl|
+      qry << " LEFT JOIN #{tbl}"
+      qry << " AS #{lnks[:as][newtbl]}" if lnks[:as][newtbl]
+      qry << " ON "
+      qry << joinLink(lnks[newtbl][:step], tbl, lnks[:as][newtbl])
+      puts "#{qry}\n\n"
+      qry = joinForeignKeys(qry, newtbl, lnks[newtbl])
     }
     qry
   end

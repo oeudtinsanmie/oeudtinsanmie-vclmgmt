@@ -73,13 +73,16 @@ Puppet::Type.type(:vcl_computer).provide(:mysql, :parent => Puppet::Provider::Vc
       },
       "vmhost"        => { 
         :recurse      => [ "computer", "vmprofile", ],
+        :as => {
+          "computer" => "myhost",
+        },
         "computer"    => {
           :step => [ "computer.vmhostid",  "vmhost.id"     ],
-          "hostname"     => [ "vmhost.computerid", "computer.id" ], 
+          "hostname"     => [ "myhost.computerid", "computer.id" ], 
         },
         "vmprofile"   => { 
           :step => [ "computer.id",    "vmhost.computerid" ],
-          "profilename"  => [ "vmhost.profileid", "vmprofile.id" ], 
+          "profilename"  => [ "vmhost.vmprofileid", "vmprofile.id" ], 
         },
       },
     }
