@@ -81,17 +81,19 @@ class Puppet::Provider::Vclresource < Puppet::Provider
       qry <<  "vclrsc.groups FROM (SELECT #{maintbl}.*, GROUP_CONCAT(resourcegroup.name SEPARATOR ',') as groups FROM #{maintbl}, resource, resourcegroupmembers, resourcegroup, resourcetype WHERE resource.resourcetypeid=resourcetype.id AND resourcetype.name='#{resourcetype}' AND resource.subid=#{maintbl}.id AND resourcegroupmembers.resourceid=resource.id AND resourcegroup.id=resourcegroupmembers.resourcegroupid group by #{maintbl}.id) as vclrsc"
 
       foreign_keys.each { |tbl, lnks|
-        qry = joinForeignKeys(qry, tbl, lnks)
+        qry = joinForeignKeys(qry, tbl, nil, nil, lnks)
       }
     end
     
     runQuery(qry).split("\n")
   end
   
-  def self.joinLink(lnk, tbl, as)
+  def self.joinLink(lnk, tbl, as, parent, asparent)
     frmtbl, frmcol = lnk[0].split('.')
     if (frmtbl == maintbl) then
       from = "vclrsc.#{frmcol}"
+    elsif (asparent and frmtbl == parent) then
+      from = "#{asparent}.#{frmcol}"
     else
       from = lnk[0]
     end
@@ -108,7 +110,7 @@ class Puppet::Provider::Vclresource < Puppet::Provider
     [ :recurse, :step, :as ]
   end
   
-  def self.joinForeignKeys(qry, tbl, lnks) 
+  def self.joinForeignKeys(qry, tbl, parent, as, lnks) 
     if protectedHashKeys.include? tbl then
       # do nothing
       return qry
@@ -127,7 +129,7 @@ class Puppet::Provider::Vclresource < Puppet::Provider
         qry << " LEFT JOIN #{tbl}"
         qry << " AS #{lnks[:as][col]}" if lnks[:as][col]
         qry << " ON " 
-        qry << joinLink(lnk, tbl, lnks[:as][col]) 
+        qry << joinLink(lnk, tbl, lnks[:as][col], parent, as) 
       end
     }
     
@@ -135,8 +137,8 @@ class Puppet::Provider::Vclresource < Puppet::Provider
       qry << " LEFT JOIN #{tbl}"
       qry << " AS #{lnks[:as][newtbl]}" if lnks[:as][newtbl]
       qry << " ON "
-      qry << joinLink(lnks[newtbl][:step], tbl, lnks[:as][newtbl])
-      qry = joinForeignKeys(qry, newtbl, lnks[newtbl])
+      qry << joinLink(lnks[newtbl][:step], tbl, lnks[:as][newtbl], parent, as)
+      qry = joinForeignKeys(qry, newtbl, tbl, lnks[:as][newtbl], lnks[newtbl])
     }
     qry
   end
@@ -181,7 +183,6 @@ class Puppet::Provider::Vclresource < Puppet::Provider
       if protectedHashKeys.include? col then
         # do nothing
       elsif cols[tbl][:recurse].include? col then
-        puts "RECURSE: "
         inst_hash, i = hashForeign(cols[tbl], col, inst_hash, hash_list, i)
       else
         inst_hash[param[0]] = hashitem(hash_list[i], param)
@@ -250,7 +251,7 @@ class Puppet::Provider::Vclresource < Puppet::Provider
   end
   
   def self.runQuery (qry)
-#    puts qry
+#    Puppet.debug qry
     begin
       cmd_list = cmd_base + [ qry ]
       output = mysql(cmd_list).strip
@@ -360,11 +361,12 @@ class Puppet::Provider::Vclresource < Puppet::Provider
   end
   
   def deleteForeignEntries(keys, main)
+    pp [ keys, main ]
     keys.each { |tbl, lnks|
       if (lnks.empty?) then 
         raise Puppet::DevError, "Link missing foreign keys for #{tbl} in foreign_keys variable of vclresource child provider"
       end
-      if tbl == :recurse then
+      if protectedHashKeys.include? tbl then
         # do nothing
       else
         if lnks[:recurse] == nil then
@@ -374,7 +376,8 @@ class Puppet::Provider::Vclresource < Puppet::Provider
           if lnks[:recurse].include? col then 
             if keys[tbl][col][:step][0].split('.')[0] == main then
               qry = "DELETE FROM #{tbl} WHERE #{keys[tbl][col][:step][1]} NOT IN (SELECT #{keys[tbl][col][:step][0].split('.')[1]} FROM #{main})"
-              self.class.runQuery(qry)
+#              self.class.runQuery(qry)
+              Puppet.debug qry
             end
             deleteForeignEntries(lnks, tbl)
           end
@@ -385,6 +388,7 @@ class Puppet::Provider::Vclresource < Puppet::Provider
   
   def flush
     Puppet.debug "Flushing #{resource[:name]}"
+    pp @resource.to_hash
     if (@property_flush[:ensure] != nil) then
       # remove rows
       Puppet.debug "Deleting #{resource[:name]}"
@@ -400,41 +404,52 @@ class Puppet::Provider::Vclresource < Puppet::Provider
         # add resource
         Puppet.debug "Adding new VCL Resource: #{resource[:name]}"
         qry = makeCreateQry(self.class.columns, self.class.foreign_keys, self.class.maintbl)
-        self.class.runQuery(qry)
+        Puppet.debug qry
+#        self.class.runQuery(qry)
       
         qry = "INSERT INTO resource (id, resourcetypeid, subid) SELECT NULL, resourcetype.id, #{self.class.maintbl}.id FROM resourcetype, #{self.class.maintbl} WHERE resourcetype.name='#{self.class.resourcetype}' AND #{self.class.maintbl}.#{self.class.namevar}='#{resource[:name]}'"
 
         Puppet.debug "Adding recource entry for #{resource[:name]}"
-        self.class.runQuery(qry)
+        Puppet.debug qry
+#        self.class.runQuery(qry)
+
+        Puppet.debug insertGroupMembersQry
       
-        self.class.runQuery(insertGroupMembersQry)
+#        self.class.runQuery(insertGroupMembersQry)
       end
     else
       # change existing definition
       Puppet.debug "Updating records for #{resource[:name]}"
       
-      qry = "UPDATE #{self.class.columns.keys.join(", ")} SET"
-      
+      qry = ""
+      frm = Set[]
+      frm += [ self.class.maintbl ]
+
       self.class.columns[self.class.maintbl].each { |col, param|
         qry << " #{self.class.maintbl}.#{col}=#{paramVal(param)},"
       }
-      
+      Puppet.debug qry
+
       othertbls = self.class.columns.keys
       othertbls.delete(self.class.maintbl)
       if (othertbls.length > 0) then
         whr = ""
         othertbls.each { |tbl|
-          qry, whr = fillUpdateForeign(self.class.columns, self.class.foreign_keys, tbl, qry, whr)
+          qry, whr, frm = fillUpdateForeign(self.class.columns, self.class.foreign_keys, tbl, qry, whr, frm)
+          Puppet.debug qry
         }
         whr << " #{self.class.maintbl}.#{self.class.namevar}='#{resource[:name]}'"
+        Puppet.debug whr
       else
         whr = " WHERE  #{self.class.maintbl}.#{self.class.namevar}='#{resource[:name]}'"
       end
       
       qry.chomp!(",")
+      qry = "UPDATE #{frm.to_a.join(", ")} SET#{qry}"
+      
       qry << " WHERE"
       qry << whr  
-      
+
       self.class.runQuery(qry)
       
       Puppet.debug "Refreshing VCL Resource groups for #{resource[:name]}"
@@ -445,31 +460,39 @@ class Puppet::Provider::Vclresource < Puppet::Provider
     end
   end
   
-  def fillUpdateForeign(cols, keys, tbl, qry, whr)
-    if tbl == :recurse then
+  def fillUpdateForeign(cols, keys, tbl, qry, whr, frm)
+    if self.class.protectedHashKeys.include? tbl then
       # do nothing
-      return [ qry, whr ]
+      return [ qry, whr, frm ]
     end
     if cols[tbl][:recurse] == nil then
       cols[tbl][:recurse] = []
     end
     cols[tbl].each { |col, param|
-      if col == :recurse then
+      if self.class.protectedHashKeys.include? col then
         # do nothing
       elsif cols[tbl][:recurse].include? col then
-        qry, whr = fillUpdateForeign(cols[tbl], keys[tbl], col, qry, whr)
-        whr << " #{keys[tbl][col][:step][0]}=#{keys[tbl][col][:step][1]} AND"
+        param.each { |c, p|
+          unless resource[p[0]] == :none or resource[p[0]] == nil
+            frm += [ col ]
+            qry, whr, frm = fillUpdateForeign(cols[tbl], keys[tbl], col, qry, whr, frm)
+            whr << " #{keys[tbl][col][:step][0]}=#{keys[tbl][col][:step][1]} AND"
+          end
+        }
       else
         if (resource[param[0]] == nil) then
           # do nothing
         elsif (resource[param[0]] == :none) then
-          qry << " #{keys[tbl][col][0]}=NULL"
+          qry << " #{keys[tbl][col][0]}=NULL," unless !keys[tbl][col]
         else
-          qry << " #{keys[tbl][col][0]}=#{keys[tbl][col][1]},"
+          frm += [ tbl ]
+          if keys[tbl][col] then
+            qry << " #{keys[tbl][col][0]}=#{keys[tbl][col][1]},"
+          end
           whr << " #{tbl}.#{col}=#{paramVal(param)} AND"
         end
       end
     }
-    [ qry, whr ]
+    [ qry, whr, frm ]
   end
 end

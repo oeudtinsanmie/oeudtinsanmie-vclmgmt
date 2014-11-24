@@ -201,7 +201,6 @@ Puppet::Type.newtype(:vcl_computer) do
   
   newproperty(:vmlimit) do
     desc ''
-    defaultto(:none)
   end
 
 end

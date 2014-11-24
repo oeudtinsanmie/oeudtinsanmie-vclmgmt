@@ -78,7 +78,7 @@ Puppet::Type.type(:vcl_computer).provide(:mysql, :parent => Puppet::Provider::Vc
         },
         "computer"    => {
           :step => [ "computer.vmhostid",  "vmhost.id"     ],
-          "hostname"     => [ "myhost.computerid", "computer.id" ], 
+          "hostname"     => [ "vmhost.computerid", "computer.id" ], 
         },
         "vmprofile"   => { 
           :step => [ "computer.id",    "vmhost.computerid" ],
