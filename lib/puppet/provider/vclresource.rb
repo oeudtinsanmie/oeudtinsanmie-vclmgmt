@@ -361,23 +361,23 @@ class Puppet::Provider::Vclresource < Puppet::Provider
   end
   
   def deleteForeignEntries(keys, main)
-    pp [ keys, main ]
     keys.each { |tbl, lnks|
       if (lnks.empty?) then 
         raise Puppet::DevError, "Link missing foreign keys for #{tbl} in foreign_keys variable of vclresource child provider"
       end
-      if protectedHashKeys.include? tbl then
+      if self.class.protectedHashKeys.include? tbl then
         # do nothing
       else
         if lnks[:recurse] == nil then
           lnks[:recurse] = []
         end
         lnks.each { |col, lnk|
-          if lnks[:recurse].include? col then 
+          if self.class.protectedHashKeys.include? col then
+            # do nothing
+          elsif lnks[:recurse].include? col then 
             if keys[tbl][col][:step][0].split('.')[0] == main then
               qry = "DELETE FROM #{tbl} WHERE #{keys[tbl][col][:step][1]} NOT IN (SELECT #{keys[tbl][col][:step][0].split('.')[1]} FROM #{main})"
-#              self.class.runQuery(qry)
-              Puppet.debug qry
+              self.class.runQuery(qry)
             end
             deleteForeignEntries(lnks, tbl)
           end
