@@ -7,7 +7,8 @@ class Puppet::Provider::Vclresource < Puppet::Provider
   
   def initialize(value={})
     super(value)
-    @property_flush = {}
+    @property_flush = new Hash(value)
+    @property_flush.delete(:ensure)
   end
   
   def self.namevar
@@ -316,7 +317,8 @@ class Puppet::Provider::Vclresource < Puppet::Provider
     keys[tbl].each { | col, param | 
        unless self.class.protectedHashKeys.include? col 
          val = resource[cols[main][tbl][col][0]]
-         if val != nil and val != :none then
+         oldval = @property_flush[cols[main][tbl][col][0]]
+         if (oldval == nil or oldval == :none) and val != nil and val != :none then
             doMakeQry = true 
          end
        end
@@ -339,52 +341,52 @@ class Puppet::Provider::Vclresource < Puppet::Provider
     [ qry ] 
   end
   
-  def makeCreateQry(cols, keys, main)
-    qry = "INSERT INTO #{main} (id,"
-    vals = ""
-    frm = Set[]
-    whr = " WHERE"
-    xtraQrys = []
-  
-    cols[main].each { |col, param|
-      unless self.class.protectedHashKeys.include? col
-        qry  << " #{main}.#{col},"
-        vals << " #{paramVal(param)},"
-      end
-    }
-    if cols[:recurse] == nil then
-      cols[:recurse] = []
-    end
-    unless cols[:recurse].include? main
-      othertbls = cols.keys
-      othertbls.delete(main)
-      if (othertbls.length > 0) then
-        othertbls.each { |tbl|
-          xtraQrys += fillCreateForeign(cols, keys, main, tbl)
-        }
-      end
-    end
-  
-    qry.chomp!(",")
-    vals.chomp!(",")
-    if (frm.empty?) then
-      qry << ") VALUES (NULL,"
-      qry << vals
-      qry << ")"
-    else
-      whr.chomp!(" AND")
-    
-      qry << ") SELECT NULL,"
-      qry << vals
-      qry << " FROM #{frm.to_a.join(', ')}"
-      qry << whr
-    end  
-    unless xtraQrys.empty?
-      qry << "; "
-      qry << xtraQrys.join("; ")
-    end
-    qry 
-  end
+#  def makeCreateQry(cols, keys, main)
+#    qry = "INSERT INTO #{main} (id,"
+#    vals = ""
+#    frm = Set[]
+#    whr = " WHERE"
+#    xtraQrys = []
+#  
+#    cols[main].each { |col, param|
+#      unless self.class.protectedHashKeys.include? col
+#        qry  << " #{main}.#{col},"
+#        vals << " #{paramVal(param)},"
+#      end
+#    }
+#    if cols[:recurse] == nil then
+#      cols[:recurse] = []
+#    end
+#    unless cols[:recurse].include? main
+#      othertbls = cols.keys
+#      othertbls.delete(main)
+#      if (othertbls.length > 0) then
+#        othertbls.each { |tbl|
+#          xtraQrys += fillCreateForeign(cols, keys, main, tbl)
+#        }
+#      end
+#    end
+#  
+#    qry.chomp!(",")
+#    vals.chomp!(",")
+#    if (frm.empty?) then
+#      qry << ") VALUES (NULL,"
+#      qry << vals
+#      qry << ")"
+#    else
+#      whr.chomp!(" AND")
+#    
+#      qry << ") SELECT NULL,"
+#      qry << vals
+#      qry << " FROM #{frm.to_a.join(', ')}"
+#      qry << whr
+#    end  
+#    unless xtraQrys.empty?
+#      qry << "; "
+#      qry << xtraQrys.join("; ")
+#    end
+#    qry 
+#  end
   
   def deleteForeignEntries(keys, main)
     keys.each { |tbl, lnks|
@@ -426,64 +428,93 @@ class Puppet::Provider::Vclresource < Puppet::Provider
       self.class.runQuery(qry)
       deleteForeignEntries(self.class.foreign_keys, self.class.maintbl)
       
-      if (@property_flush[:ensure] == :present) then
-        # add resource
-        Puppet.debug "Adding new VCL Resource: #{resource[:name]}"
-        qry = makeCreateQry(self.class.columns, self.class.foreign_keys, self.class.maintbl)
-        Puppet.debug qry
-#        self.class.runQuery(qry)
-      
-        qry = "INSERT INTO resource (id, resourcetypeid, subid) SELECT NULL, resourcetype.id, #{self.class.maintbl}.id FROM resourcetype, #{self.class.maintbl} WHERE resourcetype.name='#{self.class.resourcetype}' AND #{self.class.maintbl}.#{self.class.namevar}='#{resource[:name]}'"
-
-        Puppet.debug "Adding recource entry for #{resource[:name]}"
-        Puppet.debug qry
-#        self.class.runQuery(qry)
-
-        Puppet.debug insertGroupMembersQry
-      
-#        self.class.runQuery(insertGroupMembersQry)
+      if (@property_flush[:ensure] == :absent) then
+        return
       end
-    else
-      # change existing definition
-      Puppet.debug "Updating records for #{resource[:name]}"
+      # add resource
+      Puppet.debug "Adding new VCL Resource: #{resource[:name]}"
+#        qry = makeCreateQry(self.class.columns, self.class.foreign_keys, self.class.maintbl)
       
-      qry = ""
-      frm = Set[]
-      frm += [ self.class.maintbl ]
-
+      qry = "INSERT INTO #{self.class.maintbl} (id,"
+      vals = ""
+    
       self.class.columns[self.class.maintbl].each { |col, param|
-        qry << " #{self.class.maintbl}.#{col}=#{paramVal(param)},"
+        unless self.class.protectedHashKeys.include? col
+          qry  << " #{self.class.maintbl}.#{col},"
+          vals << " #{paramVal(param)},"
+        end
       }
+      qry << ") VALUES (NULL,"
+      qry << vals
+      qry << ")"
+      
       Puppet.debug qry
+#        self.class.runQuery(qry)
+    
+      qry = "INSERT INTO resource (id, resourcetypeid, subid) SELECT NULL, resourcetype.id, #{self.class.maintbl}.id FROM resourcetype, #{self.class.maintbl} WHERE resourcetype.name='#{self.class.resourcetype}' AND #{self.class.maintbl}.#{self.class.namevar}='#{resource[:name]}'"
 
-      othertbls = self.class.columns.keys
-      othertbls.delete(self.class.maintbl)
-      if (othertbls.length > 0) then
-        whr = ""
-        othertbls.each { |tbl|
-          qry, whr, frm = fillUpdateForeign(self.class.columns, self.class.foreign_keys, tbl, qry, whr, frm)
-          Puppet.debug qry
-        }
-        whr << " #{self.class.maintbl}.#{self.class.namevar}='#{resource[:name]}'"
-        Puppet.debug whr
-      else
-        whr = " WHERE  #{self.class.maintbl}.#{self.class.namevar}='#{resource[:name]}'"
-      end
-      
-      qry.chomp!(",")
-      qry = "UPDATE #{frm.to_a.join(", ")} SET#{qry}"
-      
-      qry << " WHERE"
-      qry << whr  
+      Puppet.debug "Adding recource entry for #{resource[:name]}"
+      Puppet.debug qry
+#        self.class.runQuery(qry)
 
-      self.class.runQuery(qry)
-      
-      Puppet.debug "Refreshing VCL Resource groups for #{resource[:name]}"
-      qry =  "DELETE FROM resourcegroupmembers WHERE resourceid IN (SELECT resource.id FROM resource, resourcetype, #{self.class.maintbl} WHERE #{self.class.maintbl}.#{self.class.namevar}='#{resource[:name]}' AND #{self.class.maintbl}.id=resource.subid AND resource.resourcetypeid=resourcetype.id AND resourcetype.name='#{self.class.resourcetype}'); "
-      qry << insertGroupMembersQry
-      self.class.runQuery(qry)
-      Puppet.debug "Done"
+      Puppet.debug insertGroupMembersQry
+    
+#        self.class.runQuery(insertGroupMembersQry)
     end
+    
+    xtraQrys = []
+    othertbls = self.class.columns.keys
+    othertbls.delete(self.class.maintbl)
+    if (othertbls.length > 0) then
+      othertbls.each { |tbl|
+        xtraQrys += fillCreateForeign(cols, keys, main, tbl)
+      }
+    end
+    unless xtraQrys.empty?
+      qry = xtraQrys.join("; ")
+      Puppet.debug qry
+#        self.class.runQuery(qry)
+    end
+    
+    # change existing definition
+    Puppet.debug "Updating records for #{resource[:name]}"
+    
+    qry = ""
+    frm = Set[]
+    frm += [ self.class.maintbl ]
+
+    self.class.columns[self.class.maintbl].each { |col, param|
+      qry << " #{self.class.maintbl}.#{col}=#{paramVal(param)},"
+    }
+    Puppet.debug qry
+
+    othertbls = self.class.columns.keys
+    othertbls.delete(self.class.maintbl)
+    if (othertbls.length > 0) then
+      whr = ""
+      othertbls.each { |tbl|
+        qry, whr, frm = fillUpdateForeign(self.class.columns, self.class.foreign_keys, tbl, qry, whr, frm)
+        Puppet.debug qry
+      }
+      whr << " #{self.class.maintbl}.#{self.class.namevar}='#{resource[:name]}'"
+      Puppet.debug whr
+    else
+      whr = " WHERE  #{self.class.maintbl}.#{self.class.namevar}='#{resource[:name]}'"
+    end
+    
+    qry.chomp!(",")
+    qry = "UPDATE #{frm.to_a.join(", ")} SET#{qry}"
+    
+    qry << " WHERE"
+    qry << whr  
+
+    self.class.runQuery(qry)
+    
+    Puppet.debug "Refreshing VCL Resource groups for #{resource[:name]}"
+    qry =  "DELETE FROM resourcegroupmembers WHERE resourceid IN (SELECT resource.id FROM resource, resourcetype, #{self.class.maintbl} WHERE #{self.class.maintbl}.#{self.class.namevar}='#{resource[:name]}' AND #{self.class.maintbl}.id=resource.subid AND resource.resourcetypeid=resourcetype.id AND resourcetype.name='#{self.class.resourcetype}'); "
+    qry << insertGroupMembersQry
+    self.class.runQuery(qry)
+    Puppet.debug "Done"
   end
   
   def fillUpdateForeign(cols, keys, tbl, qry, whr, frm)
