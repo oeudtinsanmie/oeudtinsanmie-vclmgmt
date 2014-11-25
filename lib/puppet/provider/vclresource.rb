@@ -47,7 +47,7 @@ class Puppet::Provider::Vclresource < Puppet::Provider
       cols[tbl][:recurse] = []
     end
     cols[tbl].each { |col, param|
-      if col == :recurse then
+      if protectedHashKeys.include? col then
         # do nothing
       elsif cols[tbl][:recurse].include? col then
         qry = appendForeign(cols[tbl], col, qry)
@@ -65,13 +65,13 @@ class Puppet::Provider::Vclresource < Puppet::Provider
     if (foreign_keys.empty?) then
       columns.keys.each { |tbl|
         columns[tbl].each { |col, param|
-          qry << "#{tbl}.#{col}, "
+          qry << "#{tbl}.#{col}, " unless protectedHashKeys.include? col
         }
       }
       qry << "GROUP_CONCAT(resourcegroup.name SEPARATOR ',') FROM #{maintbl}, resource, resourcegroupmembers, resourcegroup, resourcetype WHERE resource.resourcetypeid=resourcetype.id AND resourcetype.name='#{resourcetype}' AND resource.subid=#{maintbl}.id AND resourcegroupmembers.resourceid=resource.id AND resourcegroup.id=resourcegroupmembers.resourcegroupid GROUP BY #{maintbl}.id"
     else
       columns[maintbl].each { |col, param|
-        qry << "vclrsc.#{col}, "
+        qry << "vclrsc.#{col}, " unless protectedHashKeys.include? col
       }
       othertbls = columns.keys
       othertbls.delete(maintbl)
@@ -107,7 +107,7 @@ class Puppet::Provider::Vclresource < Puppet::Provider
   end
   
   def self.protectedHashKeys
-    [ :recurse, :step, :as ]
+    [ :recurse, :step, :as, :namevar ]
   end
   
   def self.joinForeignKeys(qry, tbl, parent, as, lnks) 
@@ -280,11 +280,11 @@ class Puppet::Provider::Vclresource < Puppet::Provider
     qry
   end
   
-  def fillCreateForeign(cols, keys, main, tbl, qry, vals, whr, frm)
+  def fillCreateForeign(cols, keys, main, tbl)
     xtraQrys = []
-    if tbl == :recurse then
+    if self.class.protectedHashKeys.include? tbl then
       # do nothing
-      return [ qry, vals, whr, frm, xtraQrys ]
+      return xtraQrys
     end
     if cols[tbl][:recurse] == nil then
       cols[tbl][:recurse] = []
@@ -292,63 +292,89 @@ class Puppet::Provider::Vclresource < Puppet::Provider
     cols[tbl].each { |col, param|
       if col == :recurse then
         # do nothing
-      elsif cols[:recurse].include? col then
+      elsif cols[tbl][:recurse].include? col then
         
-        if keys[tbl][col][:step][0].split('.')[0] == main then
-          newqry = makeCreateQry(cols[tbl], keys[tbl], tbl)
-          xtraQrys += [ newqry ]
-        else
-          qry, vals, whr, frm, xtra = fillCreateForeign(cols[tbl], keys[tbl], tbl, col, qry, vals, whr, frm)
-          xtraQrys += xtra
-          whr << " #{keys[tbl][col][:step][0]}=#{keys[tbl][col][:step][1]} AND"
-          frm += [ tbl ]
+        if keys[tbl][:as] == nil then 
+          keys[tbl][:as] = []
         end
-      else
-        if (resource[param[0]] == nil) then
-          # do nothing
-        elsif (resource[param[0]] == :none) then
-          qry  << " #{keys[tbl][col][0]},"
-          vals << "NULL,"
-        else
-          qry  << " #{keys[tbl][col][0]},"
-          vals << " #{keys[tbl][col][1]},"
-          whr  << " #{tbl}.#{col}=#{paramVal(param)} AND"
-          frm += [ tbl ]
+        unless keys[tbl][:as].include? col 
+          newqry = makeXtraQry(cols, keys[tbl], tbl, col)
+          xtraQrys += newqry
         end
       end
     }
-    [ qry, vals, whr, frm, xtraQrys ]
+    xtraQrys
   end
   
-  def makeCreateQry(cols, keys, main)
-    qry = "INSERT INTO #{main} (id, "
+  def makeXtraQry(cols, keys, main, tbl)
+    qry = "INSERT INTO #{main} (id,"
     vals = ""
     frm = Set[]
     whr = " WHERE"
+    
+    doMakeQry = false
+    keys[tbl].each { | col, param | 
+       unless self.class.protectedHashKeys.include? col 
+         val = resource[cols[main][tbl][col][0]]
+         if val != nil and val != :none then
+            doMakeQry = true 
+         end
+       end
+    }
+    unless doMakeQry == true
+      return [] 
+    end
+  
+    qry  << keys[tbl][:step][1].split('.')[1]
+    vals << keys[tbl][:step][0]
+    steptbl = keys[tbl][:step][0].split('.')[0]
+    frm += [ steptbl ]
+    name = cols[steptbl][:namevar]
+    whr << " #{steptbl}.#{name}=#{paramVal(cols[steptbl][name])}"
+    
+    qry << ") SELECT NULL,"
+    qry << vals 
+    qry << " FROM #{frm.to_a.join(', ')}"
+    qry << whr
+    [ qry ] 
+  end
+  
+  def makeCreateQry(cols, keys, main)
+    qry = "INSERT INTO #{main} (id,"
+    vals = ""
+    frm = Set[]
+    whr = " WHERE"
+    xtraQrys = []
   
     cols[main].each { |col, param|
-      qry  << "#{main}.#{col}, "
-      vals << "#{paramVal(param)}, "
+      unless self.class.protectedHashKeys.include? col
+        qry  << " #{main}.#{col},"
+        vals << " #{paramVal(param)},"
+      end
     }
-  
-    othertbls = cols.keys
-    othertbls.delete(main)
-    if (othertbls.length > 0) then
-      othertbls.each { |tbl|
-        qry, vals, whr, frm, xtraQrys = fillCreateForeign(cols, keys, main, tbl, qry, vals, whr, frm)
-      }
+    if cols[:recurse] == nil then
+      cols[:recurse] = []
+    end
+    unless cols[:recurse].include? main
+      othertbls = cols.keys
+      othertbls.delete(main)
+      if (othertbls.length > 0) then
+        othertbls.each { |tbl|
+          xtraQrys += fillCreateForeign(cols, keys, main, tbl)
+        }
+      end
     end
   
     qry.chomp!(",")
     vals.chomp!(",")
     if (frm.empty?) then
-      qry << ") VALUES (NULL, "
+      qry << ") VALUES (NULL,"
       qry << vals
       qry << ")"
     else
       whr.chomp!(" AND")
     
-      qry << ") SELECT NULL, "
+      qry << ") SELECT NULL,"
       qry << vals
       qry << " FROM #{frm.to_a.join(', ')}"
       qry << whr

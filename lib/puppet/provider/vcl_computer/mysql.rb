@@ -13,6 +13,7 @@ Puppet::Type.type(:vcl_computer).provide(:mysql, :parent => Puppet::Provider::Vc
   def self.columns 
     {
       "computer"     => { 
+        :namevar => "hostname",
         "hostname"          => [ :name, 		    :string   ],
         "RAM"               => [ :ram, 	        :numeric  ],
         "procnumber"        => [ :procnumber,   :numeric  ],
