@@ -81,7 +81,7 @@ class Puppet::Provider::Vclresource < Puppet::Provider
       }
       qry <<  "vclrsc.groups FROM (SELECT #{maintbl}.*, GROUP_CONCAT(resourcegroup.name SEPARATOR ',') as groups FROM #{maintbl}, resource, resourcegroupmembers, resourcegroup, resourcetype WHERE resource.resourcetypeid=resourcetype.id AND resourcetype.name='#{resourcetype}' AND resource.subid=#{maintbl}.id AND resourcegroupmembers.resourceid=resource.id AND resourcegroup.id=resourcegroupmembers.resourcegroupid group by #{maintbl}.id) as vclrsc"
 
-      Puppet.debug qry
+#      Puppet.debug qry
       foreign_keys.each { |tbl, lnks|
         qry = joinForeignKeys(qry, tbl, nil, nil, lnks)
       }
@@ -190,6 +190,7 @@ class Puppet::Provider::Vclresource < Puppet::Provider
         inst_hash, i = hashForeign(cols[tbl], col, inst_hash, hash_list, i)
       else
         inst_hash[param[0]] = hashitem(hash_list[i], param)
+        inst_hash[param[0]] = :none if "NULL" == inst_hash[param[0]]
         i = i+1
       end
     }
