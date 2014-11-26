@@ -1,6 +1,7 @@
 Key Concepts
 ------------
 The VCLmgmt module uses Puppet to configure VCL resources according to a specified manifest.  This document will briefly discuss the resources managed by the module, Puppet's approach to managing resources in general, and how VCL's resources work specifically.  For first-time Puppet users, a quick start guide is provided for getting Puppet running on your Redhat or CentOS environment.  Finally, a process for describing test scenarios as manifests is discussed and a simple example scenario is provided. 
+([tl;dr](#puppet-quickstart-centos))
 
 ### Network Structure
 A VCL Management Node is connected to the computers it provisions through the [public network and one or two private networks](https://cwiki.apache.org/confluence/display/VCL/Network+Layout).  The primary private network is responsible for pxe booting and delivering images to managed computers.  Optionally, another private network may be used to connect to a DRAC or Management Module.  The VCLmgmt puppet module expands on this network structure, allowing one or more "pods," private subnet or subnet pairs.  Computers in separate pods cannot communicate with each other over their private network(s), but can each still communicate with the management node.  The VCLmgmt module assumes is that a management node will use a single port for all primary private network subnets, and a single port if any for all secondary private network subnets.  Isolation is accomplished using different [VLANs](http://en.wikipedia.org/wiki/Virtual_LAN) for each pod. 
