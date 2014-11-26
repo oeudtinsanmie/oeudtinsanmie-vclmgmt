@@ -12,7 +12,11 @@ Facter.add(:dojolayers) do
         File.open(utils, 'r') { | file |
           layerfile = file.read()
           layers = {}
-          layerfile.split("START DOJO PARSING\n")[1].split("# END DOJO PARSING")[0].split("break;").collect { | layerblob |
+          layerfile = layerfile.split("START DOJO PARSING\n")[1].split("# END DOJO PARSING")[0]
+          while layerfile.include? "/*" do
+            layerfile = layerfile[0..(layerfile.index("/*")-1)] + layerfile[(layerfile.index("*/")+2)..-1] 
+          end
+          layerfile.split("break;").collect { | layerblob |
             if (layerblob.include? '=') then
               jnk1, name, deps = layerblob.split('=')
               name = name.split(';')[0].lstrip.rstrip.delete('\';') 
@@ -28,9 +32,11 @@ Facter.add(:dojolayers) do
             end
           }
           layers.delete(nil)
+          layers.delete("")
           layers
         }
       rescue Exception => e
+        Puppet.debug e
         Puppet.debug "Could not find file #{utils}.  VCL installation was not available when facts were gathered.  Rerun puppet apply after vcl repo has been loaded"
         {}
       end
