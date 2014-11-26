@@ -1,4 +1,4 @@
-# Class: vclmgmt::xcat_pod
+# Class: vclmgmt::pod
 #
 # This class defines related xcat_network objects for a private / ipmi network pair within xCAT
 # If node hashes are provided, they are populated with sane defaults from the network definitions
@@ -6,9 +6,9 @@
 #
 # Parameters:
 # [*private_hash*]
-#   - An xcat_vlan hash for the private network
+#   - A vlan hash for the private network
 # [*ipmi_hash*]
-#   - An xcat_vlan hash for the ipmi network
+#   - A vlan hash for the ipmi network
 # [*defaults*] 
 #   - Default values for node definitions within the nodes hash, if defined
 #     Defaults to undef
@@ -19,7 +19,7 @@
 #   - Whether to install xCAT and configure parallel xCAT objects along with VCL database definitions for images and computers
 #     Defaults to false
 #
-define vclmgmt::xcat_pod(
+define vclmgmt::pod(
   $ensure = present,
   $private_hash, 
   $ipmi_hash = undef, 
@@ -36,7 +36,7 @@ define vclmgmt::xcat_pod(
   if $private_hash['master_mac'] == undef {
     fail "vclmgmt::xcat_pod ${name} requires \$master_mac to be defined in \$private_hash"
   }
-  ensure_resource(vclmgmt::xcat_vlan, $name, merge($private_hash, { usexcat => $usexcat, ensure => $ensure, }) )
+  ensure_resource(vclmgmt::vlan, $name, merge($private_hash, { usexcat => $usexcat, ensure => $ensure, }) )
   if $ipmi_hash != undef and $ipmi_hash['master_if'] != undef {
     if $ipmi_hash['master_ip'] == undef {
       fail "vclmgmt::xcat_pod ${name} requires \$master_ip to be defined in \$ipmi_hash"
@@ -44,7 +44,7 @@ define vclmgmt::xcat_pod(
     if $ipmi_hash['master_mac'] == undef {
       fail "vclmgmt::xcat_pod ${name} requires \$master_mac to be defined in \$ipmi_hash"
     }
-    ensure_resource(vclmgmt::xcat_vlan, "${name}-ipmi", merge($ipmi_hash, { usexcat => $usexcat, ensure => $ensure, }) )
+    ensure_resource(vclmgmt::vlan, "${name}-ipmi", merge($ipmi_hash, { usexcat => $usexcat, ensure => $ensure, }) )
   }
 
   $tmphash = {
@@ -61,6 +61,6 @@ define vclmgmt::xcat_pod(
   }
 
   if $nodes != undef {
-    create_resources(vclmgmt::compute_node, $nodes, $mydefaults)
+    create_resources(vclmgmt::computer, $nodes, $mydefaults)
   }
 }

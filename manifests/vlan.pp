@@ -1,4 +1,4 @@
-# Class: vclmgmt::xcat_vlan
+# Class: vclmgmt::vlan
 #
 # This class defines xcat_network objects and related network interface definitions if a network is on a vlan
 # 
@@ -25,7 +25,7 @@
 #   - Whether to install xCAT and configure parallel xCAT objects along with VCL database definitions for images and computers
 #     Defaults to false
 #
-define vclmgmt::xcat_vlan(
+define vclmgmt::vlan(
   $ensure = present,
   $master_if, 
   $master_ifgroup = undef,

@@ -783,7 +783,7 @@ class vclmgmt(
       ipmigroup     => $ipmigroup,
     }
     $newpods = set_defaults($pods, $poddefaults, $masterdefault)
-    create_resources(vclmgmt::xcat_pod, $newpods)
+    create_resources(vclmgmt::pod, $newpods)
   }
 
   ############# Resource Chains

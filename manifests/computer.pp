@@ -1,5 +1,5 @@
 include stdlib
-# Class: vclmgmt::compute_node
+# Class: vclmgmt::computer
 #
 # This class defines related vcl_computer and xcat_node objects for a provision controlled computer
 #
@@ -127,7 +127,7 @@ include stdlib
 #   - Whether to install xCAT and configure parallel xCAT objects along with VCL database definitions for images and computers
 #     Defaults to false
 #
-define vclmgmt::compute_node(
+define vclmgmt::computer(
   $ensure       = present, 
   $hostname     = $title,
   $public_ip, 
