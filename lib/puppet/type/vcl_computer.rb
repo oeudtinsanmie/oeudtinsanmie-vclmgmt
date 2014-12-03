@@ -180,8 +180,8 @@ Puppet::Type.newtype(:vcl_computer) do
   
   newproperty(:provisioning) do
     desc ''
-     newvalues("xCAT 1.3", "Computing Lab", "xCAT 2.1", "xCAT 2.x", "VMware", "Virtual Box", "Libvirt Virtualization API", "None")
-    defaultto "xCAT 2.x"
+     newvalues("xCAT", "Computing Lab", "VMware", "Virtual Box", "Libvirt Virtualization API", "None")
+    defaultto "xCAT"
  end
 
   newproperty(:vmhost) do
