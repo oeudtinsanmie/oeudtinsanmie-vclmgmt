@@ -1,13 +1,13 @@
 VCL Managment Module
 ====================
-This module installs and configures xCAT and VCL, and profides puppet classes to manipulate the related xCAT and database tables VCL uses.  The current version supports VCL up to release-2.3.2-RC2.  Development is in process to support the new database schema in the upcoming release of 2.4.  xCAT installation and resource management use the related [xCAT module](https://github.ncsu.edu/engr-csc-netlabs/puppetmodules/tree/master/xcat).
+This module installs and configures xCAT and VCL, and profides puppet classes to manipulate the related xCAT and database tables VCL uses.  The current version supports VCL up to release-2.3.2-RC2.  Development is in process to support the new database schema in the upcoming release of 2.4.  xCAT installation and resource management use the related [xCAT module](https://github.com/oeudtinsanmie/oeudtinsanmie-xcat).
 
 Classes
 --------
   * [Vclmgmt](#vclmgmt-)
-  * [Vclmgmt::Xcat_pod](#vclmgmtxcat_pod-)
-  * [Vclmgmt::Xcat_vlan](#vclmgmtxcat_vlan-)
-  * [Vclmgmt::Compute_node](#vclmgmtcompute_node-)
+  * [Vclmgmt::pod](#vclmgmtpod-)
+  * [Vclmgmt::vlan](#vclmgmtvlan-)
+  * [Vclmgmt::computer](#vclmgmtcomputer-)
   * [Vclmgmt::Baseimage](#vclmgmtbaseimage-)
     
 Hiera Usage & Custom Functions
@@ -83,19 +83,19 @@ Installs xCAT and VCL from source, then configures the management node.  You can
         usexcat        => false,                 # Whether to install xCAT and configure parallel xCAT objects along with VCL database definitions for images and computers  (default value)
     }
 
-vclmgmt::xcat_pod 
+vclmgmt::pod 
 ------------------
-Describes the private and ipmi subnets for a given collection of compute nodes.  It accepts hashes defining the xcat_vlan objects for its private and ipmi subnets, as well as a defaults hash, which may be used to contain any values shared by both definitions.  In addition, you may include a hash describing the compute_node objects of this pod.  Compute nodes within this list will be passed definitions from the pod within their defaults hash, describing the private and ipmi interfaces, networks and domains.  These will be overridden by any explicit definition in the compute_node hashes.
+Describes the private and ipmi subnets for a given collection of compute nodes.  It accepts hashes defining the vlan objects for its private and ipmi subnets, as well as a defaults hash, which may be used to contain any values shared by both definitions.  In addition, you may include a hash describing the computer objects of this pod.  Compute nodes within this list will be passed definitions from the pod within their defaults hash, describing the private and ipmi interfaces, networks and domains.  These will be overridden by any explicit definition in the computer hashes.
 
-    vclmgmt::xcat_pod { "pod7a" : 
-        private_hash => {                         # An xcat_vlan hash for the private network
+    vclmgmt::pod { "pod7a" : 
+        private_hash => {                         # A vlan hash for the private network
             vlan_alias_ip => '192.168.37.1',
             network       => '192.168.37.0',
             netmask       => '255.255.255.192',
             domain        => 'mydomain',
             vlanid        => '307',
         },
-        ipmi_hash => {                            # An xcat_vlan hash for the ipmi network
+        ipmi_hash => {                            # A vlan hash for the ipmi network
             network       => '192.168.137.0',
             netmask       => '255.255.255.192',
             domain        => 'ipmidomain',
@@ -108,7 +108,7 @@ Describes the private and ipmi subnets for a given collection of compute nodes. 
             admin_user    => 'adminuser', 
             admin_pw      => 'adminpass', 
         },
-        nodes => {                                # Hash of vclmgmt::compute_nodes to declare with this network pair's settings
+        nodes => {                                # Hash of vclmgmt::computers to declare with this network pair's settings
             "my-node" => {
                 tgt_ip    => "192.168.37.8",
                 ipmi_ip   => "192.168.137.8",
@@ -119,11 +119,11 @@ Describes the private and ipmi subnets for a given collection of compute nodes. 
         usexcat           => false,               # Whether to install xCAT and configure parallel xCAT objects along with VCL database definitions for images and computers  (default value)
       }
 
-vclmgmt::xcat_vlan 
+vclmgmt::vlan 
 -------------------
 Creates an xcat network object in xcat describing the network.  If vlan_alias_ip is not undefined, it will also create a network interface for the vlan.
 
-    vclmgmt::xcat_vlan { "some_network" :
+    vclmgmt::vlan { "some_network" :
         master_if     => 'eth0', 
         master_mac    => 'XX:XX:XX:XX:XX:XX',   # MAC address for network interface
         master_ip     => '192.168.37.1',        # IP address for xcat management node on master_if
@@ -135,11 +135,11 @@ Creates an xcat network object in xcat describing the network.  If vlan_alias_ip
         usexcat       => false,                 # Whether to install xCAT and configure parallel xCAT objects along with VCL database definitions for images and computers  (default value)
     }
 
-vclmgmt::compute_node 
+vclmgmt::computer 
 ----------------------
-Defines related vcl_computer and xcat_node objects for a provision controlled computer.  Vcl_computer is a defined type within the vclmgmt module and manages [VCL Database Tables](https://vcl.apache.org/dev/database-schema.html#computer-table) related to computers, whereas xcat_node is a defined type within the related [xCAT module](https://github.ncsu.edu/engr-csc-netlabs/puppetmodules/tree/master/xcat#xcat-objects-).  Where the computer table uses foreign keys to store properties of the computer, Vcl_computer abstracts this out.  For example, if I made an image called 'centos65' that I wish to load on this computer, I would simply put its name in the image field.
+Defines related vcl_computer and xcat_node objects for a provision controlled computer.  Vcl_computer is a defined type within the vclmgmt module and manages [VCL Database Tables](https://vcl.apache.org/dev/database-schema.html#computer-table) related to computers, whereas xcat_node is a defined type within the related [xCAT module](https://github.com/oeudtinsanmie/oeudtinsanmie-xcat#xcat-objects-).  Where the computer table uses foreign keys to store properties of the computer, Vcl_computer abstracts this out.  For example, if I made an image called 'centos65' that I wish to load on this computer, I would simply put its name in the image field.
 
-    vclmgmt::compute_node { "my-node" :
+    vclmgmt::computer { "my-node" :
         ensure        => present,                       # Passthrough for ensurable objects in this class
         hostname      => $title,                        # Allows names of objects to be different from title of this resource
         public_ip,                                      # IP address for this computer on the public network
@@ -192,7 +192,7 @@ Defines related vcl_computer and xcat_node objects for a provision controlled co
       
 vclmgmt::baseimage 
 -------------------
-Creates the database rows for a vcl base image, and creates an image within xcat, using the [xcat::image](https://github.ncsu.edu/engr-csc-netlabs/puppetmodules/tree/master/xcat#xcat-objects-) class.  Some of these parameters are enumerations from the Apache VCL project.  With the exception of the os code, everything else should work using only the default values.  If your configuration needs non-default values, refer to [VCL documentation](https://vcl.apache.org/dev/database-schema.html#image-table) for more details.
+Creates the database rows for a vcl base image, and creates an image within xcat, using the [xcat::image](https://github.com/oeudtinsanmie/oeudtinsanmie-xcat#xcatimage-) class.  Some of these parameters are enumerations from the Apache VCL project.  With the exception of the os code, everything else should work using only the default values.  If your configuration needs non-default values, refer to [VCL documentation](https://vcl.apache.org/dev/database-schema.html#image-table) for more details.
 
     vclmgmt::baseimage { "base-img" :
         ensure        => present,                   # Passthrough for ensurable objects in this class
@@ -267,7 +267,7 @@ Here are the os codes currently available:
 
 Hiera Usage
 ===========
-vclmgmt::xcat_pod and vclmgmt::compute_node are set up as a hierarcy.  This makes it easy to define values in hiera once and let those definitions cascade through.  Variables are passed down the hierarchy as default values for lower member classes, but may be overridden by explicit definitions.  The simplest way to do this is to define all your networks and nodes in a hash within the vclmgmt class definition.  You can use Puppet's automatic variable importing or define a hash and then declare a class resource with that hash.  Alternatively, you might want to define a hash-generating function that defines network addresses according to some scheme (eg. by lab room, rack number, etc).  In that case, you may use the set_defaults function discussed below to recreate the hierarchy inheritance of the main class for your generated hashes.
+vclmgmt::pod and vclmgmt::computer are set up as a hierarcy.  This makes it easy to define values in hiera once and let those definitions cascade through.  Variables are passed down the hierarchy as default values for lower member classes, but may be overridden by explicit definitions.  The simplest way to do this is to define all your networks and nodes in a hash within the vclmgmt class definition.  You can use Puppet's automatic variable importing or define a hash and then declare a class resource with that hash.  Alternatively, you might want to define a hash-generating function that defines network addresses according to some scheme (eg. by lab room, rack number, etc).  In that case, you may use the set_defaults function discussed below to recreate the hierarchy inheritance of the main class for your generated hashes.
 
 Example Yaml 
 -------------
@@ -385,6 +385,6 @@ And then in puppet:
     
     $mypods = hiera_hash('my_nodes', {})
     $mydefaults = hiera_hash('my_defaults', {})
-    create_resources(vclmgmt::xcat_pod, set_defaults(my_generation_function($mypods), $mydefaults, $mgmt_node) )
+    create_resources(vclmgmt::pod, set_defaults(my_generation_function($mypods), $mydefaults, $mgmt_node) )
     
     

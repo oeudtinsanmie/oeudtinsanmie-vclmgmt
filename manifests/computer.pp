@@ -1,5 +1,5 @@
 include stdlib
-# Class: vclmgmt::compute_node
+# Class: vclmgmt::computer
 #
 # This class defines related vcl_computer and xcat_node objects for a provision controlled computer
 #
@@ -117,11 +117,17 @@ include stdlib
 # [*vmtype*] 
 #   - VM Type of this computer
 #     Defaults to undef -> inherits defaults from vcl_computer
+# [*vmprofile*]
+#   - VM Profile for this hypervisor.
+#     Defaults to undef -> inherits defaults from vcl_computer ("none")
+# [*vmlimit*]
+#   - Limit of VMs to host on this hypervisor
+#     Defaults to undef -> inherits defaults from vcl_computer ("none")
 # [*usexcat*]
 #   - Whether to install xCAT and configure parallel xCAT objects along with VCL database definitions for images and computers
 #     Defaults to false
 #
-define vclmgmt::compute_node(
+define vclmgmt::computer(
   $ensure       = present, 
   $hostname     = $title,
   $public_ip, 
@@ -165,6 +171,8 @@ define vclmgmt::compute_node(
   $provisioning  = undef,
   $vmhost        = undef,
   $vmtype        = undef,
+  $vmprofile     = undef,
+  $vmlimit       = undef,
   $usexcat       = false,
   $pubvlan       = undef,
   $privlan       = undef,
@@ -234,6 +242,8 @@ define vclmgmt::compute_node(
     provisioning  => $provisioning,     
     vmhost        => $vmhost,
     vmtype        => $vmtype,
+    vmprofile     => $vmprofile,
+    vmlimit       => $vmlimit,
   }
   
   if $ensure == present and $vmhost == 'localhost' {
