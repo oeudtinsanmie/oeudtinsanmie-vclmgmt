@@ -756,8 +756,8 @@ class vclmgmt(
     }
   
     # Chain declarations for xcat resources
-    Exec["makehosts"] <~ Vclmgmt::Compute_node <| |>
-    Exec["makehosts"] <~ Vclmgmt::Xcat_pod <| |>
+    Exec["makehosts"] <~ Vclmgmt::Computer <| |>
+    Exec["makehosts"] <~ Vclmgmt::Pod <| |>
     Exec["makedns"] ~> Service["xcatd"] ~> Service["vcld"]
       
   }
