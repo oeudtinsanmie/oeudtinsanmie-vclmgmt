@@ -28,21 +28,21 @@ define vclmgmt::pod(
   $usexcat = false,
 ) {
   if $private_hash == undef or ($private_hash["ovs_bridge"] == undef and $private_hash['master_if'] == undef) {
-    fail "vclmgmt::xcat_pod ${name} requires \$master_if to be defined in \$private_hash"
+    fail "vclmgmt::pod ${name} requires \$master_if to be defined in \$private_hash"
   }
   if $private_hash['master_ip'] == undef {
-    fail "vclmgmt::xcat_pod ${name} requires \$master_ip to be defined in \$private_hash"
+    fail "vclmgmt::pod ${name} requires \$master_ip to be defined in \$private_hash"
   }
   if $private_hash['master_mac'] == undef {
-    fail "vclmgmt::xcat_pod ${name} requires \$master_mac to be defined in \$private_hash"
+    fail "vclmgmt::pod ${name} requires \$master_mac to be defined in \$private_hash"
   }
   ensure_resource(vclmgmt::vlan, $name, merge($private_hash, { usexcat => $usexcat, ensure => $ensure, }) )
   if $ipmi_hash != undef and $ipmi_hash['master_if'] != undef {
     if $ipmi_hash['master_ip'] == undef {
-      fail "vclmgmt::xcat_pod ${name} requires \$master_ip to be defined in \$ipmi_hash"
+      fail "vclmgmt::pod ${name} requires \$master_ip to be defined in \$ipmi_hash"
     }
     if $ipmi_hash['master_mac'] == undef {
-      fail "vclmgmt::xcat_pod ${name} requires \$master_mac to be defined in \$ipmi_hash"
+      fail "vclmgmt::pod ${name} requires \$master_mac to be defined in \$ipmi_hash"
     }
     ensure_resource(vclmgmt::vlan, "${name}-ipmi", merge($ipmi_hash, { usexcat => $usexcat, ensure => $ensure, }) )
   }
